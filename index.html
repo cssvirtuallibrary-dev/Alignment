@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lotus Bodhicitta System</title>
+    <style>
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background-color: #05070a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #fff; user-select: none; -webkit-user-select: none;
+        }
+        #canvas-container { width: 100vw; height: 100vh; display: block; }
+
+        /* Floating Action Button */
+        #action-container { position: absolute; top: 15px; left: 15px; z-index: 30; pointer-events: auto; }
+        #start-btn {
+            background: #ffd700; color: #05070a; border: 1px solid rgba(255, 215, 0, 0.6);
+            padding: 12px 24px; border-radius: 12px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.35);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        #start-btn:hover { background: #ffe240; box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); transform: translateY(-2px); }
+        #start-btn:active { transform: translateY(1px); }
+        #start-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+        /* Collapsible UI Menu Control Panel */
+        #ui-container {
+            position: absolute; top: 75px; left: 15px;
+            background: rgba(10, 15, 25, 0.85); padding: 14px 18px; border-radius: 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);
+            width: 290px; pointer-events: auto;
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10;
+        }
+        #ui-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        h1 { font-size: 14px; margin: 0; color: #ffd700; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        #ui-toggle-btn { background: none; border: none; color: #ffd700; font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
+        #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 560px; opacity: 1; }
+        #ui-container.collapsed { width: 220px; }
+        #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); }
+        #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; pointer-events: none; }
+
+        p { font-size: 11px; color: #aaa; margin: 0 0 12px 0; line-height: 1.4; }
+        .control-group { margin-bottom: 10px; }
+        label { display: block; font-size: 10px; color: #888; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        select, input[type="range"] {
+            width: 100%; background: #141a24; border: 1px solid #253043; color: #fff;
+            padding: 6px; border-radius: 6px; outline: none; box-sizing: border-box; font-size: 11px;
+        }
+        select:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 10px; cursor: pointer; }
+        .checkbox-container input[type="checkbox"] { width: 16px; height: 16px; accent-color: #ffd700; cursor: pointer; }
+        .checkbox-container span { font-size: 11px; color: #ddd; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        details { background: rgba(20, 26, 36, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 10px; margin-top: 8px; }
+        summary { font-size: 10px; color: #ffd700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; outline: none; user-select: none; }
+
+        #data-status { font-size: 10px; color: #667; margin-top: 10px; line-height: 1.4; }
+        #data-status.error { color: #ff6a6a; }
+        #data-status.ok { color: #6fdc8c; }
+
+        /* Interactive Click Popup Card */
+        #popup-card {
+            position: absolute; bottom: 25px; left: 50%;
+            transform: translateX(-50%) translateY(150px);
+            background: rgba(10, 15, 25, 0.92); border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 16px; padding: 16px 20px; width: 85%; max-width: 380px;
+            max-height: 78vh; overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+            opacity: 0; pointer-events: none; z-index: 20;
+        }
+        #popup-card.active { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        #popup-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: #888; font-size: 18px; cursor: pointer; padding: 4px; }
+        #popup-title {
+            color: #ffd700; margin: 0 0 10px 0; font-size: 16px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 6px;
+        }
+        .popup-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 12px; }
+        .popup-label { color: #77849a; flex-shrink: 0; }
+        .popup-val { font-weight: 500; color: #fff; text-align: right; }
+
+        .popup-images { display: flex; gap: 10px; margin-top: 10px; }
+        .popup-image-block { flex: 1; text-align: center; }
+        .popup-image-block img {
+            width: 100%; max-height: 90px; object-fit: contain; border-radius: 8px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        }
+        .popup-image-block .popup-image-caption { font-size: 9px; color: #667; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+        .popup-mantra-section { margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px; }
+        .popup-mantra-val {
+            font-family: Georgia, Cambria, "Times New Roman", Times, serif; font-style: italic;
+            font-size: 12px; line-height: 1.55; color: #ffd700;
+            background: rgba(255, 215, 0, 0.04); border-left: 2px solid #ffd700;
+            padding: 10px 14px; border-radius: 0 8px 8px 0; letter-spacing: 0.3px; white-space: pre-line;
+        }
+
+        #loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #05070a; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 100; transition: opacity 0.6s ease;
+        }
+        .spinner { width: 40px; height: 40px; border: 2px solid rgba(255, 215, 0, 0.1); border-top-color: #ffd700; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-text { margin-top: 16px; color: #ffd700; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; text-align: center; padding: 0 20px; }
+
+        @media (max-width: 600px) {
+            #action-container { width: calc(100% - 30px); left: 10px; top: 10px; }
+            #start-btn { width: 100%; text-align: center; }
+            #ui-container { width: calc(100% - 30px); max-width: none; top: 75px; left: 10px; }
+            #ui-container.collapsed { width: calc(100% - 30px); }
+        }
+    </style>
+
+    <!-- Three.js components (single source: jsDelivr @0.128.0 to avoid version drift) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div id="loading-text">Calibrating Lotus Bodhicitta System...</div>
+    </div>
+
+    <div id="action-container">
+        <button id="start-btn" disabled>Start Formation</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Collapsible UI Control Panel (Open by Default) -->
+    <div id="ui-container">
+        <div id="ui-header">
+            <h1>Lotus Bodhicitta</h1>
+            <button id="ui-toggle-btn">▲</button>
+        </div>
+        <div id="ui-content">
+            <p>Interactive meditation matrix displaying the Buddha's core and the Siddham axial spheres. Data is loaded live from the WBSID worksheet.</p>
+
+            <div class="control-group">
+                <label>Active Filter Matrix</label>
+                <select id="filter-select" disabled>
+                    <option value="">Loading filters…</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Auto-Rotation Speed (RPM)</label>
+                <input type="range" id="rotation-speed" min="0" max="10" step="0.1" value="0">
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="include-group-a" checked>
+                    <span>Include Column of Light (Spiral)</span>
+                </label>
+            </div>
+
+            <details>
+                <summary>Character Render Mode</summary>
+                <div style="margin-top: 8px;">
+                    <select id="billboard-mode">
+                        <option value="rotate" selected>Rotate in 3D Space</option>
+                        <option value="billboard">Face Camera (Billboard)</option>
+                    </select>
+                </div>
+            </details>
+
+            <details style="margin-top: 10px;">
+                <summary>Core Glow Intensity</summary>
+                <div style="margin-top: 8px;">
+                    <input type="range" id="glow-intensity" min="0" max="3" step="0.1" value="1.5">
+                </div>
+            </details>
+
+            <div id="data-status">Connecting to WBSID worksheet…</div>
+        </div>
+    </div>
+
+    <!-- Popup Info Card -->
+    <div id="popup-card">
+        <button id="popup-close">&times;</button>
+        <div id="popup-title">Node Details</div>
+        <div class="popup-row"><span class="popup-label">Spatial Position:</span><span class="popup-val" id="popup-position">-</span></div>
+        <div class="popup-row"><span class="popup-label">Axis Coordination:</span><span class="popup-val" id="popup-coords">-</span></div>
+        <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-glyph">-</span></div>
+        <div class="popup-row"><span class="popup-label">Dharma Object:</span><span class="popup-val" id="popup-dharma">-</span></div>
+        <div class="popup-images">
+            <div class="popup-image-block">
+                <img id="popup-siddham-image" src="" alt="Siddham" style="display:none;">
+                <div class="popup-image-caption">Siddham Image</div>
+            </div>
+            <div class="popup-image-block">
+                <img id="popup-dharma-image" src="" alt="Dharma Object" style="display:none;">
+                <div class="popup-image-caption">Dharma Object Image</div>
+            </div>
+        </div>
+        <div class="popup-mantra-section">
+            <div class="popup-label" style="margin-bottom: 6px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px;">Mantra:</div>
+            <div class="popup-mantra-val" id="popup-mantra">-</div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 0. CONFIG — Google Sheet source (WBSID tab)
+        // =========================================================================
+        const SPREADSHEET_ID = '1Gvl7SNXhVSrKBJiPgt78T2opWckb5OO59S-q_4S6Y7w';
+        const SHEET_NAME = 'WBSID';
+        const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+        // Column indices (0-based) for the sequence/filter columns, i.e. spreadsheet columns Z..AG.
+        // Every header in this range is expected to look like "A.xxx" and hold codes such as "X08"
+        // whose trailing digits are the sequence order for that filter.
+        const FILTER_COL_START = 25; // Z
+        const FILTER_COL_END = 32;   // AG (inclusive)
+
+        const FILTER_ALL = 'Tổng Thể Bồ Đề Tâm';
+        const FILTER_SPIRAL = 'Cột Trụ Quang Minh';
+
+        // =========================================================================
+        // 1. Helper: dynamic color assignment for sheet-driven (B) nodes, by series
+        // =========================================================================
+        const SERIES_COLORS = {
+            'Thường Trụ Bất Biến': 0xaa00ff, // Purple
+            'Lục Tý': 0x00ff66,              // Green
+            'Ending': 0xff00ff,              // Magenta
+            'Liên Hoa Bồ Đề Tâm': 0xffffff,  // White (default)
+        };
+        function getSeriesColor(series) {
+            return new THREE.Color(SERIES_COLORS[series] !== undefined ? SERIES_COLORS[series] : 0xffffff);
+        }
+        function getNodeBaseColor(nodeData) {
+            if (nodeData.isSpiral) return new THREE.Color(0xffffff);
+            return getSeriesColor(nodeData.series);
+        }
+
+        // =========================================================================
+        // 2. CSV parsing (RFC4180-ish, handles quoted multi-line fields from Sheets export)
+        // =========================================================================
+        function parseCSV(text) {
+            const rows = [];
+            let row = [], field = '', inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else { inQuotes = false; }
+                    } else {
+                        field += c;
+                    }
+                } else {
+                    if (c === '"') { inQuotes = true; }
+                    else if (c === ',') { row.push(field); field = ''; }
+                    else if (c === '\r') { /* skip */ }
+                    else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+                    else { field += c; }
+                }
+            }
+            if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+            return rows;
+        }
+
+        function rowsToObjects(rows) {
+            if (!rows.length) return { headers: [], records: [] };
+            const headers = rows[0];
+            const records = rows.slice(1).filter(r => r.some(v => v && v.trim() !== '')).map((r) => {
+                const obj = {};
+                headers.forEach((h, i) => { obj[h] = (r[i] !== undefined ? r[i] : ''); });
+                return obj;
+            });
+            return { headers, records };
+        }
+
+        // =========================================================================
+        // 3. Field parsing helpers
+        // =========================================================================
+        // "A2 Lý" cells store the same (x,y,z) triplet repeated in slightly different
+        // notations, e.g. "(0.0,0.0,2.0)(0.0, 0.0, 2.0)(0.0,0.0,2.0)". We only need the
+        // first parsable triplet. Rows without one are narrative-only and are skipped.
+        function parseCoordinate(raw) {
+            if (!raw) return null;
+            const normalized = raw.replace(/−/g, '-');
+            const m = normalized.match(/\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/);
+            if (!m) return null;
+            return [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
+        }
+
+        // Sequence codes look like "X08" — the trailing digits are the order value.
+        function parseSequenceCode(raw) {
+            if (!raw) return null;
+            const m = raw.match(/\d+/);
+            return m ? parseInt(m[0], 10) : null;
+        }
+
+        // Convert a Google Drive share link into a directly-embeddable image URL.
+        // Requires the file to be shared as "Anyone with the link can view".
+        function driveDirectUrl(link) {
+            if (!link) return null;
+            const m = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (!m) return link;
+            return `https://drive.google.com/uc?export=view&id=${m[1]}`;
+        }
+
+        // =========================================================================
+        // 4. Build node dataset from the parsed WBSID sheet
+        //    Coordinate convention (per A2 Lý / A4 Hành data): [X = left/right, Y = front/back, Z = up/down]
+        //    Render mapping is a direct pass-through: threeX,threeY,threeZ = coord[0],coord[1],coord[2]
+        // =========================================================================
+        function buildSheetNodes(headers, records) {
+            const filterHeaders = headers.slice(FILTER_COL_START, FILTER_COL_END + 1);
+            const filterKeys = filterHeaders.map(h => h.replace(/^A\./, '').trim());
+
+            const nodes = [];
+            let counter = 0;
+
+            records.forEach((rec) => {
+                const coord = parseCoordinate(rec['A2 Lý']);
+                if (!coord) return; // Skip rows without a resolvable coordinate.
+
+                const filters = {};
+                filterHeaders.forEach((h, i) => {
+                    const seq = parseSequenceCode(rec[h]);
+                    if (seq !== null) filters[filterKeys[i]] = seq;
+                });
+                if (Object.keys(filters).length === 0) return; // No filter membership -> not animatable.
+
+                let series = 'Liên Hoa Bồ Đề Tâm';
+                if (filters['Thường Trụ Bất Biến'] !== undefined) series = 'Thường Trụ Bất Biến';
+                else if (filters['Lục Tý'] !== undefined) series = 'Lục Tý';
+                else if (filters['Ending'] !== undefined) series = 'Ending';
+
+                counter++;
+                nodes.push({
+                    id: `B${counter}`,
+                    isSpiral: false,
+                    wbsid: rec['WBSID'] || '',
+                    nho: rec['Nhó'] || '',
+                    spatialPosition: (rec['A4 Hành'] || '').trim(),
+                    axisCoordination: (rec['A2 Lý'] || '').trim(),
+                    coord: coord,
+                    siddham: (rec['C4 Siddham Unicode'] || '').trim(),
+                    siddhamImageLink: (rec['C4 CTT Link'] || '').trim(),
+                    dharma: (rec['C5 Dharma Object Name'] || '').trim(),
+                    dharmaImageLink: (rec['C6 Pháp Bảo Link'] || '').trim(),
+                    mantra: (rec['A4 Hành B'] || '').trim(),
+                    filters: filters,
+                    series: series,
+                });
+            });
+
+            return { nodes, filterKeys };
+        }
+
+        // Spiral path for the procedural "Column of Light" (Siddham LA nodes) — kept as-is.
+        function getSpiralPosition(t) {
+            const theta = -Math.PI / 2 - t * Math.PI / 2;
+            const r = 2.0 + t * 0.05;
+            const y = -0.4 + t * 0.1;
+            return new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta));
+        }
+
+        function buildSpiralNodes() {
+            const nodes = [];
+            for (let i = 0; i < 40; i++) {
+                const pos = getSpiralPosition(i);
+                nodes.push({
+                    id: `A${i + 1}`,
+                    isSpiral: true,
+                    spatialPosition: `Siddham LA Node #${i + 1}`,
+                    axisCoordination: `(${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`,
+                    coord: [pos.x, pos.y, pos.z],
+                    siddham: '𑖩',
+                    siddhamImageLink: '',
+                    dharma: 'Vajra',
+                    dharmaImageLink: '',
+                    mantra: 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He',
+                    filters: {},
+                    series: FILTER_SPIRAL,
+                });
+            }
+            return nodes;
+        }
+
+        let baseSphereData = []; // populated once the sheet has loaded
+
+        // =========================================================================
+        // 5. DOM references (cached once)
+        // =========================================================================
+        const container          = document.getElementById('canvas-container');
+        const startBtn           = document.getElementById('start-btn');
+        const filterSelect       = document.getElementById('filter-select');
+        const rotationSpeedInput = document.getElementById('rotation-speed');
+        const billboardModeSelect= document.getElementById('billboard-mode');
+        const glowIntensityInput = document.getElementById('glow-intensity');
+        const includeGroupACheckbox = document.getElementById('include-group-a');
+        const uiContainer        = document.getElementById('ui-container');
+        const uiHeader           = document.getElementById('ui-header');
+        const uiToggleBtn        = document.getElementById('ui-toggle-btn');
+        const loadingOverlay     = document.getElementById('loading-overlay');
+        const loadingText        = document.getElementById('loading-text');
+        const dataStatus         = document.getElementById('data-status');
+        const popupCard          = document.getElementById('popup-card');
+        const popupTitle         = document.getElementById('popup-title');
+        const popupPosition      = document.getElementById('popup-position');
+        const popupCoords        = document.getElementById('popup-coords');
+        const popupGlyph         = document.getElementById('popup-glyph');
+        const popupDharma        = document.getElementById('popup-dharma');
+        const popupSiddhamImage  = document.getElementById('popup-siddham-image');
+        const popupDharmaImage   = document.getElementById('popup-dharma-image');
+        const popupMantra        = document.getElementById('popup-mantra');
+
+        // =========================================================================
+        // 6. Scene, Camera, Renderer
+        // =========================================================================
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x05070a, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+
+        // Base initial view coordinates
+        const initialCameraPos = new THREE.Vector3(4.53, 3.5, -2.11);
+        initialCameraPos.applyAxisAngle(new THREE.Vector3(0, 1, 0), 40 * Math.PI / 180);
+        camera.position.copy(initialCameraPos);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 30;
+        controls.minDistance = 2;
+        controls.target.set(0, 0, 0);
+
+        // =========================================================================
+        // 7. Environment & Lights
+        // =========================================================================
+        function createStudioEnvMap() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#101622');
+            grad.addColorStop(0.5, '#05070a');
+            grad.addColorStop(1, '#020305');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(40, 20, 30, 40);
+            ctx.fillRect(180, 40, 40, 30);
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            return texture;
+        }
+        scene.environment = createStudioEnvMap();
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+
+        const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.0);
+        keyLight.position.set(5, 8, 5); keyLight.castShadow = true; scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xdbe9ff, 1.0);
+        fillLight.position.set(-5, 3, -5); scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        rimLight.position.set(0, -5, 0); scene.add(rimLight);
+
+        const coreLight = new THREE.PointLight(0x00aaff, 2.0, 5);
+        coreLight.position.set(0, 0, 0); scene.add(coreLight);
+
+        // =========================================================================
+        // 8. Materials & cached geometries
+        // =========================================================================
+        const privacyBlueGlass = new THREE.MeshPhysicalMaterial({
+            color: 0x88ddff, emissive: 0x0044aa, emissiveIntensity: 0.4,
+            roughness: 0.5, metalness: 0.1, transmission: 0.75, ior: 1.5, thickness: 1.8,
+            transparent: true, opacity: 1.0, side: THREE.DoubleSide, depthWrite: false
+        });
+        const clearBubbleGlass = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, roughness: 0.05, metalness: 0.1, transmission: 0.98,
+            ior: 1.52, thickness: 0.3, transparent: true, opacity: 1.0,
+            side: THREE.DoubleSide, depthWrite: false
+        });
+        const wallMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff, transparent: true, opacity: 0.4, side: THREE.DoubleSide,
+            depthWrite: false, blending: THREE.AdditiveBlending
+        });
+
+        const sphereGeoA = new THREE.SphereGeometry(0.14, 32, 32);
+        const sphereGeoB = new THREE.SphereGeometry(0.10, 32, 32);
+        const planeGeoA  = new THREE.PlaneGeometry(0.26, 0.26);
+        const planeGeoB  = new THREE.PlaneGeometry(0.18, 0.18);
+
+        // =========================================================================
+        // 9. Outer bubble + Buddha model
+        //    Buddha placed exactly at the world origin (0,0,0), facing +Y with its
+        //    right side toward +X (a -90° rotation about X from the model's neutral
+        //    upright pose: local right=+X, up=+Y, forward=+Z -> world right=+X,
+        //    up=-Z, forward=+Y). Nudge BUDDHA_EXTRA_YAW below if the source asset's
+        //    neutral orientation differs and the facing needs a further spin.
+        // =========================================================================
+        const outerBubble = new THREE.Mesh(new THREE.SphereGeometry(1.9, 64, 64), clearBubbleGlass);
+        scene.add(outerBubble);
+
+        const buddhaGroup = new THREE.Group();
+        scene.add(buddhaGroup);
+
+        const BUDDHA_EXTRA_YAW = 0; // radians; adjust here only if the model needs re-aiming
+
+        const loader = new THREE.GLTFLoader();
+        const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
+
+        function applyBuddhaOrientation(obj) {
+            obj.position.set(0, 0, 0);
+            obj.rotation.set(-Math.PI / 2, BUDDHA_EXTRA_YAW, 0);
+        }
+
+        loader.load(MODEL_URL,
+            (gltf) => {
+                const buddhaMesh = gltf.scene;
+                buddhaMesh.traverse((node) => {
+                    if (node.isMesh) {
+                        node.material = privacyBlueGlass;
+                        node.castShadow = true; node.receiveShadow = true;
+                    }
+                });
+                buddhaMesh.scale.set(1.4, 1.4, 1.4);
+                applyBuddhaOrientation(buddhaMesh);
+                buddhaGroup.add(buddhaMesh);
+                onBuddhaReady();
+            },
+            (xhr) => {
+                if (xhr.total > 0) {
+                    const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                    loadingText.innerText = `Calibrating Bodhicitta Matrix (${percent}%)`;
+                }
+            },
+            (err) => {
+                console.warn("Generating procedural fallback.", err);
+                const fallbackGroup = new THREE.Group();
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), privacyBlueGlass);
+                head.position.y = 0.55; fallbackGroup.add(head);
+                const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.28, 0.65, 32), privacyBlueGlass);
+                torso.position.y = 0.1; fallbackGroup.add(torso);
+                const legs = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.12, 16, 100), privacyBlueGlass);
+                legs.rotation.x = Math.PI / 2; legs.position.y = -0.25; fallbackGroup.add(legs);
+                applyBuddhaOrientation(fallbackGroup);
+                buddhaGroup.add(fallbackGroup);
+                onBuddhaReady();
+            }
+        );
+
+        let buddhaReady = false;
+        let sheetReady = false;
+        function onBuddhaReady() { buddhaReady = true; maybeHideLoadingOverlay(); }
+        function maybeHideLoadingOverlay() {
+            if (buddhaReady && sheetReady) {
+                loadingOverlay.style.opacity = 0;
+                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 600);
+            }
+        }
+
+        // =========================================================================
+        // 10. Spheres & character glyphs  (direct mapping: x,y,z = coord[0,1,2])
+        // =========================================================================
+        const spheresGroup = new THREE.Group();
+        scene.add(spheresGroup);
+
+        const clickableSpheres = [];
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.crossOrigin = 'anonymous';
+
+        function createFallbackGlyphTexture(char, label) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 512, 512);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 25;
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 240px sans-serif';
+            ctx.fillText(char || '?', 256, 220);
+            ctx.shadowBlur = 8; ctx.fillStyle = '#ffb90f'; ctx.font = '600 36px sans-serif';
+            ctx.fillText((label || '').toUpperCase(), 256, 400);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        function buildSceneNodesFromData() {
+            baseSphereData.forEach((data) => {
+                const pos = new THREE.Vector3(data.coord[0], data.coord[1], data.coord[2]);
+                const isGroupB = !data.isSpiral;
+
+                const sphereGeo = isGroupB ? sphereGeoB : sphereGeoA;
+                let mat;
+                if (isGroupB) {
+                    mat = new THREE.MeshPhysicalMaterial({
+                        color: getNodeBaseColor(data),
+                        roughness: 0.1, metalness: 0.1, transmission: 0.9,
+                        ior: 1.52, thickness: 0.2, transparent: true, opacity: 1.0,
+                        side: THREE.DoubleSide, depthWrite: false
+                    });
+                } else {
+                    mat = clearBubbleGlass.clone();
+                }
+
+                const sphere = new THREE.Mesh(sphereGeo, mat);
+                sphere.position.copy(pos);
+                sphere.visible = false;
+                sphere.userData = { ...data, glow: 0.0, hasBeenCalled: false };
+                spheresGroup.add(sphere);
+                clickableSpheres.push(sphere);
+                data.sphereMesh = sphere;
+
+                const planeGeo = isGroupB ? planeGeoB : planeGeoA;
+                const charMaterial = new THREE.MeshBasicMaterial({
+                    map: createFallbackGlyphTexture(data.siddham, data.dharma),
+                    transparent: true, side: THREE.DoubleSide,
+                    depthWrite: false, blending: THREE.AdditiveBlending
+                });
+
+                const plane = new THREE.Mesh(planeGeo, charMaterial);
+                plane.position.copy(pos);
+                plane.visible = false;
+                spheresGroup.add(plane);
+                data.planeMesh = plane;
+
+                const imageUrl = driveDirectUrl(data.siddhamImageLink);
+                if (imageUrl) {
+                    textureLoader.load(
+                        imageUrl,
+                        (loadedTex) => { loadedTex.colorSpace = THREE.SRGBColorSpace; charMaterial.map = loadedTex; charMaterial.needsUpdate = true; },
+                        undefined,
+                        () => { console.warn('Siddham image failed to load for', data.id, imageUrl); }
+                    );
+                }
+            });
+        }
+
+        // =========================================================================
+        // 11. Volumetric cone wall along the spiral
+        // =========================================================================
+        const wallGeometry = new THREE.BufferGeometry();
+        const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
+        wallMesh.visible = false;
+        spheresGroup.add(wallMesh);
+
+        function rebuildWallGeometry() {
+            const activeLANodes = activeSequence.slice(0, currentSeqIndex + 1).filter(node => node.id.startsWith('A'));
+            if (activeLANodes.length < 2) {
+                wallGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(), 3));
+                wallGeometry.setIndex([]);
+                return;
+            }
+            const maxT = Math.max(...activeLANodes.map(node => parseInt(node.id.substring(1)) - 1));
+            const vertices = [], indices = [];
+            const segmentsPerNode = 16;
+            const totalSegments = Math.round(maxT * segmentsPerNode);
+
+            for (let j = 1; j <= totalSegments; j++) {
+                const tPrev = (j - 1) / segmentsPerNode;
+                const tCurr = j / segmentsPerNode;
+                const pPrev = getSpiralPosition(tPrev);
+                const pCurr = getSpiralPosition(tCurr);
+
+                let bPrevX, bPrevY, bPrevZ;
+                if (tPrev >= 4) { const p = getSpiralPosition(tPrev - 4); bPrevX = p.x; bPrevY = p.y; bPrevZ = p.z; }
+                else { bPrevX = pPrev.x; bPrevY = -0.4; bPrevZ = pPrev.z; }
+
+                let bCurrX, bCurrY, bCurrZ;
+                if (tCurr >= 4) { const p = getSpiralPosition(tCurr - 4); bCurrX = p.x; bCurrY = p.y; bCurrZ = p.z; }
+                else { bCurrX = pCurr.x; bCurrY = -0.4; bCurrZ = pCurr.z; }
+
+                const baseIndex = vertices.length / 3;
+                vertices.push(
+                    pPrev.x, pPrev.y, pPrev.z,
+                    pCurr.x, pCurr.y, pCurr.z,
+                    bPrevX, bPrevY, bPrevZ,
+                    bCurrX, bCurrY, bCurrZ
+                );
+                indices.push(baseIndex + 0, baseIndex + 2, baseIndex + 1, baseIndex + 1, baseIndex + 2, baseIndex + 3);
+            }
+
+            wallGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+            wallGeometry.setIndex(indices);
+            wallGeometry.computeVertexNormals();
+            wallGeometry.attributes.position.needsUpdate = true;
+            if (wallGeometry.index) wallGeometry.index.needsUpdate = true;
+        }
+
+        // =========================================================================
+        // 12. Axial laser beams & axis labels (part of the clean start-up view)
+        // =========================================================================
+        function createAxialLaserBeam(direction) {
+            const beamGroup = new THREE.Group();
+            const totalLength = 2.3, coneHeight = 0.15;
+            const cylinderLength = totalLength - coneHeight;
+            const cylinderRadius = 0.019, coneRadius = cylinderRadius * 2.2;
+            const mat = new THREE.MeshBasicMaterial({
+                color: 0x00d2ff, transparent: true, opacity: 0.8,
+                blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+            });
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(cylinderRadius, cylinderRadius, cylinderLength, 16), mat);
+            shaft.position.y = cylinderLength / 2; beamGroup.add(shaft);
+            const head = new THREE.Mesh(new THREE.ConeGeometry(coneRadius, coneHeight, 16), mat);
+            head.position.y = cylinderLength + (coneHeight / 2); beamGroup.add(head);
+            beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+            return beamGroup;
+        }
+
+        [
+            new THREE.Vector3(1, 0, 0),  new THREE.Vector3(-1, 0, 0),
+            new THREE.Vector3(0, 1, 0),  new THREE.Vector3(0, -1, 0),
+            new THREE.Vector3(0, 0, 1),  new THREE.Vector3(0, 0, -1)
+        ].forEach((dir) => spheresGroup.add(createAxialLaserBeam(dir)));
+
+        function createAxisLabel(text, x, y, z) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffd700'; ctx.font = 'bold 36px sans-serif';
+            ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10;
+            ctx.fillText(text, 64, 64);
+            const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
+            sprite.position.set(x, y, z);
+            sprite.scale.set(0.6, 0.6, 1.0);
+            scene.add(sprite);
+        }
+        createAxisLabel("+X", 3.2, 0, 0);  createAxisLabel("-X", -3.2, 0, 0);
+        createAxisLabel("+Y", 0, 3.2, 0);  createAxisLabel("-Y", 0, -3.2, 0);
+        createAxisLabel("+Z", 0, 0, 3.2);  createAxisLabel("-Z", 0, 0, -3.2);
+
+        // =========================================================================
+        // 13. Filter + sequencer
+        // =========================================================================
+        let activeSequence = [];
+        let currentSeqIndex = -1;
+        let seqTimer = 0;
+        const nodeInterval = 2.5;
+        let isRunning = false;
+
+        function nodeMatchesFilter(n, filterVal) {
+            if (n.isSpiral) return false;
+            if (filterVal === FILTER_ALL) return true;
+            return Object.prototype.hasOwnProperty.call(n.filters, filterVal);
+        }
+
+        function getSequenceValue(n, filterVal) {
+            if (filterVal === FILTER_ALL) return Math.min(...Object.values(n.filters));
+            return n.filters[filterVal];
+        }
+
+        function generateAnimationSequence() {
+            const filterVal = filterSelect.value;
+            const includeGroupA = includeGroupACheckbox.checked;
+            activeSequence = [];
+
+            const laNodes = baseSphereData.filter(n => n.isSpiral);
+
+            if (filterVal === FILTER_SPIRAL) {
+                activeSequence = [...laNodes];
+                return;
+            }
+
+            const otherNodes = baseSphereData
+                .filter(n => nodeMatchesFilter(n, filterVal))
+                .sort((a, b) => getSequenceValue(a, filterVal) - getSequenceValue(b, filterVal));
+
+            if (includeGroupA) {
+                for (let k = 0; k < 10; k++) {
+                    for (let i = 0; i < 4; i++) {
+                        const laNode = laNodes[k * 4 + i];
+                        if (laNode) activeSequence.push(laNode);
+                    }
+                    otherNodes.forEach(node => activeSequence.push(node));
+                }
+            } else {
+                activeSequence = [...otherNodes];
+            }
+        }
+
+        function resetAnimation() {
+            isRunning = false;
+            currentSeqIndex = -1;
+            seqTimer = 0;
+
+            clickableSpheres.forEach((sphere) => {
+                sphere.visible = false;
+                sphere.userData.glow = 0.0;
+                sphere.userData.hasBeenCalled = false;
+                sphere.scale.setScalar(1.0);
+                if (!sphere.userData.isSpiral) {
+                    sphere.material.color.copy(getNodeBaseColor(sphere.userData));
+                    sphere.material.emissive.setHex(0x000000);
+                } else {
+                    sphere.material.color.setHex(0xffffff);
+                    sphere.material.emissive.setHex(0x000000);
+                }
+            });
+
+            baseSphereData.forEach((data) => {
+                if (data.planeMesh) {
+                    data.planeMesh.visible = false;
+                    data.planeMesh.scale.setScalar(1.0);
+                }
+            });
+
+            wallMesh.visible = false;
+            rebuildWallGeometry();
+            hidePopup();
+            startBtn.innerText = "Start Formation";
+        }
+
+        function triggerNextStep() {
+            if (currentSeqIndex < activeSequence.length - 1) {
+                currentSeqIndex++;
+                const nodeData = activeSequence[currentSeqIndex];
+
+                const isBGroup = !nodeData.isSpiral;
+                const prevNodeData = currentSeqIndex > 0 ? activeSequence[currentSeqIndex - 1] : null;
+                const transitionedToB = isBGroup && (!prevNodeData || prevNodeData.isSpiral);
+
+                if (transitionedToB) {
+                    clickableSpheres.forEach((sphere) => {
+                        if (!sphere.userData.isSpiral) {
+                            sphere.visible = false;
+                            sphere.userData.glow = 0.0;
+                            sphere.userData.hasBeenCalled = false;
+                            if (sphere.userData.planeMesh) sphere.userData.planeMesh.visible = false;
+                            sphere.material.color.copy(getNodeBaseColor(sphere.userData));
+                            sphere.material.emissive.setHex(0x000000);
+                        }
+                    });
+                }
+
+                const sphere = nodeData.sphereMesh;
+                const plane = nodeData.planeMesh;
+                if (sphere && plane) {
+                    sphere.visible = true;
+                    plane.visible = true;
+                    sphere.userData.glow = 2.0;
+                    sphere.userData.hasBeenCalled = true;
+                }
+
+                rebuildWallGeometry();
+            } else {
+                if (!includeGroupACheckbox.checked) {
+                    currentSeqIndex = -1;
+                    clickableSpheres.forEach((sphere) => {
+                        if (!sphere.userData.isSpiral) sphere.userData.glow = 0.0;
+                    });
+                    triggerNextStep();
+                } else {
+                    isRunning = false;
+                    startBtn.innerText = "Restart Formation";
+                }
+            }
+        }
+
+        // =========================================================================
+        // 14. Click interactivity (raycasting)
+        // =========================================================================
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let activeOutline = null;
+
+        function showPopup(data) {
+            popupTitle.innerText = `${data.spatialPosition || data.id} (${data.id})`;
+            popupPosition.innerText = data.spatialPosition || '-';
+            popupCoords.innerText = data.axisCoordination || `X: ${data.coord[0].toFixed(2)}, Y: ${data.coord[1].toFixed(2)}, Z: ${data.coord[2].toFixed(2)}`;
+            popupGlyph.innerText = data.siddham || '-';
+            popupDharma.innerText = data.dharma || '-';
+            popupMantra.textContent = data.mantra || '-';
+
+            const siddhamUrl = driveDirectUrl(data.siddhamImageLink);
+            if (siddhamUrl) { popupSiddhamImage.src = siddhamUrl; popupSiddhamImage.style.display = 'block'; }
+            else { popupSiddhamImage.style.display = 'none'; popupSiddhamImage.src = ''; }
+
+            const dharmaUrl = driveDirectUrl(data.dharmaImageLink);
+            if (dharmaUrl) { popupDharmaImage.src = dharmaUrl; popupDharmaImage.style.display = 'block'; }
+            else { popupDharmaImage.style.display = 'none'; popupDharmaImage.src = ''; }
+
+            popupCard.classList.add('active');
+        }
+
+        function hidePopup() {
+            popupCard.classList.remove('active');
+            removeHighlight();
+        }
+
+        function highlightSphere(sphere) {
+            removeHighlight();
+            const outlineRadius = sphere.userData.isSpiral ? 0.16 : 0.12;
+            const outlineGeo = new THREE.SphereGeometry(outlineRadius, 16, 16);
+            const outlineMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, wireframe: true, transparent: true, opacity: 0.5 });
+            activeOutline = new THREE.Mesh(outlineGeo, outlineMat);
+            activeOutline.position.copy(sphere.position);
+            spheresGroup.add(activeOutline);
+        }
+
+        function removeHighlight() {
+            if (activeOutline) {
+                spheresGroup.remove(activeOutline);
+                activeOutline.geometry.dispose();
+                activeOutline.material.dispose();
+                activeOutline = null;
+            }
+        }
+
+        document.getElementById('popup-close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            hidePopup();
+        });
+
+        function handlePointerDown(event) {
+            if (event.target.closest('#ui-container') || event.target.closest('#popup-card') || event.target.closest('#action-container')) return;
+            const rect = renderer.domElement.getBoundingClientRect();
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const visibleSpheres = clickableSpheres.filter(s => s.visible);
+            const intersects = raycaster.intersectObjects(visibleSpheres);
+            if (intersects.length > 0) {
+                const targetSphere = intersects[0].object;
+                showPopup(targetSphere.userData);
+                highlightSphere(targetSphere);
+            } else {
+                hidePopup();
+            }
+        }
+        window.addEventListener('pointerdown', handlePointerDown);
+
+        // =========================================================================
+        // 15. UI bindings
+        // =========================================================================
+        startBtn.addEventListener('click', () => {
+            if (isRunning) {
+                resetAnimation();
+            } else {
+                resetAnimation();
+                generateAnimationSequence();
+                isRunning = true;
+                wallMesh.visible = true;
+                startBtn.innerText = "Reset / Restart";
+                uiContainer.classList.add('collapsed');
+                uiToggleBtn.innerText = '▼';
+                triggerNextStep();
+            }
+        });
+
+        filterSelect.addEventListener('change', resetAnimation);
+        includeGroupACheckbox.addEventListener('change', resetAnimation);
+
+        uiHeader.addEventListener('click', () => {
+            const isCollapsed = uiContainer.classList.toggle('collapsed');
+            uiToggleBtn.innerText = isCollapsed ? '▼' : '▲';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // =========================================================================
+        // 16. Data loading — fetch + parse the WBSID tab, then wire up the UI
+        // =========================================================================
+        function populateFilterOptions(filterKeys) {
+            filterSelect.innerHTML = '';
+            const optAll = document.createElement('option');
+            optAll.value = FILTER_ALL; optAll.textContent = `${FILTER_ALL} (All)`;
+            filterSelect.appendChild(optAll);
+
+            const optSpiral = document.createElement('option');
+            optSpiral.value = FILTER_SPIRAL; optSpiral.textContent = `${FILTER_SPIRAL} (Column of Light)`;
+            filterSelect.appendChild(optSpiral);
+
+            filterKeys.forEach((key) => {
+                const opt = document.createElement('option');
+                opt.value = key; opt.textContent = key;
+                filterSelect.appendChild(opt);
+            });
+
+            filterSelect.value = FILTER_ALL;
+            filterSelect.disabled = false;
+        }
+
+        async function loadSheetData() {
+            try {
+                const res = await fetch(SHEET_CSV_URL, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const csvText = await res.text();
+                const rows = parseCSV(csvText);
+                const { headers, records } = rowsToObjects(rows);
+                if (!headers.length) throw new Error('Empty sheet response');
+
+                const { nodes: sheetNodes, filterKeys } = buildSheetNodes(headers, records);
+                baseSphereData = [...sheetNodes, ...buildSpiralNodes()];
+
+                buildSceneNodesFromData();
+                populateFilterOptions(filterKeys);
+
+                dataStatus.textContent = `Loaded ${sheetNodes.length} nodes from WBSID.`;
+                dataStatus.className = 'ok';
+                startBtn.disabled = false;
+            } catch (err) {
+                console.error('Failed to load WBSID sheet data:', err);
+                dataStatus.textContent = 'Could not load WBSID sheet data. Check that the sheet is published/shared, then reload.';
+                dataStatus.className = 'error';
+                loadingText.innerText = 'Data connection failed — see panel for details.';
+                // Fall back to spiral-only so the scene is still usable.
+                baseSphereData = buildSpiralNodes();
+                buildSceneNodesFromData();
+                populateFilterOptions([]);
+                startBtn.disabled = false;
+            } finally {
+                sheetReady = true;
+                maybeHideLoadingOverlay();
+            }
+        }
+        loadSheetData();
+
+        // =========================================================================
+        // 17. Sequential glow updates
+        // =========================================================================
+        function updateSequentialLighting() {
+            clickableSpheres.forEach((sphere) => {
+                if (!sphere.visible) return;
+                const nodeData = sphere.userData;
+                const isLatest = activeSequence[currentSeqIndex] && activeSequence[currentSeqIndex].id === nodeData.id;
+                const targetGlow = isLatest ? 2.0 : 0.6;
+                sphere.userData.glow = THREE.MathUtils.lerp(sphere.userData.glow, targetGlow, 0.08);
+
+                sphere.scale.setScalar(1.0 + (sphere.userData.glow * 0.25));
+
+                const matchingBaseData = baseSphereData.find(d => d.id === nodeData.id);
+                if (matchingBaseData && matchingBaseData.planeMesh) {
+                    matchingBaseData.planeMesh.scale.setScalar(1.0 + (sphere.userData.glow * 0.15));
+                }
+
+                if (!nodeData.isSpiral) {
+                    const baseColor = getNodeBaseColor(nodeData);
+                    const targetColor = isLatest ? new THREE.Color(0xff3333) : baseColor;
+                    const targetEmissive = isLatest ? new THREE.Color(0xff0000) : baseColor.clone().multiplyScalar(0.5);
+
+                    sphere.material.color.lerp(targetColor, 0.08);
+                    sphere.material.emissive.lerp(targetEmissive, 0.08);
+                    sphere.material.emissiveIntensity = sphere.userData.glow * 2.5;
+                    sphere.material.roughness = 0.05 + (sphere.userData.glow * 0.3);
+                } else {
+                    sphere.material.color.lerpColors(new THREE.Color(0xffffff), new THREE.Color(0xffd700), sphere.userData.glow);
+                    sphere.material.emissive.lerpColors(new THREE.Color(0x000000), new THREE.Color(0xffaa00), sphere.userData.glow);
+                    sphere.material.emissiveIntensity = sphere.userData.glow * 2.5;
+                    sphere.material.roughness = 0.05 + (sphere.userData.glow * 0.3);
+                }
+            });
+        }
+
+        // =========================================================================
+        // 18. Animation loop
+        // =========================================================================
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const elapsedTime = clock.getElapsedTime();
+
+            const glowVal = parseFloat(glowIntensityInput.value);
+            coreLight.intensity = (Math.sin(elapsedTime * 2) * 0.4 + 1.2) * glowVal;
+            coreLight.position.y = Math.sin(elapsedTime * 0.6) * 0.5;
+
+            if (isRunning) {
+                seqTimer += delta;
+                if (seqTimer >= nodeInterval) {
+                    seqTimer = 0;
+                    triggerNextStep();
+                }
+                wallMaterial.opacity = (0.35 + Math.sin(elapsedTime * 3.0) * 0.1) * glowVal;
+            }
+
+            const rpm = parseFloat(rotationSpeedInput.value);
+            const rotationStep = ((rpm * Math.PI * 2) / 60) * delta;
+            spheresGroup.rotation.y += rotationStep;
+            buddhaGroup.rotation.y += rotationStep;
+
+            updateSequentialLighting();
+
+            // Glyph plane float + billboard (coord[2] treated as vertical for the float offset)
+            baseSphereData.forEach((data) => {
+                const plane = data.planeMesh;
+                if (plane && plane.visible) {
+                    const floatOffset = Math.sin(elapsedTime * 1.5 + data.coord[0] * 2) * 0.012;
+                    plane.position.y = data.coord[1] + floatOffset;
+                    if (billboardModeSelect.value === 'billboard') {
+                        plane.quaternion.copy(camera.quaternion);
+                    } else {
+                        plane.rotation.set(0, elapsedTime * 0.5, 0);
+                    }
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
