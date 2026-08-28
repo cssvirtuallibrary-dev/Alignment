@@ -296,7 +296,7 @@
         const boxDharmaImg = document.getElementById('box-dharma-img');
 
         // =========================================================================
-        // SECTION 2: THREE.JS SCENE SETUP WITH COORDINATION (+X: Right, +Y: Front, +Z: Up)
+        // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
@@ -305,9 +305,8 @@
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.up.set(0, 0, 1); // Z is Up
 
-        // Position camera to view Buddha from front-right elevated 3/4 angle
-        // Buddha faces +Y, right side is +X, crown is +Z
-        camera.position.set(3.8, -4.8, 2.8);
+        // Set starting point of view to [4, 4, 2]
+        camera.position.set(4, 4, 2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -349,10 +348,10 @@
         scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
         const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.0);
-        keyLight.position.set(5, -6, 7); keyLight.castShadow = true; scene.add(keyLight);
+        keyLight.position.set(5, 6, 7); keyLight.castShadow = true; scene.add(keyLight);
 
         const fillLight = new THREE.DirectionalLight(0xdbe9ff, 1.2);
-        fillLight.position.set(-5, 6, -3); scene.add(fillLight);
+        fillLight.position.set(-5, -6, -3); scene.add(fillLight);
 
         const coreLight = new THREE.PointLight(0x00d2ff, 2.2, 8);
         coreLight.position.set(0, 0, 0); scene.add(coreLight);
@@ -382,10 +381,6 @@
         const planeGeoA = new THREE.PlaneGeometry(0.26, 0.26);
         const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
 
-        // Outer boundary sphere
-        const outerBubble = new THREE.Mesh(new THREE.SphereGeometry(2.3, 64, 64), outerBubbleMat);
-        scene.add(outerBubble);
-
         // Root groups
         const buddhaGroup = new THREE.Group();
         scene.add(buddhaGroup);
@@ -396,7 +391,7 @@
         const textureLoader = new THREE.TextureLoader();
 
         // =========================================================================
-        // SECTION 5: BUDDHA 3D MODEL (Facing +Y, Right side +X, Crown +Z, Origin 0,0,0)
+        // SECTION 5: BUDDHA 3D MODEL (Facing +Y, Right side +X, Crown +Z, NO OFFSET at 0,0,0)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -412,9 +407,9 @@
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                // Rotate to orient: Head along +Z, Facing along +Y, Right along +X
+                // Rotate to orient: Head along +Z, Facing along +Y, Right along +X (no position offset)
                 buddhaMesh.rotation.set(Math.PI / 2, 0, 0);
-                buddhaMesh.position.set(0.0, -0.18, -0.5);
+                buddhaMesh.position.set(0, 0, 0);
                 buddhaGroup.add(buddhaMesh);
                 hideLoadingOverlay();
             },
@@ -434,7 +429,7 @@
         function buildProceduralBuddha() {
             const fallback = new THREE.Group();
             
-            // Head (centered at crown area)
+            // Head
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), glassMaterial);
             head.position.set(0, 0, 0.45);
             fallback.add(head);
@@ -455,7 +450,7 @@
             legs.position.set(0, 0, -0.28);
             fallback.add(legs);
 
-            fallback.position.set(0, 0, -0.15);
+            fallback.position.set(0, 0, 0);
             buddhaGroup.add(fallback);
         }
 
@@ -680,7 +675,6 @@
                     (tex) => { tex.colorSpace = THREE.SRGBColorSpace; charMaterial.map = tex; charMaterial.needsUpdate = true; },
                     undefined,
                     () => {
-                        // Attempt fallback
                         const fallbackImg = nodeData.id + ".png";
                         textureLoader.load(fallbackImg, (tex) => {
                             tex.colorSpace = THREE.SRGBColorSpace;
@@ -693,7 +687,6 @@
             return { sphere, plane, data: nodeData };
         }
 
-        // Clear existing spheres before initializing new ones
         function clearAllNodeObjects() {
             clickableSpheres.forEach(s => {
                 spheresGroup.remove(s);
@@ -721,7 +714,6 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const text = await response.text();
                 
-                // Parse GViz response format
                 const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
                 const gvizData = JSON.parse(jsonStr);
                 
@@ -754,14 +746,6 @@
         function parseGVizTable(table) {
             const cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
             
-            // Map required fields according to user specification:
-            // a. Spatial Position = "A4 Hành"
-            // b. Axis Coordination = "A2 Lý"
-            // c. Siddham Image = "C4 CTT Link"
-            // d. Siddham = "C4 Siddham Unicode"
-            // e. Dharma Object = "C5 Dharma Object Name"
-            // f. Mantra = "A4 Hành B"
-            // g. Dharma Object Image = "C6 Pháp Bảo Link"
             const colFind = (keyword) => cols.find(c => c.label.toLowerCase().includes(keyword.toLowerCase()));
 
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
@@ -773,7 +757,6 @@
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
             const dharmaImgCol = colFind('c6 pháp bảo link') || colFind('pháp bảo link');
 
-            // Find all filter sequence columns: starting with "A." or columns Z to AG (col index 25 to 32)
             filterColumns = cols.filter(c => c.label.startsWith('A.') || (c.index >= 25 && c.index <= 32 && c.label.length > 0));
 
             rawSheetRows = [];
@@ -821,12 +804,10 @@
             
             filterColumns = headers.map((h, i) => ({ index: i, label: h })).filter(c => c.label.startsWith('A.') || (c.index >= 25 && c.index <= 32));
 
-            // Use fallback processor
             useEmbeddedFallbackData();
         }
 
         function useEmbeddedFallbackData() {
-            // Built-in calibrated data directly matching the specified format
             const embeddedData = [
                 // B Series Nodes
                 { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 1, "A.Thường Trụ Bất Biến": 1 } },
@@ -911,14 +892,12 @@
             filterColumns.forEach((fc, idx) => {
                 const opt = document.createElement('option');
                 opt.value = fc.label;
-                // Clean label by stripping leading "A."
                 const displayName = fc.label.startsWith('A.') ? fc.label.substring(2) : fc.label;
                 opt.textContent = `${displayName} (${fc.label})`;
                 if (idx === 0) opt.selected = true;
                 filterSelect.appendChild(opt);
             });
 
-            // If no spiral nodes were in the sheet, generate standard 40 A-nodes
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -944,7 +923,7 @@
                 }
             });
 
-            // Initial startup state: Clean screen with just Buddha & coordination indicators
+            // Clean initial startup state
             resetAnimation();
         }
 
@@ -956,10 +935,8 @@
                 return r.sequences && r.sequences[selectedFilter] !== undefined && r.sequences[selectedFilter] > 0;
             });
 
-            // Sort nodes strictly by sequence order in respective column
             matchingRows.sort((a, b) => a.sequences[selectedFilter] - b.sequences[selectedFilter]);
 
-            // Spiral nodes
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
                 const nA = parseInt(a.id.replace(/\D/g, '')) || 0;
                 const nB = parseInt(b.id.replace(/\D/g, '')) || 0;
@@ -971,7 +948,6 @@
             if (selectedFilter.includes("Cột Trụ Quang Minh") || !matchingRows.some(r => r.id.startsWith('B'))) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral && spiralNodes.length > 0) {
-                // Interleave spiral loops with meditation centers
                 const otherNodes = matchingRows.filter(r => r.id.startsWith('B'));
                 for (let k = 0; k < 10; k++) {
                     for (let i = 0; i < 4; i++) {
@@ -1073,7 +1049,6 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            // Images preview
             if (data.siddhamImage) {
                 popupSiddhamImg.src = formatImageUrl(data.siddhamImage);
                 boxSiddhamImg.style.display = 'block';
@@ -1173,7 +1148,7 @@
         });
 
         // =========================================================================
-        // SECTION 14: ANIMATION LOOP & GLOW ILLUMINATION
+        // SECTION 14: ANIMATION LOOP & SEQUENTIAL LIGHTING
         // =========================================================================
         function updateSequentialLighting() {
             clickableSpheres.forEach(sphere => {
@@ -1254,7 +1229,7 @@
             renderer.render(scene, camera);
         }
 
-        // Initialize Matrix and run loop
+        // Start initialization and loop
         fetchGoogleSheetData();
         animate();
     </script>
