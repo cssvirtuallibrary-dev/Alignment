@@ -402,7 +402,9 @@
         const textureLoader = new THREE.TextureLoader();
 
         // =========================================================================
-        // SECTION 5: BUDDHA 3D MODEL (Facing +Y, Right side +X, Crown +Z, Origin 0,0,0)
+        // SECTION 5: BUDDHA 3D MODEL
+        // Adjusted: Offset +0.2 in +X direction, -0.5 in -Z direction -> Position = (0.2, 0.0, -0.5)
+        // Orientation: Facing +Y, Right side +X, Crown +Z
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -418,9 +420,10 @@
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                // Orientation: Head along +Z, Facing along +Y, Right along +X, Origin at (0, 0, 0)
+                // Orientation: Head along +Z, Facing along +Y, Right along +X
                 buddhaMesh.rotation.set(Math.PI / 2, 0, 0);
-                buddhaMesh.position.set(0, 0, 0);
+                // Offset: +0.2 in +X, -0.5 in -Z
+                buddhaMesh.position.set(0.2, 0.0, -0.5);
                 buddhaGroup.add(buddhaMesh);
                 hideLoadingOverlay();
             },
@@ -462,7 +465,7 @@
             fallback.add(legs);
 
             fallback.rotation.set(0, 0, 0);
-            fallback.position.set(0, 0, 0);
+            fallback.position.set(0.2, 0.0, -0.5);
             buddhaGroup.add(fallback);
         }
 
