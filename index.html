@@ -311,7 +311,7 @@
 
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
-        // Camera position set to (3, 4, 2)
+        // Initial perspective camera set to (3, 4, 2)
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
@@ -641,7 +641,7 @@
         }
 
         // =========================================================================
-        // SECTION 8: BLOB & PROXY FETCH ENGINE FOR GOOGLE DRIVE IMAGES
+        // SECTION 8: RESILIENT IMAGE LOADING PIPELINE
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -662,68 +662,96 @@
             return url;
         }
 
-        // Load image as a local Blob ObjectURL to guarantee 100% clean WebGL texture uploads
-        async function loadRobustTexture(url, fallbackCanvasTex, onLoaded) {
-            if (!url || typeof url !== 'string' || !url.trim()) {
+        function buildImageCandidateUrls(url, isGroupA = false) {
+            const list = [];
+            if (!url && isGroupA) url = "06_LA_Gold.PNG";
+            if (!url || typeof url !== 'string') return list;
+            url = url.trim();
+
+            const fileId = extractGoogleDriveFileId(url);
+            if (fileId) {
+                list.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000`);
+                list.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+                list.push(`https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`);
+                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`)}`);
+            } else if (url.startsWith('http://') || url.startsWith('https://')) {
+                list.push(url);
+                list.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`);
+                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            }
+
+            // Local fallback filenames
+            const cleanName = url.split('/').pop().replace(/[?#].*$/, '');
+            if (isGroupA) {
+                list.push("06_LA_Gold.PNG");
+                list.push("06_LA_Gold.png");
+                list.push("./06_LA_Gold.PNG");
+                list.push("./06_LA_Gold.png");
+                list.push("06_la_gold.png");
+                list.push("06_LA_GOLD.PNG");
+            } else if (cleanName) {
+                list.push(cleanName);
+                list.push("./" + cleanName);
+                if (cleanName.endsWith('.png')) list.push(cleanName.replace(/\.png$/i, '.PNG'));
+                if (cleanName.endsWith('.PNG')) list.push(cleanName.replace(/\.PNG$/i, '.png'));
+            }
+
+            return [...new Set(list)];
+        }
+
+        async function loadRobustTexture(url, fallbackCanvasTex, isGroupA = false, onLoaded = null) {
+            const candidates = buildImageCandidateUrls(url, isGroupA);
+            if (candidates.length === 0) {
                 if (onLoaded) onLoaded(fallbackCanvasTex);
                 return;
             }
-            url = url.trim();
-            const fileId = extractGoogleDriveFileId(url);
 
-            const candidateUrls = [];
-            if (fileId) {
-                // High-performance direct CDN endpoints for Google Drive
-                candidateUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000`);
-                candidateUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
-                candidateUrls.push(`https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`);
-                candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`)}`);
-            } else if (url.startsWith('http://') || url.startsWith('https://')) {
-                candidateUrls.push(url);
-                candidateUrls.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`);
-                candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-            } else {
-                candidateUrls.push(url);
-            }
+            for (const candUrl of candidates) {
+                const isHttp = candUrl.startsWith('http://') || candUrl.startsWith('https://');
+                
+                // Attempt 1: Fetch via CORS mode and create direct ObjectURL
+                if (isHttp) {
+                    try {
+                        const res = await fetch(candUrl, { mode: 'cors' });
+                        if (res.ok) {
+                            const blob = await res.blob();
+                            if (blob && blob.size > 50 && !blob.type.includes('html')) {
+                                const objUrl = URL.createObjectURL(blob);
+                                const img = new Image();
+                                await new Promise((resolve, reject) => {
+                                    img.onload = resolve;
+                                    img.onerror = reject;
+                                    img.src = objUrl;
+                                });
+                                const tex = new THREE.Texture(img);
+                                tex.colorSpace = THREE.SRGBColorSpace;
+                                tex.needsUpdate = true;
+                                if (onLoaded) onLoaded(tex);
+                                return;
+                            }
+                        }
+                    } catch (e) { /* continue to next */ }
+                }
 
-            for (const candUrl of candidateUrls) {
+                // Attempt 2: Direct Image tag element load
                 try {
-                    const res = await fetch(candUrl, { mode: 'cors' });
-                    if (!res.ok) continue;
-                    const blob = await res.blob();
-                    if (!blob || blob.size < 50 || blob.type.includes('html')) continue;
-
-                    const objectUrl = URL.createObjectURL(blob);
                     const img = new Image();
-                    img.src = objectUrl;
+                    if (isHttp) img.crossOrigin = 'anonymous';
                     await new Promise((resolve, reject) => {
                         img.onload = resolve;
                         img.onerror = reject;
+                        img.src = candUrl;
                     });
-
                     const tex = new THREE.Texture(img);
                     tex.colorSpace = THREE.SRGBColorSpace;
                     tex.needsUpdate = true;
                     if (onLoaded) onLoaded(tex);
                     return;
-                } catch (e) {
-                    // Try next candidate endpoint in pipeline
-                }
+                } catch (err) { /* continue to next */ }
             }
 
-            // If network fetch fails, attempt standard HTML Image element
-            const fallbackImg = new Image();
-            fallbackImg.crossOrigin = 'anonymous';
-            fallbackImg.onload = () => {
-                const tex = new THREE.Texture(fallbackImg);
-                tex.colorSpace = THREE.SRGBColorSpace;
-                tex.needsUpdate = true;
-                if (onLoaded) onLoaded(tex);
-            };
-            fallbackImg.onerror = () => {
-                if (onLoaded) onLoaded(fallbackCanvasTex);
-            };
-            fallbackImg.src = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000` : url;
+            // If all fail, display fallback canvas text
+            if (onLoaded) onLoaded(fallbackCanvasTex);
         }
 
         function parseCoordinates(coordStr) {
@@ -770,12 +798,13 @@
 
         // =========================================================================
         // SECTION 9: 3D NODE CREATION & DUAL-SIDED ROTATING MEDALLION COIN
-        // Front Face: Siddham Image (C4 CTT Link)
+        // Front Face: Siddham Image (C4 CTT Link or 06_LA_Gold.PNG for A-nodes)
         // Back Face: Dharma Object Image (C6 Pháp Bảo Link)
         // =========================================================================
         function buildNode3DObject(nodeData) {
             const pos = new THREE.Vector3(...nodeData.coords);
             const isGroupB = nodeData.id.startsWith('B');
+            const isGroupA = nodeData.id.startsWith('A');
 
             const sphereGeo = isGroupB ? sphereGeoB : sphereGeoA;
             let mat;
@@ -803,9 +832,8 @@
             spheresGroup.add(coinGroup);
 
             const planeGeo = isGroupB ? planeGeoB : planeGeoA;
-            const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, nodeData.id);
+            const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, isGroupA ? 'LA' : nodeData.id);
 
-            // Front face material (Siddham character)
             const frontMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex, transparent: true, side: THREE.FrontSide,
                 depthWrite: false, blending: THREE.AdditiveBlending
@@ -813,7 +841,6 @@
             const frontMesh = new THREE.Mesh(planeGeo, frontMat);
             coinGroup.add(frontMesh);
 
-            // Back face material (Dharma Object)
             const backMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex, transparent: true, side: THREE.FrontSide,
                 depthWrite: false, blending: THREE.AdditiveBlending
@@ -822,9 +849,9 @@
             backMesh.rotation.y = Math.PI;
             coinGroup.add(backMesh);
 
-            // Asynchronously load Siddham front texture via robust blob/proxy pipeline
-            const siddhamSrc = nodeData.siddhamImage || nodeData.id + ".png";
-            loadRobustTexture(siddhamSrc, fallbackTex, (tex) => {
+            // Asynchronously load Siddham front texture (strictly defaulting A-nodes to 06_LA_Gold.PNG)
+            const siddhamSrc = nodeData.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : (nodeData.id + ".png"));
+            loadRobustTexture(siddhamSrc, fallbackTex, isGroupA, (tex) => {
                 frontMat.map = tex;
                 frontMat.needsUpdate = true;
                 if (!nodeData.dharmaObjectImage) {
@@ -833,9 +860,9 @@
                 }
             });
 
-            // Asynchronously load Dharma object back texture
+            // Asynchronously load Dharma object back texture if available
             if (nodeData.dharmaObjectImage) {
-                loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, (tex) => {
+                loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, false, (tex) => {
                     backMat.map = tex;
                     backMat.needsUpdate = true;
                 });
@@ -935,15 +962,17 @@
                     }
                 });
 
+                const isGroupA = id.startsWith('A');
+
                 rawSheetRows.push({
                     id: id,
-                    spatialPosition: getVal(posCol),
+                    spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
                     coordsStr: getVal(coordCol),
                     coords: parseCoordinates(getVal(coordCol)),
-                    siddhamImage: getVal(siddhamImgCol),
-                    siddhamUnicode: getVal(siddhamUniCol),
-                    dharmaObject: getVal(dharmaCol),
-                    mantra: getVal(mantraCol),
+                    siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
+                    siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
+                    dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
+                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
                     dharmaObjectImage: getVal(dharmaImgCol),
                     sequences: sequences
                 });
@@ -1004,7 +1033,7 @@
                     spatialPosition: `Spiral Light Node #${i + 1}`,
                     coords: [sp.x, sp.y, sp.z],
                     siddhamUnicode: "𑖩",
-                    siddhamImage: "06_LA_Gold.png",
+                    siddhamImage: "06_LA_Gold.PNG",
                     dharmaObject: "Vajra Scepter",
                     mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
                     sequences: { "A.Tổng Thể Bồ Đề Tâm": i + 1, "A.Cột Trụ Quang Minh": i + 1 }
@@ -1053,7 +1082,7 @@
                         spatialPosition: `Column of Light Node #${i + 1}`,
                         coords: [sp.x, sp.y, sp.z],
                         siddhamUnicode: "𑖩",
-                        siddhamImage: "06_LA_Gold.png",
+                        siddhamImage: "06_LA_Gold.PNG",
                         dharmaObject: "Vajra Scepter",
                         mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
                         sequences: { "A.Cột Trụ Quang Minh": i + 1 }
@@ -1066,6 +1095,7 @@
                         if (!isNaN(num) && num >= 1 && num <= 40) {
                             const sp = getSpiralPosition(num - 1);
                             r.coords = [sp.x, sp.y, sp.z];
+                            if (!r.siddhamImage) r.siddhamImage = '06_LA_Gold.PNG';
                         }
                     }
                 });
@@ -1202,6 +1232,7 @@
         let activeOutline = null;
 
         function showPopup(data) {
+            const isGroupA = data.id && data.id.startsWith('A');
             popupId.innerText = data.id || "-";
             popupPosition.innerText = data.spatialPosition || "Central Axis";
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
@@ -1209,12 +1240,17 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            if (data.siddhamImage) {
-                const sUrl = formatImageUrl(data.siddhamImage);
+            const sSrc = data.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : "");
+            if (sSrc) {
+                const sUrl = formatImageUrl(sSrc);
                 popupSiddhamImg.src = sUrl;
                 popupSiddhamImg.onerror = () => {
-                    const fid = extractGoogleDriveFileId(data.siddhamImage);
-                    if (fid) popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
+                    const fid = extractGoogleDriveFileId(sSrc);
+                    if (fid) {
+                        popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
+                    } else if (isGroupA) {
+                        popupSiddhamImg.src = "06_LA_Gold.PNG";
+                    }
                 };
                 boxSiddhamImg.style.display = 'block';
             } else {
