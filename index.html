@@ -313,6 +313,7 @@
 
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
+        // Camera position set to (3, 4, 2)
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
@@ -321,8 +322,8 @@
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.up.set(0, 0, 1);
 
-        // Starting point of view set to [4, 4, 2]
-        camera.position.set(4, 4, 2);
+        // Starting point of view set to (3, 4, 2)
+        camera.position.set(3, 4, 2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -388,14 +389,14 @@
         });
 
         const wallMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff, transparent: true, opacity: 0.4, side: THREE.DoubleSide,
+            color: 0xffe240, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
             depthWrite: false, blending: THREE.AdditiveBlending
         });
 
         const sphereGeoA = new THREE.SphereGeometry(0.14, 32, 32);
         const sphereGeoB = new THREE.SphereGeometry(0.10, 32, 32);
-        const planeGeoA = new THREE.PlaneGeometry(0.26, 0.26);
-        const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
+        const planeGeoA = new THREE.PlaneGeometry(0.24, 0.24);
+        const planeGeoB = new THREE.PlaneGeometry(0.17, 0.17);
 
         // Root groups
         const buddhaGroup = new THREE.Group();
@@ -410,12 +411,14 @@
         const gridMarkersGroup = new THREE.Group();
         scene.add(gridMarkersGroup);
 
+        // Set TextureLoader crossOrigin to anonymous for Google Drive / external assets
         const textureLoader = new THREE.TextureLoader();
+        textureLoader.setCrossOrigin('anonymous');
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
         // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
-        // Position offset: (-0.2 in X -> 0.0, +0.2 in Y -> 0.2, -0.5 in Z) -> (0.0, 0.2, -0.5)
+        // Position offset: (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -431,10 +434,8 @@
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                // Set Euler order to ZYX so Z rotation is applied cleanly around world +Z
                 buddhaMesh.rotation.order = 'ZYX';
                 buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                // Position: X = 0.0, Y = 0.2, Z = -0.5
                 buddhaMesh.position.set(0.0, 0.2, -0.5);
                 buddhaGroup.add(buddhaMesh);
                 hideLoadingOverlay();
@@ -609,12 +610,18 @@
         buildUnitGridMarkers();
 
         // =========================================================================
-        // SECTION 7: SPIRAL WALL GEOMETRY
+        // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
+        // 1. Node #1 starts at +Y direction (theta = +PI/2)
+        // 2. Rotation direction reversed: theta = PI/2 - t * (PI/2)
+        // 3. Smooth continuous funnel cone geometry (smooth slope from bottom to top)
         // =========================================================================
         function getSpiralPosition(t) {
-            const theta = -Math.PI / 2 - t * Math.PI / 2;
-            const r = 1.9 + t * 0.05;
-            const z = -0.5 + t * 0.09;
+            // Node #1 (t=0) starts precisely on +Y axis (theta = PI/2)
+            // Reversed rotation: subtract angle so it ascends clockwise in the XY plane
+            const theta = Math.PI / 2 - t * (Math.PI / 2);
+            // Smooth funnel cone radius: expands as it ascends in Z
+            const r = 1.6 + t * 0.045;
+            const z = -0.5 + t * 0.085;
             return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
         }
 
@@ -636,8 +643,11 @@
             }));
 
             const vertices = [], indices = [];
-            const segmentsPerNode = 16;
+            const segmentsPerNode = 20;
             const totalSegments = Math.round(maxT * segmentsPerNode);
+
+            // Build smooth continuous funnel cone wall strip with constant thickness
+            const wallHeightExtent = 0.22;
 
             for (let j = 1; j <= totalSegments; j++) {
                 const tPrev = (j - 1) / segmentsPerNode;
@@ -645,17 +655,25 @@
                 const pPrev = getSpiralPosition(tPrev);
                 const pCurr = getSpiralPosition(tCurr);
 
-                let bPrevZ = tPrev >= 4 ? getSpiralPosition(tPrev - 4).z : -0.5;
-                let bCurrZ = tCurr >= 4 ? getSpiralPosition(tCurr - 4).z : -0.5;
+                // Upper rim of funnel
+                const uPrev = new THREE.Vector3(pPrev.x * 1.04, pPrev.y * 1.04, pPrev.z + wallHeightExtent);
+                const uCurr = new THREE.Vector3(pCurr.x * 1.04, pCurr.y * 1.04, pCurr.z + wallHeightExtent);
+
+                // Lower rim of funnel
+                const lPrev = new THREE.Vector3(pPrev.x * 0.94, pPrev.y * 0.94, pPrev.z - wallHeightExtent);
+                const lCurr = new THREE.Vector3(pCurr.x * 0.94, pCurr.y * 0.94, pCurr.z - wallHeightExtent);
 
                 const baseIndex = vertices.length / 3;
                 vertices.push(
-                    pPrev.x, pPrev.y, pPrev.z,
-                    pCurr.x, pCurr.y, pCurr.z,
-                    pPrev.x, pPrev.y, bPrevZ,
-                    pCurr.x, pCurr.y, bCurrZ
+                    uPrev.x, uPrev.y, uPrev.z,
+                    uCurr.x, uCurr.y, uCurr.z,
+                    lPrev.x, lPrev.y, lPrev.z,
+                    lCurr.x, lCurr.y, lCurr.z
                 );
-                indices.push(baseIndex + 0, baseIndex + 2, baseIndex + 1, baseIndex + 1, baseIndex + 2, baseIndex + 3);
+                indices.push(
+                    baseIndex + 0, baseIndex + 2, baseIndex + 1,
+                    baseIndex + 1, baseIndex + 2, baseIndex + 3
+                );
             }
 
             wallGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
@@ -666,16 +684,79 @@
         }
 
         // =========================================================================
-        // SECTION 8: DATA FETCHER & GOOGLE SHEET SYNC ENGINE
+        // SECTION 8: GOOGLE DRIVE FILE_ID EXTRACTOR & PERMISSIVE IMAGE LOADER
         // =========================================================================
+        function extractGoogleDriveFileId(rawUrl) {
+            if (!rawUrl || typeof rawUrl !== 'string') return null;
+            rawUrl = rawUrl.trim();
+            // Match various Google Drive sharing and viewing formats
+            const match = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]{25,})/) ||
+                          rawUrl.match(/id=([a-zA-Z0-9_-]{25,})/) ||
+                          rawUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+            return match ? match[1] : null;
+        }
+
         function formatImageUrl(url) {
             if (!url || typeof url !== 'string') return '';
             url = url.trim();
-            const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-            if (driveMatch && driveMatch[1]) {
-                return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w500`;
+            const fileId = extractGoogleDriveFileId(url);
+            if (fileId) {
+                // High-resolution direct stream CDN endpoint for Google Drive files
+                return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return url;
+        }
+
+        function loadRobustTexture(url, fallbackCanvasTex, onLoaded) {
+            const directUrl = formatImageUrl(url);
+            if (!directUrl) {
+                if (onLoaded) onLoaded(fallbackCanvasTex);
+                return;
+            }
+
+            // Primary load attempt using direct URL
+            textureLoader.load(
+                directUrl,
+                (tex) => {
+                    tex.colorSpace = THREE.SRGBColorSpace;
+                    tex.needsUpdate = true;
+                    if (onLoaded) onLoaded(tex);
+                },
+                undefined,
+                () => {
+                    // Secondary CORS proxy fallback attempt if browser security blocks direct stream
+                    const fileId = extractGoogleDriveFileId(url);
+                    const proxyUrl = fileId 
+                        ? `https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`
+                        : `https://wsrv.nl/?url=${encodeURIComponent(directUrl)}&output=png`;
+
+                    textureLoader.load(
+                        proxyUrl,
+                        (proxyTex) => {
+                            proxyTex.colorSpace = THREE.SRGBColorSpace;
+                            proxyTex.needsUpdate = true;
+                            if (onLoaded) onLoaded(proxyTex);
+                        },
+                        undefined,
+                        () => {
+                            // Tertiary local image fallback (e.g., '01_A_Gold.png')
+                            const localUrl = directUrl.split('/').pop();
+                            textureLoader.load(
+                                localUrl,
+                                (locTex) => {
+                                    locTex.colorSpace = THREE.SRGBColorSpace;
+                                    locTex.needsUpdate = true;
+                                    if (onLoaded) onLoaded(locTex);
+                                },
+                                undefined,
+                                () => {
+                                    if (onLoaded) onLoaded(fallbackCanvasTex);
+                                }
+                            );
+                        }
+                    );
+                }
+            );
         }
 
         function parseCoordinates(coordStr) {
@@ -702,18 +783,18 @@
             return new THREE.Color(0xffffff);
         }
 
-        function createFallbackGlyphTexture(char, phonetic) {
+        function createFallbackGlyphTexture(char, label) {
             const canvas = document.createElement('canvas');
             canvas.width = 512; canvas.height = 512;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, 512, 512);
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 25;
+            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 24;
             ctx.fillStyle = '#ffffff'; ctx.font = 'bold 220px sans-serif';
             ctx.fillText(char || "𑖀", 256, 220);
-            if (phonetic) {
-                ctx.shadowBlur = 8; ctx.fillStyle = '#ffb90f'; ctx.font = '600 48px sans-serif';
-                ctx.fillText(phonetic.toUpperCase(), 256, 400);
+            if (label) {
+                ctx.shadowBlur = 8; ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px sans-serif';
+                ctx.fillText(label.toUpperCase(), 256, 400);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.colorSpace = THREE.SRGBColorSpace;
@@ -721,7 +802,10 @@
         }
 
         // =========================================================================
-        // SECTION 9: 3D NODE CREATION & MANAGEMENT
+        // SECTION 9: 3D NODE CREATION & DUAL-SIDED ROTATING MEDALLION COIN
+        // Front Face: Siddham Image (C4 CTT Link)
+        // Back Face: Dharma Object Image (C6 Pháp Bảo Link)
+        // If only 1 image available, it mirrors to both sides of the rotating coin
         // =========================================================================
         function buildNode3DObject(nodeData) {
             const pos = new THREE.Vector3(...nodeData.coords);
@@ -747,35 +831,53 @@
             spheresGroup.add(sphere);
             clickableSpheres.push(sphere);
 
+            // Medallion coin container
+            const coinGroup = new THREE.Group();
+            coinGroup.position.copy(pos);
+            coinGroup.visible = false;
+            spheresGroup.add(coinGroup);
+
             const planeGeo = isGroupB ? planeGeoB : planeGeoA;
-            const charMaterial = new THREE.MeshBasicMaterial({
-                map: createFallbackGlyphTexture(nodeData.siddhamUnicode, nodeData.id),
-                transparent: true, side: THREE.DoubleSide,
+            const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, nodeData.id);
+
+            // Front face material (Siddham character)
+            const frontMat = new THREE.MeshBasicMaterial({
+                map: fallbackTex, transparent: true, side: THREE.FrontSide,
                 depthWrite: false, blending: THREE.AdditiveBlending
             });
+            const frontMesh = new THREE.Mesh(planeGeo, frontMat);
+            coinGroup.add(frontMesh);
 
-            const plane = new THREE.Mesh(planeGeo, charMaterial);
-            plane.position.copy(pos);
-            plane.visible = false;
-            spheresGroup.add(plane);
+            // Back face material (Dharma Object)
+            const backMat = new THREE.MeshBasicMaterial({
+                map: fallbackTex, transparent: true, side: THREE.FrontSide,
+                depthWrite: false, blending: THREE.AdditiveBlending
+            });
+            const backMesh = new THREE.Mesh(planeGeo, backMat);
+            backMesh.rotation.y = Math.PI; // Flip 180 degrees for reverse face of the coin
+            coinGroup.add(backMesh);
 
-            if (nodeData.siddhamImage) {
-                const imgUrl = formatImageUrl(nodeData.siddhamImage);
-                textureLoader.load(
-                    imgUrl,
-                    (tex) => { tex.colorSpace = THREE.SRGBColorSpace; charMaterial.map = tex; charMaterial.needsUpdate = true; },
-                    undefined,
-                    () => {
-                        const fallbackImg = nodeData.id + ".png";
-                        textureLoader.load(fallbackImg, (tex) => {
-                            tex.colorSpace = THREE.SRGBColorSpace;
-                            charMaterial.map = tex; charMaterial.needsUpdate = true;
-                        });
-                    }
-                );
+            // Asynchronously load Siddham front texture
+            const siddhamSrc = nodeData.siddhamImage || nodeData.id + ".png";
+            loadRobustTexture(siddhamSrc, fallbackTex, (tex) => {
+                frontMat.map = tex;
+                frontMat.needsUpdate = true;
+                // If dharma object image is absent, mirror the front Siddham image to back
+                if (!nodeData.dharmaObjectImage) {
+                    backMat.map = tex;
+                    backMat.needsUpdate = true;
+                }
+            });
+
+            // Asynchronously load Dharma object back texture if available
+            if (nodeData.dharmaObjectImage) {
+                loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, (tex) => {
+                    backMat.map = tex;
+                    backMat.needsUpdate = true;
+                });
             }
 
-            return { sphere, plane, data: nodeData };
+            return { sphere, coinGroup, data: nodeData };
         }
 
         function clearAllNodeObjects() {
@@ -785,10 +887,8 @@
                 if (s.material) s.material.dispose();
             });
             nodeObjectsMap.forEach(item => {
-                if (item.plane) {
-                    spheresGroup.remove(item.plane);
-                    item.plane.geometry.dispose();
-                    if (item.plane.material) item.plane.material.dispose();
+                if (item.coinGroup) {
+                    spheresGroup.remove(item.coinGroup);
                 }
             });
             clickableSpheres = [];
@@ -1068,9 +1168,9 @@
             });
 
             nodeObjectsMap.forEach(item => {
-                if (item.plane) {
-                    item.plane.visible = false;
-                    item.plane.scale.setScalar(1.0);
+                if (item.coinGroup) {
+                    item.coinGroup.visible = false;
+                    item.coinGroup.scale.setScalar(1.0);
                 }
             });
 
@@ -1096,7 +1196,7 @@
                             sphere.visible = false;
                             sphere.userData.glow = 0.0;
                             const item = nodeObjectsMap.get(sphere.userData.id);
-                            if (item && item.plane) item.plane.visible = false;
+                            if (item && item.coinGroup) item.coinGroup.visible = false;
                             sphere.material.color.copy(getNodeBaseColor(sphere.userData.id));
                             sphere.material.emissive.setHex(0x000000);
                         }
@@ -1105,7 +1205,7 @@
 
                 if (nodeObj) {
                     nodeObj.sphere.visible = true;
-                    nodeObj.plane.visible = true;
+                    nodeObj.coinGroup.visible = true;
                     nodeObj.sphere.userData.glow = 2.0;
                 }
 
@@ -1255,8 +1355,8 @@
                 sphere.scale.setScalar(1.0 + (sphere.userData.glow * 0.25));
 
                 const item = nodeObjectsMap.get(nodeData.id);
-                if (item && item.plane) {
-                    item.plane.scale.setScalar(1.0 + (sphere.userData.glow * 0.15));
+                if (item && item.coinGroup) {
+                    item.coinGroup.scale.setScalar(1.0 + (sphere.userData.glow * 0.15));
                 }
 
                 if (nodeData.id.startsWith('B')) {
@@ -1305,16 +1405,18 @@
 
             updateSequentialLighting();
 
-            // Floating planes & Billboard modes
+            // Medallion coin 3D rotation / billboard modes
             nodeObjectsMap.forEach(item => {
-                const plane = item.plane;
-                if (plane && plane.visible) {
+                const coinGroup = item.coinGroup;
+                if (coinGroup && coinGroup.visible) {
                     const floatOffset = Math.sin(elapsedTime * 1.5 + item.data.coords[0] * 2) * 0.012;
-                    plane.position.z = item.data.coords[2] + floatOffset;
+                    coinGroup.position.z = item.data.coords[2] + floatOffset;
+                    
                     if (billboardModeSelect.value === 'billboard') {
-                        plane.quaternion.copy(camera.quaternion);
+                        coinGroup.quaternion.copy(camera.quaternion);
                     } else {
-                        plane.rotation.set(Math.PI / 2, 0, elapsedTime * 0.5);
+                        // Smoothly spin medallion coin like a rotating coin around its local Y/Z axis
+                        coinGroup.rotation.set(Math.PI / 2, elapsedTime * 1.2, 0);
                     }
                 }
             });
