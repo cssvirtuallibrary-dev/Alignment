@@ -411,10 +411,6 @@
         const gridMarkersGroup = new THREE.Group();
         scene.add(gridMarkersGroup);
 
-        // Set TextureLoader crossOrigin to anonymous for Google Drive / external assets
-        const textureLoader = new THREE.TextureLoader();
-        textureLoader.setCrossOrigin('anonymous');
-
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
         // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
@@ -611,15 +607,15 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
-        // 1. Node #1 starts at +Y direction (theta = +PI/2)
-        // 2. Rotation direction reversed: theta = PI/2 - t * (PI/2)
-        // 3. Smooth continuous funnel cone geometry (smooth slope from bottom to top)
+        // 1. Node #1 starts on the +Y direction (theta = PI/2)
+        // 2. COUNTERCLOCKWISE spiraling up direction: theta = PI/2 + t * (PI/2)
+        // 3. Smooth continuous funnel cone geometry
         // =========================================================================
         function getSpiralPosition(t) {
             // Node #1 (t=0) starts precisely on +Y axis (theta = PI/2)
-            // Reversed rotation: subtract angle so it ascends clockwise in the XY plane
-            const theta = Math.PI / 2 - t * (Math.PI / 2);
-            // Smooth funnel cone radius: expands as it ascends in Z
+            // Counterclockwise rotation: add angle (+ t * PI/2)
+            const theta = Math.PI / 2 + t * (Math.PI / 2);
+            // Smooth funnel cone radius expanding as it ascends in Z
             const r = 1.6 + t * 0.045;
             const z = -0.5 + t * 0.085;
             return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
@@ -646,7 +642,6 @@
             const segmentsPerNode = 20;
             const totalSegments = Math.round(maxT * segmentsPerNode);
 
-            // Build smooth continuous funnel cone wall strip with constant thickness
             const wallHeightExtent = 0.22;
 
             for (let j = 1; j <= totalSegments; j++) {
@@ -689,7 +684,6 @@
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
             rawUrl = rawUrl.trim();
-            // Match various Google Drive sharing and viewing formats
             const match = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]{25,})/) ||
                           rawUrl.match(/id=([a-zA-Z0-9_-]{25,})/) ||
                           rawUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
@@ -701,62 +695,69 @@
             url = url.trim();
             const fileId = extractGoogleDriveFileId(url);
             if (fileId) {
-                // High-resolution direct stream CDN endpoint for Google Drive files
+                // High-resolution Google Drive direct thumbnail endpoint
                 return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return url;
         }
 
+        // Resilient image loading using HTML Image element to avoid canvas/WebGL CORS tainting
         function loadRobustTexture(url, fallbackCanvasTex, onLoaded) {
-            const directUrl = formatImageUrl(url);
-            if (!directUrl) {
+            const rawUrl = formatImageUrl(url);
+            if (!rawUrl) {
                 if (onLoaded) onLoaded(fallbackCanvasTex);
                 return;
             }
 
-            // Primary load attempt using direct URL
-            textureLoader.load(
-                directUrl,
-                (tex) => {
-                    tex.colorSpace = THREE.SRGBColorSpace;
-                    tex.needsUpdate = true;
-                    if (onLoaded) onLoaded(tex);
-                },
-                undefined,
-                () => {
-                    // Secondary CORS proxy fallback attempt if browser security blocks direct stream
-                    const fileId = extractGoogleDriveFileId(url);
-                    const proxyUrl = fileId 
-                        ? `https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`
-                        : `https://wsrv.nl/?url=${encodeURIComponent(directUrl)}&output=png`;
+            const fileId = extractGoogleDriveFileId(url);
+            const primaryUrl = fileId 
+                ? `https://lh3.googleusercontent.com/d/${fileId}=w1000`
+                : rawUrl;
 
-                    textureLoader.load(
-                        proxyUrl,
-                        (proxyTex) => {
-                            proxyTex.colorSpace = THREE.SRGBColorSpace;
-                            proxyTex.needsUpdate = true;
-                            if (onLoaded) onLoaded(proxyTex);
-                        },
-                        undefined,
-                        () => {
-                            // Tertiary local image fallback (e.g., '01_A_Gold.png')
-                            const localUrl = directUrl.split('/').pop();
-                            textureLoader.load(
-                                localUrl,
-                                (locTex) => {
-                                    locTex.colorSpace = THREE.SRGBColorSpace;
-                                    locTex.needsUpdate = true;
-                                    if (onLoaded) onLoaded(locTex);
-                                },
-                                undefined,
-                                () => {
-                                    if (onLoaded) onLoaded(fallbackCanvasTex);
-                                }
-                            );
-                        }
-                    );
-                }
-            );
+            const proxyUrl = fileId
+                ? `https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`
+                : `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&output=png`;
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+
+            img.onload = () => {
+                const texture = new THREE.Texture(img);
+                texture.colorSpace = THREE.SRGBColorSpace;
+                texture.needsUpdate = true;
+                if (onLoaded) onLoaded(texture);
+            };
+
+            img.onerror = () => {
+                // Try proxy URL fallback
+                const proxyImg = new Image();
+                proxyImg.crossOrigin = "anonymous";
+                proxyImg.onload = () => {
+                    const texture = new THREE.Texture(proxyImg);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    texture.needsUpdate = true;
+                    if (onLoaded) onLoaded(texture);
+                };
+                proxyImg.onerror = () => {
+                    // Try local root fallback
+                    const localUrl = rawUrl.split('/').pop();
+                    const localImg = new Image();
+                    localImg.crossOrigin = "anonymous";
+                    localImg.onload = () => {
+                        const texture = new THREE.Texture(localImg);
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        texture.needsUpdate = true;
+                        if (onLoaded) onLoaded(texture);
+                    };
+                    localImg.onerror = () => {
+                        if (onLoaded) onLoaded(fallbackCanvasTex);
+                    };
+                    localImg.src = localUrl;
+                };
+                proxyImg.src = proxyUrl;
+            };
+
+            img.src = primaryUrl;
         }
 
         function parseCoordinates(coordStr) {
@@ -805,7 +806,6 @@
         // SECTION 9: 3D NODE CREATION & DUAL-SIDED ROTATING MEDALLION COIN
         // Front Face: Siddham Image (C4 CTT Link)
         // Back Face: Dharma Object Image (C6 Pháp Bảo Link)
-        // If only 1 image available, it mirrors to both sides of the rotating coin
         // =========================================================================
         function buildNode3DObject(nodeData) {
             const pos = new THREE.Vector3(...nodeData.coords);
@@ -862,7 +862,6 @@
             loadRobustTexture(siddhamSrc, fallbackTex, (tex) => {
                 frontMat.map = tex;
                 frontMat.needsUpdate = true;
-                // If dharma object image is absent, mirror the front Siddham image to back
                 if (!nodeData.dharmaObjectImage) {
                     backMat.map = tex;
                     backMat.needsUpdate = true;
@@ -1040,7 +1039,7 @@
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 34, "A.Ending": 3 } }
             ];
 
-            // 40 Spiral A-nodes
+            // 40 Spiral A-nodes starting at +Y direction (theta = PI/2)
             for (let i = 0; i < 40; i++) {
                 const sp = getSpiralPosition(i);
                 embeddedData.push({
@@ -1088,6 +1087,7 @@
                 filterSelect.appendChild(opt);
             });
 
+            // Ensure 40 spiral nodes exist with correct coordinate positions
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1103,6 +1103,17 @@
                         sequences: { "A.Cột Trụ Quang Minh": i + 1 }
                     });
                 }
+            } else {
+                // Update coordinates of spiral nodes based on updated counterclockwise formula
+                rawSheetRows.forEach(r => {
+                    if (r.id.startsWith('A')) {
+                        const num = parseInt(r.id.replace(/\D/g, ''));
+                        if (!isNaN(num) && num >= 1 && num <= 40) {
+                            const sp = getSpiralPosition(num - 1);
+                            r.coords = [sp.x, sp.y, sp.z];
+                        }
+                    }
+                });
             }
 
             rawSheetRows.forEach(row => {
@@ -1133,19 +1144,25 @@
 
             currentSequenceNodes = [];
 
-            if (selectedFilter.includes("Cột Trụ Quang Minh") || !matchingRows.some(r => r.id.startsWith('B'))) {
+            if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
-            } else if (includeSpiral && spiralNodes.length > 0) {
-                const otherNodes = matchingRows.filter(r => r.id.startsWith('B'));
-                for (let k = 0; k < 10; k++) {
-                    for (let i = 0; i < 4; i++) {
-                        const sNode = spiralNodes[k * 4 + i];
-                        if (sNode) currentSequenceNodes.push(sNode);
+            } else if (includeSpiral) {
+                // When Column of Light Spiral is checked: Interleave or prefix spiral nodes into sequence
+                const otherNodes = matchingRows.filter(r => !r.id.startsWith('A'));
+                if (otherNodes.length > 0) {
+                    for (let k = 0; k < 10; k++) {
+                        for (let i = 0; i < 4; i++) {
+                            const sNode = spiralNodes[k * 4 + i];
+                            if (sNode) currentSequenceNodes.push(sNode);
+                        }
+                        otherNodes.forEach(node => currentSequenceNodes.push(node));
                     }
-                    otherNodes.forEach(node => currentSequenceNodes.push(node));
+                } else {
+                    currentSequenceNodes = [...spiralNodes];
                 }
             } else {
-                currentSequenceNodes = [...matchingRows];
+                // When Column of Light Spiral is unchecked: Completely exclude spiral nodes (A series)
+                currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
         }
 
@@ -1209,7 +1226,9 @@
                     nodeObj.sphere.userData.glow = 2.0;
                 }
 
-                rebuildWallGeometry();
+                if (includeSpiralCheckbox.checked) {
+                    rebuildWallGeometry();
+                }
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
@@ -1238,14 +1257,24 @@
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
             if (data.siddhamImage) {
-                popupSiddhamImg.src = formatImageUrl(data.siddhamImage);
+                const sUrl = formatImageUrl(data.siddhamImage);
+                popupSiddhamImg.src = sUrl;
+                popupSiddhamImg.onerror = () => {
+                    const fid = extractGoogleDriveFileId(data.siddhamImage);
+                    if (fid) popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
+                };
                 boxSiddhamImg.style.display = 'block';
             } else {
                 boxSiddhamImg.style.display = 'none';
             }
 
             if (data.dharmaObjectImage) {
-                popupDharmaImg.src = formatImageUrl(data.dharmaObjectImage);
+                const dUrl = formatImageUrl(data.dharmaObjectImage);
+                popupDharmaImg.src = dUrl;
+                popupDharmaImg.onerror = () => {
+                    const fid = extractGoogleDriveFileId(data.dharmaObjectImage);
+                    if (fid) popupDharmaImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
+                };
                 boxDharmaImg.style.display = 'block';
             } else {
                 boxDharmaImg.style.display = 'none';
@@ -1313,7 +1342,7 @@
                 resetAnimation();
                 generateActiveSequence();
                 isRunning = true;
-                wallMesh.visible = true;
+                wallMesh.visible = includeSpiralCheckbox.checked;
                 startBtn.innerText = "Reset / Restart";
                 uiContainer.classList.add('collapsed');
                 uiToggleBtn.innerText = '▼';
@@ -1321,11 +1350,19 @@
             }
         });
 
-        filterSelect.addEventListener('change', resetAnimation);
-        includeSpiralCheckbox.addEventListener('change', resetAnimation);
+        filterSelect.addEventListener('change', () => {
+            resetAnimation();
+        });
+
+        includeSpiralCheckbox.addEventListener('change', () => {
+            wallMesh.visible = includeSpiralCheckbox.checked && isRunning;
+            resetAnimation();
+        });
+
         showAxesCheckbox.addEventListener('change', (e) => {
             axesGroup.visible = e.target.checked;
         });
+
         showGridMarkersCheckbox.addEventListener('change', (e) => {
             gridMarkersGroup.visible = e.target.checked;
         });
@@ -1394,7 +1431,9 @@
                     seqTimer = 0;
                     triggerNextStep();
                 }
-                wallMaterial.opacity = (0.35 + Math.sin(elapsedTime * 3.0) * 0.1) * glowVal;
+                if (includeSpiralCheckbox.checked) {
+                    wallMaterial.opacity = (0.35 + Math.sin(elapsedTime * 3.0) * 0.1) * glowVal;
+                }
             }
 
             // Central axis auto-rotation (around Z-axis)
@@ -1415,7 +1454,7 @@
                     if (billboardModeSelect.value === 'billboard') {
                         coinGroup.quaternion.copy(camera.quaternion);
                     } else {
-                        // Smoothly spin medallion coin like a rotating coin around its local Y/Z axis
+                        // Smoothly spin medallion coin like a rotating coin around its local Y axis
                         coinGroup.rotation.set(Math.PI / 2, elapsedTime * 1.2, 0);
                     }
                 }
