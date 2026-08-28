@@ -414,9 +414,8 @@
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
-        // Intrinsic model orientation fix: X-axis upright (PI/2), then Z-axis CCW (+PI/2)
-        // Euler order 'ZYX' ensures clean rotation strictly around the scene +Z axis
-        // Position offset: (+0.2 in +X, -0.5 in -Z) -> (0.2, 0.0, -0.5)
+        // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
+        // Position offset: (-0.2 in X -> 0.0, +0.2 in Y -> 0.2, -0.5 in Z) -> (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -435,8 +434,8 @@
                 // Set Euler order to ZYX so Z rotation is applied cleanly around world +Z
                 buddhaMesh.rotation.order = 'ZYX';
                 buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                // Offset: +0.2 in +X, -0.5 in -Z
-                buddhaMesh.position.set(0.2, 0.0, -0.5);
+                // Position: X = 0.0, Y = 0.2, Z = -0.5
+                buddhaMesh.position.set(0.0, 0.2, -0.5);
                 buddhaGroup.add(buddhaMesh);
                 hideLoadingOverlay();
             },
@@ -479,7 +478,7 @@
 
             fallback.rotation.order = 'ZYX';
             fallback.rotation.set(0, 0, Math.PI / 2);
-            fallback.position.set(0.2, 0.0, -0.5);
+            fallback.position.set(0.0, 0.2, -0.5);
             buddhaGroup.add(fallback);
         }
 
