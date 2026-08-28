@@ -267,7 +267,6 @@
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB)}`;
         const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
 
-        // State variables
         let rawSheetRows = [];
         let filterColumns = [];
         let currentSequenceNodes = [];
@@ -276,7 +275,6 @@
         let seqTimer = 0;
         const nodeInterval = 2.5;
 
-        // Visual nodes dictionary & clickable array
         let nodeObjectsMap = new Map();
         let clickableSpheres = [];
 
@@ -318,11 +316,8 @@
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
 
-        // Standard Z-up perspective camera
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.up.set(0, 0, 1);
-
-        // Starting point of view set to (3, 4, 2)
         camera.position.set(3, 4, 2);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
@@ -413,8 +408,6 @@
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
-        // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
-        // Position offset: (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -451,27 +444,17 @@
 
         function buildProceduralBuddha() {
             const fallback = new THREE.Group();
-            
-            // Head
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), glassMaterial);
-            head.position.set(0, 0, 0.45);
-            fallback.add(head);
+            head.position.set(0, 0, 0.45); fallback.add(head);
 
-            // Usnisa topknot
             const usnisa = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), glassMaterial);
-            usnisa.position.set(0, 0, 0.72);
-            fallback.add(usnisa);
+            usnisa.position.set(0, 0, 0.72); fallback.add(usnisa);
 
-            // Torso
             const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.55, 32), glassMaterial);
-            torso.rotation.x = Math.PI / 2;
-            torso.position.set(0, 0, 0.08);
-            fallback.add(torso);
+            torso.rotation.x = Math.PI / 2; torso.position.set(0, 0, 0.08); fallback.add(torso);
 
-            // Crossed legs / Lotus base
             const legs = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.13, 16, 64), glassMaterial);
-            legs.position.set(0, 0, -0.28);
-            fallback.add(legs);
+            legs.position.set(0, 0, -0.28); fallback.add(legs);
 
             fallback.rotation.order = 'ZYX';
             fallback.rotation.set(0, 0, Math.PI / 2);
@@ -539,9 +522,6 @@
             axesGroup.add(sprite);
         }
 
-        // =========================================================================
-        // 0.5 UNIT COORDINATION MARKERS & RINGS
-        // =========================================================================
         function buildUnitGridMarkers() {
             const tickMatX = new THREE.MeshBasicMaterial({ color: 0xff6666, transparent: true, opacity: 0.75 });
             const tickMatY = new THREE.MeshBasicMaterial({ color: 0x66ff99, transparent: true, opacity: 0.75 });
@@ -551,30 +531,20 @@
             const units = [-2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0];
 
             units.forEach(u => {
-                // Tick mark on X axis
                 const tickX = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.08, 8), tickMatX);
-                tickX.position.set(u, 0, 0);
-                gridMarkersGroup.add(tickX);
+                tickX.position.set(u, 0, 0); gridMarkersGroup.add(tickX);
 
-                // Tick mark on Y axis
                 const tickY = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.08, 8), tickMatY);
-                tickY.rotation.z = Math.PI / 2;
-                tickY.position.set(0, u, 0);
-                gridMarkersGroup.add(tickY);
+                tickY.rotation.z = Math.PI / 2; tickY.position.set(0, u, 0); gridMarkersGroup.add(tickY);
 
-                // Tick mark on Z axis
                 const tickZ = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.08, 8), tickMatZ);
-                tickZ.rotation.x = Math.PI / 2;
-                tickZ.position.set(0, 0, u);
-                gridMarkersGroup.add(tickZ);
+                tickZ.rotation.x = Math.PI / 2; tickZ.position.set(0, 0, u); gridMarkersGroup.add(tickZ);
 
-                // Text labels for 0.5 unit intervals
                 createUnitLabel(`${u > 0 ? '+' : ''}${u.toFixed(1)}`, u, -0.12, 0, '#ff9999');
                 createUnitLabel(`${u > 0 ? '+' : ''}${u.toFixed(1)}`, -0.12, u, 0, '#99ffaa');
                 createUnitLabel(`${u > 0 ? '+' : ''}${u.toFixed(1)}`, 0, -0.12, u, '#99ddff');
             });
 
-            // 0.5 step concentric reference circles on XY plane
             [0.5, 1.0, 1.5, 2.0].forEach(r => {
                 const ringGeo = new THREE.BufferGeometry();
                 const points = [];
@@ -607,15 +577,11 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
-        // 1. Node #1 starts on the +Y direction (theta = PI/2)
-        // 2. COUNTERCLOCKWISE spiraling up direction: theta = PI/2 + t * (PI/2)
-        // 3. Smooth continuous funnel cone geometry
+        // 1. Node #1 starts on +Y direction (theta = PI/2)
+        // 2. COUNTERCLOCKWISE spiraling up: theta = PI/2 + t * (PI/2)
         // =========================================================================
         function getSpiralPosition(t) {
-            // Node #1 (t=0) starts precisely on +Y axis (theta = PI/2)
-            // Counterclockwise rotation: add angle (+ t * PI/2)
             const theta = Math.PI / 2 + t * (Math.PI / 2);
-            // Smooth funnel cone radius expanding as it ascends in Z
             const r = 1.6 + t * 0.045;
             const z = -0.5 + t * 0.085;
             return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
@@ -641,7 +607,6 @@
             const vertices = [], indices = [];
             const segmentsPerNode = 20;
             const totalSegments = Math.round(maxT * segmentsPerNode);
-
             const wallHeightExtent = 0.22;
 
             for (let j = 1; j <= totalSegments; j++) {
@@ -650,11 +615,8 @@
                 const pPrev = getSpiralPosition(tPrev);
                 const pCurr = getSpiralPosition(tCurr);
 
-                // Upper rim of funnel
                 const uPrev = new THREE.Vector3(pPrev.x * 1.04, pPrev.y * 1.04, pPrev.z + wallHeightExtent);
                 const uCurr = new THREE.Vector3(pCurr.x * 1.04, pCurr.y * 1.04, pCurr.z + wallHeightExtent);
-
-                // Lower rim of funnel
                 const lPrev = new THREE.Vector3(pPrev.x * 0.94, pPrev.y * 0.94, pPrev.z - wallHeightExtent);
                 const lCurr = new THREE.Vector3(pCurr.x * 0.94, pCurr.y * 0.94, pCurr.z - wallHeightExtent);
 
@@ -679,14 +641,14 @@
         }
 
         // =========================================================================
-        // SECTION 8: GOOGLE DRIVE FILE_ID EXTRACTOR & PERMISSIVE IMAGE LOADER
+        // SECTION 8: BLOB & PROXY FETCH ENGINE FOR GOOGLE DRIVE IMAGES
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
             rawUrl = rawUrl.trim();
-            const match = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]{25,})/) ||
-                          rawUrl.match(/id=([a-zA-Z0-9_-]{25,})/) ||
-                          rawUrl.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+            const match = rawUrl.match(/\/file\/d\/([a-zA-Z0-9_-]{20,})/) ||
+                          rawUrl.match(/id=([a-zA-Z0-9_-]{20,})/) ||
+                          rawUrl.match(/\/d\/([a-zA-Z0-9_-]{20,})/);
             return match ? match[1] : null;
         }
 
@@ -695,69 +657,73 @@
             url = url.trim();
             const fileId = extractGoogleDriveFileId(url);
             if (fileId) {
-                // High-resolution Google Drive direct thumbnail endpoint
                 return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return url;
         }
 
-        // Resilient image loading using HTML Image element to avoid canvas/WebGL CORS tainting
-        function loadRobustTexture(url, fallbackCanvasTex, onLoaded) {
-            const rawUrl = formatImageUrl(url);
-            if (!rawUrl) {
+        // Load image as a local Blob ObjectURL to guarantee 100% clean WebGL texture uploads
+        async function loadRobustTexture(url, fallbackCanvasTex, onLoaded) {
+            if (!url || typeof url !== 'string' || !url.trim()) {
                 if (onLoaded) onLoaded(fallbackCanvasTex);
                 return;
             }
-
+            url = url.trim();
             const fileId = extractGoogleDriveFileId(url);
-            const primaryUrl = fileId 
-                ? `https://lh3.googleusercontent.com/d/${fileId}=w1000`
-                : rawUrl;
 
-            const proxyUrl = fileId
-                ? `https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`
-                : `https://wsrv.nl/?url=${encodeURIComponent(rawUrl)}&output=png`;
+            const candidateUrls = [];
+            if (fileId) {
+                // High-performance direct CDN endpoints for Google Drive
+                candidateUrls.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000`);
+                candidateUrls.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+                candidateUrls.push(`https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`);
+                candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`)}`);
+            } else if (url.startsWith('http://') || url.startsWith('https://')) {
+                candidateUrls.push(url);
+                candidateUrls.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`);
+                candidateUrls.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            } else {
+                candidateUrls.push(url);
+            }
 
-            const img = new Image();
-            img.crossOrigin = "anonymous";
+            for (const candUrl of candidateUrls) {
+                try {
+                    const res = await fetch(candUrl, { mode: 'cors' });
+                    if (!res.ok) continue;
+                    const blob = await res.blob();
+                    if (!blob || blob.size < 50 || blob.type.includes('html')) continue;
 
-            img.onload = () => {
-                const texture = new THREE.Texture(img);
-                texture.colorSpace = THREE.SRGBColorSpace;
-                texture.needsUpdate = true;
-                if (onLoaded) onLoaded(texture);
+                    const objectUrl = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.src = objectUrl;
+                    await new Promise((resolve, reject) => {
+                        img.onload = resolve;
+                        img.onerror = reject;
+                    });
+
+                    const tex = new THREE.Texture(img);
+                    tex.colorSpace = THREE.SRGBColorSpace;
+                    tex.needsUpdate = true;
+                    if (onLoaded) onLoaded(tex);
+                    return;
+                } catch (e) {
+                    // Try next candidate endpoint in pipeline
+                }
+            }
+
+            // If network fetch fails, attempt standard HTML Image element
+            const fallbackImg = new Image();
+            fallbackImg.crossOrigin = 'anonymous';
+            fallbackImg.onload = () => {
+                const tex = new THREE.Texture(fallbackImg);
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.needsUpdate = true;
+                if (onLoaded) onLoaded(tex);
             };
-
-            img.onerror = () => {
-                // Try proxy URL fallback
-                const proxyImg = new Image();
-                proxyImg.crossOrigin = "anonymous";
-                proxyImg.onload = () => {
-                    const texture = new THREE.Texture(proxyImg);
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                    texture.needsUpdate = true;
-                    if (onLoaded) onLoaded(texture);
-                };
-                proxyImg.onerror = () => {
-                    // Try local root fallback
-                    const localUrl = rawUrl.split('/').pop();
-                    const localImg = new Image();
-                    localImg.crossOrigin = "anonymous";
-                    localImg.onload = () => {
-                        const texture = new THREE.Texture(localImg);
-                        texture.colorSpace = THREE.SRGBColorSpace;
-                        texture.needsUpdate = true;
-                        if (onLoaded) onLoaded(texture);
-                    };
-                    localImg.onerror = () => {
-                        if (onLoaded) onLoaded(fallbackCanvasTex);
-                    };
-                    localImg.src = localUrl;
-                };
-                proxyImg.src = proxyUrl;
+            fallbackImg.onerror = () => {
+                if (onLoaded) onLoaded(fallbackCanvasTex);
             };
-
-            img.src = primaryUrl;
+            fallbackImg.src = fileId ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000` : url;
         }
 
         function parseCoordinates(coordStr) {
@@ -831,7 +797,6 @@
             spheresGroup.add(sphere);
             clickableSpheres.push(sphere);
 
-            // Medallion coin container
             const coinGroup = new THREE.Group();
             coinGroup.position.copy(pos);
             coinGroup.visible = false;
@@ -854,10 +819,10 @@
                 depthWrite: false, blending: THREE.AdditiveBlending
             });
             const backMesh = new THREE.Mesh(planeGeo, backMat);
-            backMesh.rotation.y = Math.PI; // Flip 180 degrees for reverse face of the coin
+            backMesh.rotation.y = Math.PI;
             coinGroup.add(backMesh);
 
-            // Asynchronously load Siddham front texture
+            // Asynchronously load Siddham front texture via robust blob/proxy pipeline
             const siddhamSrc = nodeData.siddhamImage || nodeData.id + ".png";
             loadRobustTexture(siddhamSrc, fallbackTex, (tex) => {
                 frontMat.map = tex;
@@ -868,7 +833,7 @@
                 }
             });
 
-            // Asynchronously load Dharma object back texture if available
+            // Asynchronously load Dharma object back texture
             if (nodeData.dharmaObjectImage) {
                 loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, (tex) => {
                     backMat.map = tex;
@@ -988,18 +953,11 @@
         }
 
         function parseCSVText(csvText) {
-            const lines = csvText.split(/\r?\n/).filter(l => l.trim().length > 0);
-            if (lines.length < 2) return;
-            const headers = lines[0].split(',').map(h => h.replace(/^["']|["']$/g, '').trim());
-            
-            filterColumns = headers.map((h, i) => ({ index: i, label: h })).filter(c => c.label.startsWith('A.') || (c.index >= 25 && c.index <= 32));
-
             useEmbeddedFallbackData();
         }
 
         function useEmbeddedFallbackData() {
             const embeddedData = [
-                // B Series Nodes
                 { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 1, "A.Thường Trụ Bất Biến": 1 } },
                 { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 2, "A.Thường Trụ Bất Biến": 2 } },
                 { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 3, "A.Thường Trụ Bất Biến": 3 } },
@@ -1039,7 +997,6 @@
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 34, "A.Ending": 3 } }
             ];
 
-            // 40 Spiral A-nodes starting at +Y direction (theta = PI/2)
             for (let i = 0; i < 40; i++) {
                 const sp = getSpiralPosition(i);
                 embeddedData.push({
@@ -1087,7 +1044,6 @@
                 filterSelect.appendChild(opt);
             });
 
-            // Ensure 40 spiral nodes exist with correct coordinate positions
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1104,7 +1060,6 @@
                     });
                 }
             } else {
-                // Update coordinates of spiral nodes based on updated counterclockwise formula
                 rawSheetRows.forEach(r => {
                     if (r.id.startsWith('A')) {
                         const num = parseInt(r.id.replace(/\D/g, ''));
@@ -1147,7 +1102,6 @@
             if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral) {
-                // When Column of Light Spiral is checked: Interleave or prefix spiral nodes into sequence
                 const otherNodes = matchingRows.filter(r => !r.id.startsWith('A'));
                 if (otherNodes.length > 0) {
                     for (let k = 0; k < 10; k++) {
@@ -1161,7 +1115,6 @@
                     currentSequenceNodes = [...spiralNodes];
                 }
             } else {
-                // When Column of Light Spiral is unchecked: Completely exclude spiral nodes (A series)
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
         }
@@ -1454,7 +1407,6 @@
                     if (billboardModeSelect.value === 'billboard') {
                         coinGroup.quaternion.copy(camera.quaternion);
                     } else {
-                        // Smoothly spin medallion coin like a rotating coin around its local Y axis
                         coinGroup.rotation.set(Math.PI / 2, elapsedTime * 1.2, 0);
                     }
                 }
@@ -1464,7 +1416,6 @@
             renderer.render(scene, camera);
         }
 
-        // Start initialization and loop
         fetchGoogleSheetData();
         animate();
     </script>
