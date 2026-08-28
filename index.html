@@ -200,6 +200,13 @@
 
             <div class="control-group">
                 <label class="checkbox-container">
+                    <input type="checkbox" id="show-axes" checked>
+                    <span>Show Coordination Axes</span>
+                </label>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
                     <input type="checkbox" id="show-grid-markers" checked>
                     <span>Show 0.5 Unit Markers</span>
                 </label>
@@ -283,6 +290,7 @@
         const billboardModeSelect = document.getElementById('billboard-mode');
         const glowIntensityInput = document.getElementById('glow-intensity');
         const includeSpiralCheckbox = document.getElementById('include-spiral');
+        const showAxesCheckbox = document.getElementById('show-axes');
         const showGridMarkersCheckbox = document.getElementById('show-grid-markers');
         const uiContainer = document.getElementById('ui-container');
         const uiHeader = document.getElementById('ui-header');
@@ -396,6 +404,9 @@
         const spheresGroup = new THREE.Group();
         scene.add(spheresGroup);
 
+        const axesGroup = new THREE.Group();
+        scene.add(axesGroup);
+
         const gridMarkersGroup = new THREE.Group();
         scene.add(gridMarkersGroup);
 
@@ -403,8 +414,8 @@
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
-        // Adjusted: Offset +0.2 in +X direction, -0.5 in -Z direction -> Position = (0.2, 0.0, -0.5)
-        // Orientation: Facing +Y, Right side +X, Crown +Z
+        // Rotated 90 degrees CCW around +Z: rotation = (PI/2, 0, PI/2)
+        // Position offset: (+0.2 in +X, -0.5 in -Z) -> (0.2, 0.0, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -420,8 +431,8 @@
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                // Orientation: Head along +Z, Facing along +Y, Right along +X
-                buddhaMesh.rotation.set(Math.PI / 2, 0, 0);
+                // Rotate 90 deg CCW around Z axis
+                buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
                 // Offset: +0.2 in +X, -0.5 in -Z
                 buddhaMesh.position.set(0.2, 0.0, -0.5);
                 buddhaGroup.add(buddhaMesh);
@@ -464,7 +475,7 @@
             legs.position.set(0, 0, -0.28);
             fallback.add(legs);
 
-            fallback.rotation.set(0, 0, 0);
+            fallback.rotation.set(0, 0, Math.PI / 2);
             fallback.position.set(0.2, 0.0, -0.5);
             buddhaGroup.add(fallback);
         }
@@ -510,7 +521,7 @@
         ];
 
         axesDirections.forEach(axis => {
-            scene.add(createAxialLaserBeam(axis.dir, axis.col));
+            axesGroup.add(createAxialLaserBeam(axis.dir, axis.col));
             createAxisLabel(axis.label, axis.pos[0], axis.pos[1], axis.pos[2]);
         });
 
@@ -526,7 +537,7 @@
             const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true }));
             sprite.position.set(x, y, z);
             sprite.scale.set(0.85, 0.42, 1.0);
-            scene.add(sprite);
+            axesGroup.add(sprite);
         }
 
         // =========================================================================
@@ -1210,6 +1221,9 @@
 
         filterSelect.addEventListener('change', resetAnimation);
         includeSpiralCheckbox.addEventListener('change', resetAnimation);
+        showAxesCheckbox.addEventListener('change', (e) => {
+            axesGroup.visible = e.target.checked;
+        });
         showGridMarkersCheckbox.addEventListener('change', (e) => {
             gridMarkersGroup.visible = e.target.checked;
         });
