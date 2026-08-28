@@ -402,10 +402,7 @@
         const textureLoader = new THREE.TextureLoader();
 
         // =========================================================================
-        // SECTION 5: BUDDHA 3D MODEL
-        // 1. Rotate 90 deg counterclockwise around Z axis
-        // 2. Offset +0.2 in +Y direction
-        // 3. Offset -0.5 in -Z direction: Position = (0.0, 0.2, -0.5)
+        // SECTION 5: BUDDHA 3D MODEL (Facing +Y, Right side +X, Crown +Z, Origin 0,0,0)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -421,10 +418,9 @@
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                // Rotate: X = 90 deg (stand up facing +Y), Z = 90 deg counterclockwise (+PI/2)
-                buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                // Offset: +0.2 in Y, -0.5 in Z
-                buddhaMesh.position.set(0.0, 0.2, -0.5);
+                // Orientation: Head along +Z, Facing along +Y, Right along +X, Origin at (0, 0, 0)
+                buddhaMesh.rotation.set(Math.PI / 2, 0, 0);
+                buddhaMesh.position.set(0, 0, 0);
                 buddhaGroup.add(buddhaMesh);
                 hideLoadingOverlay();
             },
@@ -465,8 +461,8 @@
             legs.position.set(0, 0, -0.28);
             fallback.add(legs);
 
-            fallback.rotation.set(0, 0, Math.PI / 2);
-            fallback.position.set(0.0, 0.2, -0.5);
+            fallback.rotation.set(0, 0, 0);
+            fallback.position.set(0, 0, 0);
             buddhaGroup.add(fallback);
         }
 
@@ -542,7 +538,7 @@
             const units = [-2.0, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0];
 
             units.forEach(u => {
-                // Tick mark on X axis (cross perpendicular bar)
+                // Tick mark on X axis
                 const tickX = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.08, 8), tickMatX);
                 tickX.position.set(u, 0, 0);
                 gridMarkersGroup.add(tickX);
