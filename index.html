@@ -11,7 +11,7 @@
             --accent-glow: #ffe240;
             --accent-blue: #00d2ff;
             --panel-bg: rgba(10, 15, 25, 0.88);
-            --panel-border: rgba(255, 215, 0, 0.2);
+            --panel-border: rgba(255, 215, 0, 0.25);
             --text-main: #ffffff;
             --text-muted: #8e9bb0;
         }
@@ -50,7 +50,7 @@
         #sync-status {
             position: absolute; top: 22px; right: 20px; z-index: 30;
             display: flex; align-items: center; gap: 8px;
-            background: rgba(10, 15, 25, 0.75); border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 15, 25, 0.8); border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 6px 14px; border-radius: 20px; font-size: 11px; color: var(--text-muted);
             backdrop-filter: blur(10px);
         }
@@ -63,25 +63,25 @@
         #ui-container {
             position: absolute; top: 76px; left: 18px;
             background: var(--panel-bg); padding: 16px 20px; border-radius: 14px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7); border: 1px solid var(--panel-border);
-            width: 310px; pointer-events: auto;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75); border: 1px solid var(--panel-border);
+            width: 320px; pointer-events: auto;
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10;
         }
         #ui-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         h1 { font-size: 14px; margin: 0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
-        #ui-content { margin-top: 14px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 560px; opacity: 1; }
+        #ui-content { margin-top: 14px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 580px; opacity: 1; }
         #ui-container.collapsed { width: 230px; }
         #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); }
         #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; pointer-events: none; }
 
         p { font-size: 11px; color: #a0aec0; margin: 0 0 14px 0; line-height: 1.45; }
         .control-group { margin-bottom: 12px; }
-        label { display: block; font-size: 10px; color: #718096; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+        label { display: block; font-size: 10px; color: #8e9bb0; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
         select, input[type="range"] {
-            width: 100%; background: #121824; border: 1px solid #232d3f; color: #fff;
-            padding: 7px 10px; border-radius: 7px; outline: none; box-sizing: border-box; font-size: 11px;
+            width: 100%; background: #121824; border: 1px solid #283548; color: #fff;
+            padding: 8px 10px; border-radius: 7px; outline: none; box-sizing: border-box; font-size: 11px;
             transition: border-color 0.2s;
         }
         select:focus { border-color: var(--accent-gold); }
@@ -92,6 +92,15 @@
 
         details { background: rgba(18, 24, 36, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
         summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; outline: none; user-select: none; }
+
+        /* Sequence Status Bar */
+        #seq-status-box {
+            background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 11px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #seq-status-text { color: var(--accent-gold); font-weight: 600; }
+        #seq-status-count { color: #fff; font-size: 10px; }
 
         /* Interactive Details Popup Card */
         #popup-card {
@@ -186,7 +195,12 @@
                 </select>
             </div>
 
-            <div class="control-group">
+            <div id="seq-status-box">
+                <span id="seq-status-text">Matrix Ready</span>
+                <span id="seq-status-count">0 Nodes</span>
+            </div>
+
+            <div class="control-group" style="margin-top: 12px;">
                 <label>Auto-Rotation Speed (RPM)</label>
                 <input type="range" id="rotation-speed" min="0" max="10" step="0.1" value="0">
             </div>
@@ -238,6 +252,7 @@
         <div class="popup-row"><span class="popup-label">WBS ID:</span><span class="popup-val" id="popup-id">-</span></div>
         <div class="popup-row"><span class="popup-label">Spatial Position:</span><span class="popup-val" id="popup-position">-</span></div>
         <div class="popup-row"><span class="popup-label">Axis Coordination:</span><span class="popup-val" id="popup-coords">-</span></div>
+        <div class="popup-row"><span class="popup-label">Sequence Step:</span><span class="popup-val" id="popup-seq-step">-</span></div>
         <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-siddham">-</span></div>
         <div class="popup-row"><span class="popup-label">Dharma Object:</span><span class="popup-val" id="popup-dharma">-</span></div>
         
@@ -284,6 +299,8 @@
         const syncLabel = document.getElementById('sync-label');
         const syncDot = document.getElementById('sync-dot');
         const filterSelect = document.getElementById('filter-select');
+        const seqStatusText = document.getElementById('seq-status-text');
+        const seqStatusCount = document.getElementById('seq-status-count');
         const rotationSpeedInput = document.getElementById('rotation-speed');
         const billboardModeSelect = document.getElementById('billboard-mode');
         const glowIntensityInput = document.getElementById('glow-intensity');
@@ -301,6 +318,7 @@
         const popupId = document.getElementById('popup-id');
         const popupPosition = document.getElementById('popup-position');
         const popupCoords = document.getElementById('popup-coords');
+        const popupSeqStep = document.getElementById('popup-seq-step');
         const popupSiddham = document.getElementById('popup-siddham');
         const popupDharma = document.getElementById('popup-dharma');
         const popupMantra = document.getElementById('popup-mantra');
@@ -311,7 +329,7 @@
 
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
-        // Initial perspective camera set to (3, 4, 2)
+        // Perspective camera set to (3, 4, 2)
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
@@ -680,15 +698,12 @@
                 list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
             }
 
-            // Local fallback filenames
             const cleanName = url.split('/').pop().replace(/[?#].*$/, '');
             if (isGroupA) {
                 list.push("06_LA_Gold.PNG");
                 list.push("06_LA_Gold.png");
                 list.push("./06_LA_Gold.PNG");
                 list.push("./06_LA_Gold.png");
-                list.push("06_la_gold.png");
-                list.push("06_LA_GOLD.PNG");
             } else if (cleanName) {
                 list.push(cleanName);
                 list.push("./" + cleanName);
@@ -708,8 +723,6 @@
 
             for (const candUrl of candidates) {
                 const isHttp = candUrl.startsWith('http://') || candUrl.startsWith('https://');
-                
-                // Attempt 1: Fetch via CORS mode and create direct ObjectURL
                 if (isHttp) {
                     try {
                         const res = await fetch(candUrl, { mode: 'cors' });
@@ -730,10 +743,9 @@
                                 return;
                             }
                         }
-                    } catch (e) { /* continue to next */ }
+                    } catch (e) { /* continue */ }
                 }
 
-                // Attempt 2: Direct Image tag element load
                 try {
                     const img = new Image();
                     if (isHttp) img.crossOrigin = 'anonymous';
@@ -747,10 +759,9 @@
                     tex.needsUpdate = true;
                     if (onLoaded) onLoaded(tex);
                     return;
-                } catch (err) { /* continue to next */ }
+                } catch (err) { /* continue */ }
             }
 
-            // If all fail, display fallback canvas text
             if (onLoaded) onLoaded(fallbackCanvasTex);
         }
 
@@ -798,8 +809,6 @@
 
         // =========================================================================
         // SECTION 9: 3D NODE CREATION & DUAL-SIDED ROTATING MEDALLION COIN
-        // Front Face: Siddham Image (C4 CTT Link or 06_LA_Gold.PNG for A-nodes)
-        // Back Face: Dharma Object Image (C6 Pháp Bảo Link)
         // =========================================================================
         function buildNode3DObject(nodeData) {
             const pos = new THREE.Vector3(...nodeData.coords);
@@ -849,7 +858,6 @@
             backMesh.rotation.y = Math.PI;
             coinGroup.add(backMesh);
 
-            // Asynchronously load Siddham front texture (strictly defaulting A-nodes to 06_LA_Gold.PNG)
             const siddhamSrc = nodeData.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : (nodeData.id + ".png"));
             loadRobustTexture(siddhamSrc, fallbackTex, isGroupA, (tex) => {
                 frontMat.map = tex;
@@ -860,7 +868,6 @@
                 }
             });
 
-            // Asynchronously load Dharma object back texture if available
             if (nodeData.dharmaObjectImage) {
                 loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, false, (tex) => {
                     backMat.map = tex;
@@ -887,7 +894,7 @@
         }
 
         // =========================================================================
-        // SECTION 10: GOOGLE SHEET DATA LOADING & PARSER
+        // SECTION 10: GOOGLE SHEET DATA LOADING & COMPREHENSIVE PARSER
         // =========================================================================
         async function fetchGoogleSheetData() {
             try {
@@ -904,7 +911,7 @@
                 syncLabel.innerText = "Synced with Google Sheet";
                 syncDot.style.background = "#00ff88";
             } catch (err) {
-                console.warn("Direct Google Sheet JSON fetch failed, trying CSV or embedded data...", err);
+                console.warn("Direct Google Sheet JSON fetch failed, trying CSV or fallback...", err);
                 tryCSVFetchOrFallback();
             }
         }
@@ -926,39 +933,80 @@
         }
 
         function parseGVizTable(table) {
-            const cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
-            
+            let cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
+            let dataRows = table.rows;
+
+            // Handle cases where the first row contains the actual column header labels
+            const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
+                if (!cell || cell.v === null) return false;
+                const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
+                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('hành') || v.toLowerCase().includes('link');
+            });
+
+            if (firstRowHasHeaders) {
+                const headerRow = dataRows[0];
+                cols = cols.map((col, idx) => {
+                    const cell = headerRow.c ? headerRow.c[idx] : null;
+                    const val = cell && cell.v !== null ? String(cell.f !== undefined ? cell.f : cell.v).trim() : col.label;
+                    return { index: idx, label: val || col.label };
+                });
+                dataRows = dataRows.slice(1);
+            }
+
             const colFind = (keyword) => cols.find(c => c.label.toLowerCase().includes(keyword.toLowerCase()));
 
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
             const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
-            const coordCol = colFind('a2 lý') || colFind('axis') || colFind('lý');
+            const coordCol = colFind('a2 lý') || colFind('axis') || colFind('lý') || colFind('coord');
             const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image');
             const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('siddham');
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
             const dharmaImgCol = colFind('c6 pháp bảo link') || colFind('pháp bảo link');
 
-            filterColumns = cols.filter(c => c.label.startsWith('A.') || (c.index >= 25 && c.index <= 32 && c.label.length > 0));
+            // Find all sequence filter matrix columns (columns with "A." or sequence titles)
+            filterColumns = cols.filter(c => {
+                const l = c.label;
+                return l.startsWith('A.') || l.startsWith('Tổng Thể') || l.startsWith('Thường Trụ') || l.startsWith('Liên Hoa') || l.startsWith('Lục Tý') || l.startsWith('Ending') || (c.index >= 20 && l.length > 2);
+            });
+
+            if (filterColumns.length === 0) {
+                // Fallback filter column definitions
+                filterColumns = [
+                    { label: "A.Tổng Thể Bồ Đề Tâm", index: -1 },
+                    { label: "A.Cột Trụ Quang Minh", index: -1 },
+                    { label: "A.Thường Trụ Bất Biến", index: -1 },
+                    { label: "A.Liên Hoa Bồ Đề Tâm", index: -1 },
+                    { label: "A.Lục Tý", index: -1 },
+                    { label: "A.Ending", index: -1 },
+                    { label: "A.A3/3/3", index: -1 },
+                    { label: "A.A4/3/3", index: -1 },
+                    { label: "A.A5/3/3", index: -1 },
+                    { label: "A.A5/5/5", index: -1 }
+                ];
+            }
 
             rawSheetRows = [];
-            table.rows.forEach(r => {
+            dataRows.forEach(r => {
                 if (!r.c) return;
                 const getVal = (col) => {
-                    if (!col || !r.c[col.index]) return '';
+                    if (!col || col.index < 0 || !r.c[col.index]) return '';
                     const cell = r.c[col.index];
                     return (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')).toString().trim();
                 };
 
                 const id = getVal(idCol);
-                if (!id) return;
+                if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
                 const sequences = {};
                 filterColumns.forEach(fc => {
-                    const val = getVal(fc);
-                    const num = parseFloat(val);
-                    if (!isNaN(num) && num > 0) {
-                        sequences[fc.label] = num;
+                    if (fc.index >= 0 && r.c[fc.index]) {
+                        const cell = r.c[fc.index];
+                        const val = cell.v !== null ? cell.v : cell.f;
+                        const num = parseFloat(val);
+                        if (!isNaN(num) && num > 0) {
+                            sequences[fc.label] = num;
+                        }
                     }
                 });
 
@@ -978,52 +1026,107 @@
                 });
             });
 
+            // If Google Sheet rows lacked sequence values, merge with embedded sequence mappings
+            mergeEmbeddedSequencesIfNeeded();
             initMatrixWithParsedData();
+        }
+
+        function mergeEmbeddedSequencesIfNeeded() {
+            const sample = rawSheetRows.find(r => r.id === 'B01');
+            if (!sample || Object.keys(sample.sequences).length === 0) {
+                // Apply standard matrix sequence mappings to nodes
+                const fallbackMap = getFallbackSequenceMap();
+                rawSheetRows.forEach(row => {
+                    if (fallbackMap[row.id]) {
+                        row.sequences = { ...fallbackMap[row.id], ...row.sequences };
+                    }
+                });
+            }
         }
 
         function parseCSVText(csvText) {
             useEmbeddedFallbackData();
         }
 
+        function getFallbackSequenceMap() {
+            return {
+                "B01": { "A.Tổng Thể Bồ Đề Tâm": 1, "A.Thường Trụ Bất Biến": 1 },
+                "B02": { "A.Tổng Thể Bồ Đề Tâm": 2, "A.Thường Trụ Bất Biến": 2 },
+                "B03": { "A.Tổng Thể Bồ Đề Tâm": 3, "A.Thường Trụ Bất Biến": 3 },
+                "B04": { "A.Tổng Thể Bồ Đề Tâm": 4, "A.Thường Trụ Bất Biến": 4 },
+                "B05": { "A.Tổng Thể Bồ Đề Tâm": 5, "A.Thường Trụ Bất Biến": 5 },
+                "B06": { "A.Tổng Thể Bồ Đề Tâm": 6, "A.Thường Trụ Bất Biến": 6 },
+                "B07": { "A.Tổng Thể Bồ Đề Tâm": 7, "A.Liên Hoa Bồ Đề Tâm": 1, "A.A3/3/3": 1, "A.A4/3/3": 1, "A.A5/3/3": 1, "A.A5/5/5": 1 },
+                "B08": { "A.Tổng Thể Bồ Đề Tâm": 8, "A.Liên Hoa Bồ Đề Tâm": 2, "A.A5/3/3": 2, "A.A5/5/5": 2 },
+                "B09": { "A.Tổng Thể Bồ Đề Tâm": 9, "A.Liên Hoa Bồ Đề Tâm": 3, "A.A3/3/3": 2, "A.A4/3/3": 2, "A.A5/3/3": 3, "A.A5/5/5": 3 },
+                "B10": { "A.Tổng Thể Bồ Đề Tâm": 10, "A.Liên Hoa Bồ Đề Tâm": 4, "A.A4/3/3": 3, "A.A5/3/3": 4, "A.A5/5/5": 4 },
+                "B11": { "A.Tổng Thể Bồ Đề Tâm": 11, "A.Liên Hoa Bồ Đề Tâm": 5, "A.A3/3/3": 3, "A.A4/3/3": 4, "A.A5/3/3": 5, "A.A5/5/5": 5 },
+                "B12": { "A.Tổng Thể Bồ Đề Tâm": 12, "A.Liên Hoa Bồ Đề Tâm": 6, "A.A3/3/3": 4, "A.A4/3/3": 5, "A.A5/3/3": 6, "A.A5/5/5": 6 },
+                "B13": { "A.Tổng Thể Bồ Đề Tâm": 13, "A.Liên Hoa Bồ Đề Tâm": 7, "A.A5/5/5": 7 },
+                "B14": { "A.Tổng Thể Bồ Đề Tâm": 14, "A.Liên Hoa Bồ Đề Tâm": 8, "A.A3/3/3": 5, "A.A4/3/3": 6, "A.A5/3/3": 7, "A.A5/5/5": 8 },
+                "B15": { "A.Tổng Thể Bồ Đề Tâm": 15, "A.Liên Hoa Bồ Đề Tâm": 9, "A.A5/5/5": 9 },
+                "B16": { "A.Tổng Thể Bồ Đề Tâm": 16, "A.Liên Hoa Bồ Đề Tâm": 10, "A.A3/3/3": 6, "A.A4/3/3": 7, "A.A5/3/3": 8, "A.A5/5/5": 10 },
+                "B17": { "A.Tổng Thể Bồ Đề Tâm": 17, "A.Liên Hoa Bồ Đề Tâm": 11, "A.A3/3/3": 7, "A.A4/3/3": 8, "A.A5/3/3": 9, "A.A5/5/5": 11 },
+                "B18": { "A.Tổng Thể Bồ Đề Tâm": 18, "A.Liên Hoa Bồ Đề Tâm": 12, "A.A5/5/5": 12 },
+                "B19": { "A.Tổng Thể Bồ Đề Tâm": 19, "A.Liên Hoa Bồ Đề Tâm": 13, "A.A3/3/3": 8, "A.A4/3/3": 9, "A.A5/3/3": 10, "A.A5/5/5": 13 },
+                "B20": { "A.Tổng Thể Bồ Đề Tâm": 20, "A.Liên Hoa Bồ Đề Tâm": 14, "A.A5/5/5": 14 },
+                "B21": { "A.Tổng Thể Bồ Đề Tâm": 21, "A.Liên Hoa Bồ Đề Tâm": 15, "A.A3/3/3": 9, "A.A4/3/3": 10, "A.A5/3/3": 11, "A.A5/5/5": 15 },
+                "B22": { "A.Tổng Thể Bồ Đề Tâm": 22, "A.Liên Hoa Bồ Đề Tâm": 16 },
+                "B23": { "A.Tổng Thể Bồ Đề Tâm": 23, "A.Liên Hoa Bồ Đề Tâm": 17 },
+                "B24": { "A.Tổng Thể Bồ Đề Tâm": 24, "A.Liên Hoa Bồ Đề Tâm": 18 },
+                "B25": { "A.Tổng Thể Bồ Đề Tâm": 25, "A.Liên Hoa Bồ Đề Tâm": 19 },
+                "B26": { "A.Tổng Thể Bồ Đề Tâm": 26, "A.Lục Tý": 1 },
+                "B27": { "A.Tổng Thể Bồ Đề Tâm": 27, "A.Lục Tý": 2 },
+                "B28": { "A.Tổng Thể Bồ Đề Tâm": 28, "A.Lục Tý": 3 },
+                "B29": { "A.Tổng Thể Bồ Đề Tâm": 29, "A.Lục Tý": 4 },
+                "B30": { "A.Tổng Thể Bồ Đề Tâm": 30, "A.Lục Tý": 5 },
+                "B31": { "A.Tổng Thể Bồ Đề Tâm": 31, "A.Lục Tý": 6 },
+                "B32": { "A.Tổng Thể Bồ Đề Tâm": 32, "A.Ending": 1 },
+                "B33": { "A.Tổng Thể Bồ Đề Tâm": 33, "A.Ending": 2 },
+                "B34": { "A.Tổng Thể Bồ Đề Tâm": 34, "A.Ending": 3 }
+            };
+        }
+
         function useEmbeddedFallbackData() {
+            const fallbackSeqMap = getFallbackSequenceMap();
             const embeddedData = [
-                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 1, "A.Thường Trụ Bất Biến": 1 } },
-                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 2, "A.Thường Trụ Bất Biến": 2 } },
-                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 3, "A.Thường Trụ Bất Biến": 3 } },
-                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li\nNamo La Da Nang\nDa La Ye Ye\nOm, E No Pe Di\nWei Re Yi Syi Di Syi, To Li Ti\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 4, "A.Thường Trụ Bất Biến": 4 } },
-                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen\nOm, E Dzo Wei Li\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 5, "A.Thường Trụ Bất Biến": 5 } },
-                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No\nOm, Jye No La,\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 6, "A.Thường Trụ Bất Biến": 6 } },
+                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B01"] },
+                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja", sequences: fallbackSeqMap["B02"] },
+                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja", sequences: fallbackSeqMap["B03"] },
+                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li\nNamo La Da Nang\nDa La Ye Ye\nOm, E No Pe Di\nWei Re Yi Syi Di Syi, To Li Ti\nSo Po He", sequences: fallbackSeqMap["B04"] },
+                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen\nOm, E Dzo Wei Li\nSo Po He.", sequences: fallbackSeqMap["B05"] },
+                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No\nOm, Jye No La,\nSo Po He.", sequences: fallbackSeqMap["B06"] },
 
-                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 7, "A.Liên Hoa Bồ Đề Tâm": 1, "A.A3/3/3": 1, "A.A4/3/3": 1, "A.A5/3/3": 1, "A.A5/5/5": 1 } },
-                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye\nOm, Wa Dz La,\nBo Shr Jye Li,\nJye Nang Syin La Hum", sequences: { "A.Tổng Thể Bồ Đề Tâm": 8, "A.Liên Hoa Bồ Đề Tâm": 2, "A.A5/3/3": 2, "A.A5/5/5": 2 } },
-                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 9, "A.Liên Hoa Bồ Đề Tâm": 3, "A.A3/3/3": 2, "A.A4/3/3": 2, "A.A5/3/3": 3, "A.A5/5/5": 3 } },
-                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 10, "A.Liên Hoa Bồ Đề Tâm": 4, "A.A4/3/3": 3, "A.A5/3/3": 4, "A.A5/5/5": 4 } },
-                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 11, "A.Liên Hoa Bồ Đề Tâm": 5, "A.A3/3/3": 3, "A.A4/3/3": 4, "A.A5/3/3": 5, "A.A5/5/5": 5 } },
-                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 12, "A.Liên Hoa Bồ Đề Tâm": 6, "A.A3/3/3": 4, "A.A4/3/3": 5, "A.A5/3/3": 6, "A.A5/5/5": 6 } },
-                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye\nOm, Shang Jye Li,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 13, "A.Liên Hoa Bồ Đề Tâm": 7, "A.A5/5/5": 7 } },
-                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 14, "A.Liên Hoa Bồ Đề Tâm": 8, "A.A3/3/3": 5, "A.A4/3/3": 6, "A.A5/3/3": 7, "A.A5/5/5": 8 } },
-                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng\nOm, Wa Dz La,\nWei La Ye,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 15, "A.Liên Hoa Bồ Đề Tâm": 9, "A.A5/5/5": 9 } },
-                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 16, "A.Liên Hoa Bồ Đề Tâm": 10, "A.A3/3/3": 6, "A.A4/3/3": 7, "A.A5/3/3": 8, "A.A5/5/5": 10 } },
-                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 17, "A.Liên Hoa Bồ Đề Tâm": 11, "A.A3/3/3": 7, "A.A4/3/3": 8, "A.A5/3/3": 9, "A.A5/5/5": 11 } },
-                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye\nOm, Sa La Sa La,\nWa Dz La, Jya La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 18, "A.Liên Hoa Bồ Đề Tâm": 12, "A.A5/5/5": 12 } },
-                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 19, "A.Liên Hoa Bồ Đề Tâm": 13, "A.A3/3/3": 8, "A.A4/3/3": 9, "A.A5/3/3": 10, "A.A5/5/5": 13 } },
-                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun\nOm, Jr Li Jr Li,\nWa Dz La,\nBu La Pan To,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 20, "A.Liên Hoa Bồ Đề Tâm": 14, "A.A5/5/5": 14 } },
-                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 21, "A.Liên Hoa Bồ Đề Tâm": 15, "A.A3/3/3": 9, "A.A4/3/3": 10, "A.A5/3/3": 11, "A.A5/5/5": 15 } },
-                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do\nMan Do La,\nBa To Ye\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 22, "A.Liên Hoa Bồ Đề Tâm": 16 } },
-                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye\nOm, Wei La Ye,\nWei La Ye\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 23, "A.Liên Hoa Bồ Đề Tâm": 17 } },
-                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr\nOm, Jye Li San Man Yen,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 24, "A.Liên Hoa Bồ Đề Tâm": 18 } },
-                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye\nOm, Wa Dz Li Ni,\nWa Dz Lan Yi,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 25, "A.Liên Hoa Bồ Đề Tâm": 19 } },
+                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B07"] },
+                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye\nOm, Wa Dz La,\nBo Shr Jye Li,\nJye Nang Syin La Hum", sequences: fallbackSeqMap["B08"] },
+                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B09"] },
+                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B10"] },
+                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B11"] },
+                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B12"] },
+                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye\nOm, Shang Jye Li,\nSo Po He", sequences: fallbackSeqMap["B13"] },
+                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B14"] },
+                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng\nOm, Wa Dz La,\nWei La Ye,\nSo Po He", sequences: fallbackSeqMap["B15"] },
+                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B16"] },
+                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B17"] },
+                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye\nOm, Sa La Sa La,\nWa Dz La, Jya La,\nHum Pan Ja", sequences: fallbackSeqMap["B18"] },
+                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B19"] },
+                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun\nOm, Jr Li Jr Li,\nWa Dz La,\nBu La Pan To,\nHum Pan Ja", sequences: fallbackSeqMap["B20"] },
+                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B21"] },
+                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do\nMan Do La,\nBa To Ye\nSo Po He", sequences: fallbackSeqMap["B22"] },
+                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye\nOm, Wei La Ye,\nWei La Ye\nSo Po He", sequences: fallbackSeqMap["B23"] },
+                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr\nOm, Jye Li San Man Yen,\nSo Po He", sequences: fallbackSeqMap["B24"] },
+                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye\nOm, Wa Dz Li Ni,\nWa Dz Lan Yi,\nSo Po He", sequences: fallbackSeqMap["B25"] },
 
-                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li\nOm, Bo Na Man\nRe Ling He Li.\nOm, Wei Sala Wei Sala\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 26, "A.Lục Tý": 1 } },
-                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye\nOm, Dz La Nan Ye\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 27, "A.Lục Tý": 2 } },
-                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 28, "A.Lục Tý": 3 } },
-                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: { "A.Tổng Thể Bồ Đề Tâm": 29, "A.Lục Tý": 4 } },
-                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 30, "A.Lục Tý": 5 } },
-                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 31, "A.Lục Tý": 6 } },
+                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li\nOm, Bo Na Man\nRe Ling He Li.\nOm, Wei Sala Wei Sala\nHum Pan Ja", sequences: fallbackSeqMap["B26"] },
+                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye\nOm, Dz La Nan Ye\nHum Pan Ja", sequences: fallbackSeqMap["B27"] },
+                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B28"] },
+                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B29"] },
+                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B30"] },
+                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He", sequences: fallbackSeqMap["B31"] },
 
-                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 32, "A.Ending": 1 } },
-                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: { "A.Tổng Thể Bồ Đề Tâm": 33, "A.Ending": 2 } },
-                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: { "A.Tổng Thể Bồ Đề Tâm": 34, "A.Ending": 3 } }
+                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: fallbackSeqMap["B32"] },
+                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
+                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] }
             ];
 
             for (let i = 0; i < 40; i++) {
@@ -1068,11 +1171,12 @@
                 const opt = document.createElement('option');
                 opt.value = fc.label;
                 const displayName = fc.label.startsWith('A.') ? fc.label.substring(2) : fc.label;
-                opt.textContent = `${displayName} (${fc.label})`;
+                opt.textContent = `${displayName}`;
                 if (idx === 0) opt.selected = true;
                 filterSelect.appendChild(opt);
             });
 
+            // Ensure 40 spiral nodes exist with counterclockwise coordinates
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1109,17 +1213,20 @@
             });
 
             resetAnimation();
+            generateActiveSequence();
         }
 
         function generateActiveSequence() {
             const selectedFilter = filterSelect.value;
             const includeSpiral = includeSpiralCheckbox.checked;
 
+            // Extract only the rows that participate in the selected sequence matrix
             const matchingRows = rawSheetRows.filter(r => {
-                return r.sequences && r.sequences[selectedFilter] !== undefined && r.sequences[selectedFilter] > 0;
+                return r.sequences && r.sequences[selectedFilter] !== undefined && Number(r.sequences[selectedFilter]) > 0;
             });
 
-            matchingRows.sort((a, b) => a.sequences[selectedFilter] - b.sequences[selectedFilter]);
+            // Sort strictly in ascending sequence order from the Google Sheet feed
+            matchingRows.sort((a, b) => Number(a.sequences[selectedFilter]) - Number(b.sequences[selectedFilter]));
 
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
                 const nA = parseInt(a.id.replace(/\D/g, '')) || 0;
@@ -1132,21 +1239,32 @@
             if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral) {
-                const otherNodes = matchingRows.filter(r => !r.id.startsWith('A'));
-                if (otherNodes.length > 0) {
-                    for (let k = 0; k < 10; k++) {
-                        for (let i = 0; i < 4; i++) {
-                            const sNode = spiralNodes[k * 4 + i];
-                            if (sNode) currentSequenceNodes.push(sNode);
+                const nonSpiral = matchingRows.filter(r => !r.id.startsWith('A'));
+                if (nonSpiral.length > 0) {
+                    if (selectedFilter.includes("Tổng Thể")) {
+                        // Standard Bodhicitta 10-stage matrix: 4 spiral nodes per stage
+                        for (let k = 0; k < 10; k++) {
+                            for (let i = 0; i < 4; i++) {
+                                const sNode = spiralNodes[k * 4 + i];
+                                if (sNode) currentSequenceNodes.push(sNode);
+                            }
+                            nonSpiral.forEach(node => currentSequenceNodes.push(node));
                         }
-                        otherNodes.forEach(node => currentSequenceNodes.push(node));
+                    } else {
+                        // Include spiral nodes as prefix/accompaniment
+                        currentSequenceNodes = [...matchingRows];
                     }
                 } else {
-                    currentSequenceNodes = [...spiralNodes];
+                    currentSequenceNodes = [...matchingRows];
                 }
             } else {
+                // Opt-out Spiral: Strictly filter out any A-nodes and play only the sequence from sheet
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
+
+            // Update UI Sequence count
+            seqStatusText.innerText = selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter;
+            seqStatusCount.innerText = `${currentSequenceNodes.length} Steps`;
         }
 
         function resetAnimation() {
@@ -1212,6 +1330,11 @@
                 if (includeSpiralCheckbox.checked) {
                     rebuildWallGeometry();
                 }
+
+                // Update status step counter
+                const selectedFilter = filterSelect.value;
+                const stepNum = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
+                seqStatusCount.innerText = `Step ${stepNum} / ${currentSequenceNodes.length}`;
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
@@ -1233,9 +1356,14 @@
 
         function showPopup(data) {
             const isGroupA = data.id && data.id.startsWith('A');
+            const selectedFilter = filterSelect.value;
             popupId.innerText = data.id || "-";
             popupPosition.innerText = data.spatialPosition || "Central Axis";
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
+            
+            const stepVal = data.sequences && data.sequences[selectedFilter] !== undefined ? `#${data.sequences[selectedFilter]}` : '-';
+            popupSeqStep.innerText = `${stepVal} (${selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter})`;
+
             popupSiddham.innerText = `${data.siddhamUnicode || ""} (${data.id})`;
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
@@ -1341,11 +1469,13 @@
 
         filterSelect.addEventListener('change', () => {
             resetAnimation();
+            generateActiveSequence();
         });
 
         includeSpiralCheckbox.addEventListener('change', () => {
             wallMesh.visible = includeSpiralCheckbox.checked && isRunning;
             resetAnimation();
+            generateActiveSequence();
         });
 
         showAxesCheckbox.addEventListener('change', (e) => {
