@@ -99,8 +99,8 @@
             border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 11px;
             display: flex; justify-content: space-between; align-items: center;
         }
-        #seq-status-text { color: var(--accent-gold); font-weight: 600; }
-        #seq-status-count { color: #fff; font-size: 10px; }
+        #seq-status-text { color: var(--accent-gold); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%; }
+        #seq-status-count { color: #fff; font-size: 10px; white-space: nowrap; }
 
         /* Interactive Details Popup Card */
         #popup-card {
@@ -189,7 +189,7 @@
             <p>Meditative matrix displaying the Buddha's core orientation (+Y facing, +X right, +Z crown) and dynamic Siddham axial nodes.</p>
 
             <div class="control-group">
-                <label>Filter Sequence Matrix</label>
+                <label>Filter Sequence Matrix (Columns Z – AH)</label>
                 <select id="filter-select">
                     <option value="" disabled selected>Loading sequences...</option>
                 </select>
@@ -595,8 +595,6 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
-        // 1. Node #1 starts on +Y direction (theta = PI/2)
-        // 2. COUNTERCLOCKWISE spiraling up: theta = PI/2 + t * (PI/2)
         // =========================================================================
         function getSpiralPosition(t) {
             const theta = Math.PI / 2 + t * (Math.PI / 2);
@@ -894,7 +892,15 @@
         }
 
         // =========================================================================
-        // SECTION 10: GOOGLE SHEET DATA LOADING & COMPREHENSIVE PARSER
+        // NATURAL ALPHANUMERIC COMPARATOR (Supports "1", "2a", "B01", "10", etc.)
+        // =========================================================================
+        function naturalCompare(aStr, bStr) {
+            return String(aStr).localeCompare(String(bStr), undefined, { numeric: true, sensitivity: 'base' });
+        }
+
+        // =========================================================================
+        // SECTION 10: GOOGLE SHEET DATA LOADING (FILTER EXTRACT COLUMNS Z TO AH)
+        // Column Index 25 = Z, Column Index 33 = AH
         // =========================================================================
         async function fetchGoogleSheetData() {
             try {
@@ -964,25 +970,26 @@
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
             const dharmaImgCol = colFind('c6 pháp bảo link') || colFind('pháp bảo link');
 
-            // Find all sequence filter matrix columns (columns with "A." or sequence titles)
+            // Strictly filter sequence columns from Column Index 25 (Z) to Column Index 33 (AH)
             filterColumns = cols.filter(c => {
-                const l = c.label;
-                return l.startsWith('A.') || l.startsWith('Tổng Thể') || l.startsWith('Thường Trụ') || l.startsWith('Liên Hoa') || l.startsWith('Lục Tý') || l.startsWith('Ending') || (c.index >= 20 && l.length > 2);
+                return c.index >= 25 && c.index <= 33 && c.label.length > 0;
             });
 
             if (filterColumns.length === 0) {
-                // Fallback filter column definitions
+                filterColumns = cols.filter(c => c.label.startsWith('A.') || (c.index >= 20 && c.label.length > 2));
+            }
+
+            if (filterColumns.length === 0) {
                 filterColumns = [
-                    { label: "A.Tổng Thể Bồ Đề Tâm", index: -1 },
-                    { label: "A.Cột Trụ Quang Minh", index: -1 },
-                    { label: "A.Thường Trụ Bất Biến", index: -1 },
-                    { label: "A.Liên Hoa Bồ Đề Tâm", index: -1 },
-                    { label: "A.Lục Tý", index: -1 },
-                    { label: "A.Ending", index: -1 },
-                    { label: "A.A3/3/3", index: -1 },
-                    { label: "A.A4/3/3", index: -1 },
-                    { label: "A.A5/3/3", index: -1 },
-                    { label: "A.A5/5/5", index: -1 }
+                    { label: "A.Tổng Thể Bồ Đề Tâm", index: 25 },
+                    { label: "A.Cột Trụ Quang Minh", index: 26 },
+                    { label: "A.Thường Trụ Bất Biến", index: 27 },
+                    { label: "A.Liên Hoa Bồ Đề Tâm", index: 28 },
+                    { label: "A.Lục Tý", index: 29 },
+                    { label: "A.Ending", index: 30 },
+                    { label: "A.A3/3/3", index: 31 },
+                    { label: "A.A4/3/3", index: 32 },
+                    { label: "A.A5/3/3", index: 33 }
                 ];
             }
 
@@ -998,14 +1005,17 @@
                 const id = getVal(idCol);
                 if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
+                // Alphanumeric sequence collection
                 const sequences = {};
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
                         const cell = r.c[fc.index];
                         const val = cell.v !== null ? cell.v : cell.f;
-                        const num = parseFloat(val);
-                        if (!isNaN(num) && num > 0) {
-                            sequences[fc.label] = num;
+                        if (val !== undefined && val !== null) {
+                            const strVal = String(val).trim();
+                            if (strVal.length > 0 && strVal !== '-' && strVal !== '0') {
+                                sequences[fc.label] = strVal;
+                            }
                         }
                     }
                 });
@@ -1026,7 +1036,6 @@
                 });
             });
 
-            // If Google Sheet rows lacked sequence values, merge with embedded sequence mappings
             mergeEmbeddedSequencesIfNeeded();
             initMatrixWithParsedData();
         }
@@ -1034,7 +1043,6 @@
         function mergeEmbeddedSequencesIfNeeded() {
             const sample = rawSheetRows.find(r => r.id === 'B01');
             if (!sample || Object.keys(sample.sequences).length === 0) {
-                // Apply standard matrix sequence mappings to nodes
                 const fallbackMap = getFallbackSequenceMap();
                 rawSheetRows.forEach(row => {
                     if (fallbackMap[row.id]) {
@@ -1050,40 +1058,40 @@
 
         function getFallbackSequenceMap() {
             return {
-                "B01": { "A.Tổng Thể Bồ Đề Tâm": 1, "A.Thường Trụ Bất Biến": 1 },
-                "B02": { "A.Tổng Thể Bồ Đề Tâm": 2, "A.Thường Trụ Bất Biến": 2 },
-                "B03": { "A.Tổng Thể Bồ Đề Tâm": 3, "A.Thường Trụ Bất Biến": 3 },
-                "B04": { "A.Tổng Thể Bồ Đề Tâm": 4, "A.Thường Trụ Bất Biến": 4 },
-                "B05": { "A.Tổng Thể Bồ Đề Tâm": 5, "A.Thường Trụ Bất Biến": 5 },
-                "B06": { "A.Tổng Thể Bồ Đề Tâm": 6, "A.Thường Trụ Bất Biến": 6 },
-                "B07": { "A.Tổng Thể Bồ Đề Tâm": 7, "A.Liên Hoa Bồ Đề Tâm": 1, "A.A3/3/3": 1, "A.A4/3/3": 1, "A.A5/3/3": 1, "A.A5/5/5": 1 },
-                "B08": { "A.Tổng Thể Bồ Đề Tâm": 8, "A.Liên Hoa Bồ Đề Tâm": 2, "A.A5/3/3": 2, "A.A5/5/5": 2 },
-                "B09": { "A.Tổng Thể Bồ Đề Tâm": 9, "A.Liên Hoa Bồ Đề Tâm": 3, "A.A3/3/3": 2, "A.A4/3/3": 2, "A.A5/3/3": 3, "A.A5/5/5": 3 },
-                "B10": { "A.Tổng Thể Bồ Đề Tâm": 10, "A.Liên Hoa Bồ Đề Tâm": 4, "A.A4/3/3": 3, "A.A5/3/3": 4, "A.A5/5/5": 4 },
-                "B11": { "A.Tổng Thể Bồ Đề Tâm": 11, "A.Liên Hoa Bồ Đề Tâm": 5, "A.A3/3/3": 3, "A.A4/3/3": 4, "A.A5/3/3": 5, "A.A5/5/5": 5 },
-                "B12": { "A.Tổng Thể Bồ Đề Tâm": 12, "A.Liên Hoa Bồ Đề Tâm": 6, "A.A3/3/3": 4, "A.A4/3/3": 5, "A.A5/3/3": 6, "A.A5/5/5": 6 },
-                "B13": { "A.Tổng Thể Bồ Đề Tâm": 13, "A.Liên Hoa Bồ Đề Tâm": 7, "A.A5/5/5": 7 },
-                "B14": { "A.Tổng Thể Bồ Đề Tâm": 14, "A.Liên Hoa Bồ Đề Tâm": 8, "A.A3/3/3": 5, "A.A4/3/3": 6, "A.A5/3/3": 7, "A.A5/5/5": 8 },
-                "B15": { "A.Tổng Thể Bồ Đề Tâm": 15, "A.Liên Hoa Bồ Đề Tâm": 9, "A.A5/5/5": 9 },
-                "B16": { "A.Tổng Thể Bồ Đề Tâm": 16, "A.Liên Hoa Bồ Đề Tâm": 10, "A.A3/3/3": 6, "A.A4/3/3": 7, "A.A5/3/3": 8, "A.A5/5/5": 10 },
-                "B17": { "A.Tổng Thể Bồ Đề Tâm": 17, "A.Liên Hoa Bồ Đề Tâm": 11, "A.A3/3/3": 7, "A.A4/3/3": 8, "A.A5/3/3": 9, "A.A5/5/5": 11 },
-                "B18": { "A.Tổng Thể Bồ Đề Tâm": 18, "A.Liên Hoa Bồ Đề Tâm": 12, "A.A5/5/5": 12 },
-                "B19": { "A.Tổng Thể Bồ Đề Tâm": 19, "A.Liên Hoa Bồ Đề Tâm": 13, "A.A3/3/3": 8, "A.A4/3/3": 9, "A.A5/3/3": 10, "A.A5/5/5": 13 },
-                "B20": { "A.Tổng Thể Bồ Đề Tâm": 20, "A.Liên Hoa Bồ Đề Tâm": 14, "A.A5/5/5": 14 },
-                "B21": { "A.Tổng Thể Bồ Đề Tâm": 21, "A.Liên Hoa Bồ Đề Tâm": 15, "A.A3/3/3": 9, "A.A4/3/3": 10, "A.A5/3/3": 11, "A.A5/5/5": 15 },
-                "B22": { "A.Tổng Thể Bồ Đề Tâm": 22, "A.Liên Hoa Bồ Đề Tâm": 16 },
-                "B23": { "A.Tổng Thể Bồ Đề Tâm": 23, "A.Liên Hoa Bồ Đề Tâm": 17 },
-                "B24": { "A.Tổng Thể Bồ Đề Tâm": 24, "A.Liên Hoa Bồ Đề Tâm": 18 },
-                "B25": { "A.Tổng Thể Bồ Đề Tâm": 25, "A.Liên Hoa Bồ Đề Tâm": 19 },
-                "B26": { "A.Tổng Thể Bồ Đề Tâm": 26, "A.Lục Tý": 1 },
-                "B27": { "A.Tổng Thể Bồ Đề Tâm": 27, "A.Lục Tý": 2 },
-                "B28": { "A.Tổng Thể Bồ Đề Tâm": 28, "A.Lục Tý": 3 },
-                "B29": { "A.Tổng Thể Bồ Đề Tâm": 29, "A.Lục Tý": 4 },
-                "B30": { "A.Tổng Thể Bồ Đề Tâm": 30, "A.Lục Tý": 5 },
-                "B31": { "A.Tổng Thể Bồ Đề Tâm": 31, "A.Lục Tý": 6 },
-                "B32": { "A.Tổng Thể Bồ Đề Tâm": 32, "A.Ending": 1 },
-                "B33": { "A.Tổng Thể Bồ Đề Tâm": 33, "A.Ending": 2 },
-                "B34": { "A.Tổng Thể Bồ Đề Tâm": 34, "A.Ending": 3 }
+                "B01": { "A.Tổng Thể Bồ Đề Tâm": "1", "A.Thường Trụ Bất Biến": "1" },
+                "B02": { "A.Tổng Thể Bồ Đề Tâm": "2", "A.Thường Trụ Bất Biến": "2" },
+                "B03": { "A.Tổng Thể Bồ Đề Tâm": "3", "A.Thường Trụ Bất Biến": "3" },
+                "B04": { "A.Tổng Thể Bồ Đề Tâm": "4", "A.Thường Trụ Bất Biến": "4" },
+                "B05": { "A.Tổng Thể Bồ Đề Tâm": "5", "A.Thường Trụ Bất Biến": "5" },
+                "B06": { "A.Tổng Thể Bồ Đề Tâm": "6", "A.Thường Trụ Bất Biến": "6" },
+                "B07": { "A.Tổng Thể Bồ Đề Tâm": "7", "A.Liên Hoa Bồ Đề Tâm": "1", "A.A3/3/3": "1", "A.A4/3/3": "1", "A.A5/3/3": "1", "A.A5/5/5": "1" },
+                "B08": { "A.Tổng Thể Bồ Đề Tâm": "8", "A.Liên Hoa Bồ Đề Tâm": "2", "A.A5/3/3": "2", "A.A5/5/5": "2" },
+                "B09": { "A.Tổng Thể Bồ Đề Tâm": "9", "A.Liên Hoa Bồ Đề Tâm": "3", "A.A3/3/3": "2", "A.A4/3/3": "2", "A.A5/3/3": "3", "A.A5/5/5": "3" },
+                "B10": { "A.Tổng Thể Bồ Đề Tâm": "10", "A.Liên Hoa Bồ Đề Tâm": "4", "A.A4/3/3": "3", "A.A5/3/3": "4", "A.A5/5/5": "4" },
+                "B11": { "A.Tổng Thể Bồ Đề Tâm": "11", "A.Liên Hoa Bồ Đề Tâm": "5", "A.A3/3/3": "3", "A.A4/3/3": "4", "A.A5/3/3": "5", "A.A5/5/5": "5" },
+                "B12": { "A.Tổng Thể Bồ Đề Tâm": "12", "A.Liên Hoa Bồ Đề Tâm": "6", "A.A3/3/3": "4", "A.A4/3/3": "5", "A.A5/3/3": "6", "A.A5/5/5": "6" },
+                "B13": { "A.Tổng Thể Bồ Đề Tâm": "13", "A.Liên Hoa Bồ Đề Tâm": "7", "A.A5/5/5": "7" },
+                "B14": { "A.Tổng Thể Bồ Đề Tâm": "14", "A.Liên Hoa Bồ Đề Tâm": "8", "A.A3/3/3": "5", "A.A4/3/3": "6", "A.A5/3/3": "7", "A.A5/5/5": "8" },
+                "B15": { "A.Tổng Thể Bồ Đề Tâm": "15", "A.Liên Hoa Bồ Đề Tâm": "9", "A.A5/5/5": "9" },
+                "B16": { "A.Tổng Thể Bồ Đề Tâm": "16", "A.Liên Hoa Bồ Đề Tâm": "10", "A.A3/3/3": "6", "A.A4/3/3": "7", "A.A5/3/3": "8", "A.A5/5/5": "10" },
+                "B17": { "A.Tổng Thể Bồ Đề Tâm": "17", "A.Liên Hoa Bồ Đề Tâm": "11", "A.A3/3/3": "7", "A.A4/3/3": "8", "A.A5/3/3": "9", "A.A5/5/5": "11" },
+                "B18": { "A.Tổng Thể Bồ Đề Tâm": "18", "A.Liên Hoa Bồ Đề Tâm": "12", "A.A5/5/5": "12" },
+                "B19": { "A.Tổng Thể Bồ Đề Tâm": "19", "A.Liên Hoa Bồ Đề Tâm": "13", "A.A3/3/3": "8", "A.A4/3/3": "9", "A.A5/3/3": "10", "A.A5/5/5": "13" },
+                "B20": { "A.Tổng Thể Bồ Đề Tâm": "20", "A.Liên Hoa Bồ Đề Tâm": "14", "A.A5/5/5": "14" },
+                "B21": { "A.Tổng Thể Bồ Đề Tâm": "21", "A.Liên Hoa Bồ Đề Tâm": "15", "A.A3/3/3": "9", "A.A4/3/3": "10", "A.A5/3/3": "11", "A.A5/5/5": "15" },
+                "B22": { "A.Tổng Thể Bồ Đề Tâm": "22", "A.Liên Hoa Bồ Đề Tâm": "16" },
+                "B23": { "A.Tổng Thể Bồ Đề Tâm": "23", "A.Liên Hoa Bồ Đề Tâm": "17" },
+                "B24": { "A.Tổng Thể Bồ Đề Tâm": "24", "A.Liên Hoa Bồ Đề Tâm": "18" },
+                "B25": { "A.Tổng Thể Bồ Đề Tâm": "25", "A.Liên Hoa Bồ Đề Tâm": "19" },
+                "B26": { "A.Tổng Thể Bồ Đề Tâm": "26", "A.Lục Tý": "1" },
+                "B27": { "A.Tổng Thể Bồ Đề Tâm": "27", "A.Lục Tý": "2" },
+                "B28": { "A.Tổng Thể Bồ Đề Tâm": "28", "A.Lục Tý": "3" },
+                "B29": { "A.Tổng Thể Bồ Đề Tâm": "29", "A.Lục Tý": "4" },
+                "B30": { "A.Tổng Thể Bồ Đề Tâm": "30", "A.Lục Tý": "5" },
+                "B31": { "A.Tổng Thể Bồ Đề Tâm": "31", "A.Lục Tý": "6" },
+                "B32": { "A.Tổng Thể Bồ Đề Tâm": "32", "A.Ending": "1" },
+                "B33": { "A.Tổng Thể Bồ Đề Tâm": "33", "A.Ending": "2" },
+                "B34": { "A.Tổng Thể Bồ Đề Tâm": "34", "A.Ending": "3" }
             };
         }
 
@@ -1139,29 +1147,28 @@
                     siddhamImage: "06_LA_Gold.PNG",
                     dharmaObject: "Vajra Scepter",
                     mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
-                    sequences: { "A.Tổng Thể Bồ Đề Tâm": i + 1, "A.Cột Trụ Quang Minh": i + 1 }
+                    sequences: { "A.Tổng Thể Bồ Đề Tâm": String(i + 1), "A.Cột Trụ Quang Minh": String(i + 1) }
                 });
             }
 
             rawSheetRows = embeddedData;
             filterColumns = [
-                { label: "A.Tổng Thể Bồ Đề Tâm" },
-                { label: "A.Cột Trụ Quang Minh" },
-                { label: "A.Thường Trụ Bất Biến" },
-                { label: "A.Liên Hoa Bồ Đề Tâm" },
-                { label: "A.Lục Tý" },
-                { label: "A.Ending" },
-                { label: "A.A3/3/3" },
-                { label: "A.A4/3/3" },
-                { label: "A.A5/3/3" },
-                { label: "A.A5/5/5" }
+                { label: "A.Tổng Thể Bồ Đề Tâm", index: 25 },
+                { label: "A.Cột Trụ Quang Minh", index: 26 },
+                { label: "A.Thường Trụ Bất Biến", index: 27 },
+                { label: "A.Liên Hoa Bồ Đề Tâm", index: 28 },
+                { label: "A.Lục Tý", index: 29 },
+                { label: "A.Ending", index: 30 },
+                { label: "A.A3/3/3", index: 31 },
+                { label: "A.A4/3/3", index: 32 },
+                { label: "A.A5/3/3", index: 33 }
             ];
 
             initMatrixWithParsedData();
         }
 
         // =========================================================================
-        // SECTION 11: INITIALIZATION & SEQUENCE ENGINE
+        // SECTION 11: INITIALIZATION & ALPHANUMERIC SEQUENCE ENGINE
         // =========================================================================
         function initMatrixWithParsedData() {
             clearAllNodeObjects();
@@ -1176,7 +1183,6 @@
                 filterSelect.appendChild(opt);
             });
 
-            // Ensure 40 spiral nodes exist with counterclockwise coordinates
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1189,7 +1195,7 @@
                         siddhamImage: "06_LA_Gold.PNG",
                         dharmaObject: "Vajra Scepter",
                         mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
-                        sequences: { "A.Cột Trụ Quang Minh": i + 1 }
+                        sequences: { "A.Cột Trụ Quang Minh": String(i + 1) }
                     });
                 }
             } else {
@@ -1220,13 +1226,15 @@
             const selectedFilter = filterSelect.value;
             const includeSpiral = includeSpiralCheckbox.checked;
 
-            // Extract only the rows that participate in the selected sequence matrix
+            // Filter rows that have an alphanumeric sequence key in this column
             const matchingRows = rawSheetRows.filter(r => {
-                return r.sequences && r.sequences[selectedFilter] !== undefined && Number(r.sequences[selectedFilter]) > 0;
+                return r.sequences && r.sequences[selectedFilter] !== undefined && String(r.sequences[selectedFilter]).trim().length > 0;
             });
 
-            // Sort strictly in ascending sequence order from the Google Sheet feed
-            matchingRows.sort((a, b) => Number(a.sequences[selectedFilter]) - Number(b.sequences[selectedFilter]));
+            // Sort with Natural Alphanumeric Ordering (e.g. 1, 2, ... 9, 10, A1, B2a)
+            matchingRows.sort((a, b) => {
+                return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
+            });
 
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
                 const nA = parseInt(a.id.replace(/\D/g, '')) || 0;
@@ -1242,7 +1250,6 @@
                 const nonSpiral = matchingRows.filter(r => !r.id.startsWith('A'));
                 if (nonSpiral.length > 0) {
                     if (selectedFilter.includes("Tổng Thể")) {
-                        // Standard Bodhicitta 10-stage matrix: 4 spiral nodes per stage
                         for (let k = 0; k < 10; k++) {
                             for (let i = 0; i < 4; i++) {
                                 const sNode = spiralNodes[k * 4 + i];
@@ -1251,18 +1258,16 @@
                             nonSpiral.forEach(node => currentSequenceNodes.push(node));
                         }
                     } else {
-                        // Include spiral nodes as prefix/accompaniment
                         currentSequenceNodes = [...matchingRows];
                     }
                 } else {
                     currentSequenceNodes = [...matchingRows];
                 }
             } else {
-                // Opt-out Spiral: Strictly filter out any A-nodes and play only the sequence from sheet
+                // When Column of Light Spiral is unchecked: Completely exclude A-nodes
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
 
-            // Update UI Sequence count
             seqStatusText.innerText = selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter;
             seqStatusCount.innerText = `${currentSequenceNodes.length} Steps`;
         }
@@ -1331,10 +1336,9 @@
                     rebuildWallGeometry();
                 }
 
-                // Update status step counter
                 const selectedFilter = filterSelect.value;
-                const stepNum = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
-                seqStatusCount.innerText = `Step ${stepNum} / ${currentSequenceNodes.length}`;
+                const stepKey = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
+                seqStatusCount.innerText = `Step ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
