@@ -128,7 +128,7 @@
         .popup-images { display: flex; gap: 10px; margin: 12px 0; }
         .popup-img-box { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px; text-align: center; }
         .popup-img-box span { font-size: 9px; color: #8e9bb0; display: block; margin-bottom: 4px; text-transform: uppercase; }
-        .popup-img-box img { max-width: 100%; max-height: 70px; object-fit: contain; border-radius: 4px; }
+        .popup-img-box img { max-width: 100%; max-height: 80px; object-fit: contain; border-radius: 4px; }
 
         .popup-mantra-section { margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 10px; }
         .popup-mantra-val {
@@ -186,7 +186,7 @@
             <button id="ui-toggle-btn">▲</button>
         </div>
         <div id="ui-content">
-            <p>Meditative matrix displaying the Buddha's core orientation (+Y facing, +X right, +Z crown) and dynamic Siddham axial nodes.</p>
+            <p>Single active Siddham matrix sequenced from A2 Lý coordinates. Each node activates one at a time.</p>
 
             <div class="control-group">
                 <label>Filter Sequence Matrix (Columns Z – AH)</label>
@@ -248,22 +248,18 @@
     <!-- Interactive Node Details Popup -->
     <div id="popup-card">
         <button id="popup-close">&times;</button>
-        <div id="popup-title">Sphere Details</div>
+        <div id="popup-title">Siddham Node Details</div>
         <div class="popup-row"><span class="popup-label">WBS ID:</span><span class="popup-val" id="popup-id">-</span></div>
         <div class="popup-row"><span class="popup-label">Spatial Position:</span><span class="popup-val" id="popup-position">-</span></div>
-        <div class="popup-row"><span class="popup-label">Axis Coordination:</span><span class="popup-val" id="popup-coords">-</span></div>
+        <div class="popup-row"><span class="popup-label">A2 Lý Coordinate:</span><span class="popup-val" id="popup-coords">-</span></div>
         <div class="popup-row"><span class="popup-label">Sequence Step:</span><span class="popup-val" id="popup-seq-step">-</span></div>
         <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-siddham">-</span></div>
         <div class="popup-row"><span class="popup-label">Dharma Object:</span><span class="popup-val" id="popup-dharma">-</span></div>
         
         <div class="popup-images" id="popup-images-container">
-            <div class="popup-img-box" id="box-siddham-img" style="display:none;">
-                <span>Siddham Image</span>
+            <div class="popup-img-box" id="box-siddham-img" style="display:none; width: 100%;">
+                <span>Siddham Image (C4 CTT Link)</span>
                 <img id="popup-siddham-img" src="" alt="Siddham">
-            </div>
-            <div class="popup-img-box" id="box-dharma-img" style="display:none;">
-                <span>Dharma Object</span>
-                <img id="popup-dharma-img" src="" alt="Dharma Object">
             </div>
         </div>
 
@@ -290,8 +286,9 @@
         let seqTimer = 0;
         const nodeInterval = 2.5;
 
+        // Visual nodes dictionary & clickable meshes array (planes only)
         let nodeObjectsMap = new Map();
-        let clickableSpheres = [];
+        let clickablePlanes = [];
 
         // DOM elements
         const container = document.getElementById('canvas-container');
@@ -323,13 +320,11 @@
         const popupDharma = document.getElementById('popup-dharma');
         const popupMantra = document.getElementById('popup-mantra');
         const popupSiddhamImg = document.getElementById('popup-siddham-img');
-        const popupDharmaImg = document.getElementById('popup-dharma-img');
         const boxSiddhamImg = document.getElementById('box-siddham-img');
-        const boxDharmaImg = document.getElementById('box-dharma-img');
 
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
-        // Perspective camera set to (3, 4, 2)
+        // Perspective camera initialized to (3, 4, 2)
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x05070a, 0.025);
@@ -375,7 +370,7 @@
         }
         scene.environment = createStudioEnvMap();
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
         const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.0);
         keyLight.position.set(5, 6, 7); keyLight.castShadow = true; scene.add(keyLight);
@@ -387,7 +382,8 @@
         coreLight.position.set(0, 0, 0); scene.add(coreLight);
 
         // =========================================================================
-        // SECTION 4: MATERIALS & GEOMETRIES
+        // SECTION 4: MATERIALS & GEOMETRIES (1/2 SIZE, NO SPHERE, JUST SIDDHAM IMAGE)
+        // 1/2 size geometry: 0.12 x 0.12 for Group A, 0.085 x 0.085 for Group B
         // =========================================================================
         const glassMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x88ddff, emissive: 0x0044aa, emissiveIntensity: 0.35,
@@ -395,28 +391,21 @@
             transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false
         });
 
-        const outerBubbleMat = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff, roughness: 0.05, metalness: 0.1, transmission: 0.98,
-            ior: 1.52, thickness: 0.3, transparent: true, opacity: 1.0,
-            side: THREE.DoubleSide, depthWrite: false
-        });
-
         const wallMaterial = new THREE.MeshBasicMaterial({
             color: 0xffe240, transparent: true, opacity: 0.45, side: THREE.DoubleSide,
             depthWrite: false, blending: THREE.AdditiveBlending
         });
 
-        const sphereGeoA = new THREE.SphereGeometry(0.14, 32, 32);
-        const sphereGeoB = new THREE.SphereGeometry(0.10, 32, 32);
-        const planeGeoA = new THREE.PlaneGeometry(0.24, 0.24);
-        const planeGeoB = new THREE.PlaneGeometry(0.17, 0.17);
+        // 1/2 size Siddham image planes (reduced from 0.24 and 0.17 to 0.12 and 0.085)
+        const planeGeoA = new THREE.PlaneGeometry(0.12, 0.12);
+        const planeGeoB = new THREE.PlaneGeometry(0.085, 0.085);
 
         // Root groups
         const buddhaGroup = new THREE.Group();
         scene.add(buddhaGroup);
 
-        const spheresGroup = new THREE.Group();
-        scene.add(spheresGroup);
+        const nodesGroup = new THREE.Group();
+        scene.add(nodesGroup);
 
         const axesGroup = new THREE.Group();
         scene.add(axesGroup);
@@ -426,6 +415,8 @@
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
+        // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
+        // Offset: (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -606,7 +597,7 @@
         const wallGeometry = new THREE.BufferGeometry();
         const wallMesh = new THREE.Mesh(wallGeometry, wallMaterial);
         wallMesh.visible = false;
-        spheresGroup.add(wallMesh);
+        nodesGroup.add(wallMesh);
 
         function rebuildWallGeometry() {
             const activeLANodes = currentSequenceNodes.slice(0, currentSeqIndex + 1).filter(n => n.id && n.id.startsWith('A'));
@@ -657,7 +648,7 @@
         }
 
         // =========================================================================
-        // SECTION 8: RESILIENT IMAGE LOADING PIPELINE
+        // SECTION 8: RESILIENT IMAGE LOADING PIPELINE (ONLY C4 CTT LINK)
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -763,28 +754,21 @@
             if (onLoaded) onLoaded(fallbackCanvasTex);
         }
 
+        // =========================================================================
+        // COORDINATE PARSER STRICTLY FOR A2 LÝ
+        // Handles: "(0, 0.8, -0.1)", "0, 0.8, -0.1", "[0, 0.8, -0.1]", etc.
+        // =========================================================================
         function parseCoordinates(coordStr) {
             if (!coordStr) return [0, 0, 0];
             if (Array.isArray(coordStr)) return coordStr.map(Number);
             const cleaned = String(coordStr).replace(/[()[\]{}'"]/g, '').trim();
-            const parts = cleaned.split(/[,;\s/]+/).filter(p => p.length > 0 && !isNaN(Number(p)));
+            const parts = cleaned.split(/[,;\s]+/).filter(p => p.length > 0 && !isNaN(Number(p)));
             if (parts.length >= 3) {
                 return [parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2])];
             } else if (parts.length === 2) {
                 return [parseFloat(parts[0]), parseFloat(parts[1]), 0];
             }
             return [0, 0, 0];
-        }
-
-        function getNodeBaseColor(id) {
-            if (!id || !id.startsWith('B')) return new THREE.Color(0xffffff);
-            const num = parseInt(id.replace(/\D/g, ''));
-            if (num >= 1 && num <= 6) return new THREE.Color(0xaa00ff);
-            if (num >= 7 && num <= 21) return new THREE.Color(0xffffff);
-            if (num >= 22 && num <= 25) return new THREE.Color(0x00aaff);
-            if (num >= 26 && num <= 31) return new THREE.Color(0x00ff66);
-            if (num >= 32 && num <= 34) return new THREE.Color(0xff00ff);
-            return new THREE.Color(0xffffff);
         }
 
         function createFallbackGlyphTexture(char, label) {
@@ -806,88 +790,47 @@
         }
 
         // =========================================================================
-        // SECTION 9: 3D NODE CREATION & DUAL-SIDED ROTATING MEDALLION COIN
+        // SECTION 9: 3D NODE CREATION (NO SPHERE, JUST 1/2 SIZE SIDDHAM IMAGE PLANE)
+        // Positioned at A2 Lý coordinates
         // =========================================================================
         function buildNode3DObject(nodeData) {
             const pos = new THREE.Vector3(...nodeData.coords);
-            const isGroupB = nodeData.id.startsWith('B');
             const isGroupA = nodeData.id.startsWith('A');
 
-            const sphereGeo = isGroupB ? sphereGeoB : sphereGeoA;
-            let mat;
-            if (isGroupB) {
-                mat = new THREE.MeshPhysicalMaterial({
-                    color: getNodeBaseColor(nodeData.id),
-                    roughness: 0.15, metalness: 0.1, transmission: 0.9,
-                    ior: 1.52, thickness: 0.2, transparent: true, opacity: 1.0,
-                    side: THREE.DoubleSide, depthWrite: false
-                });
-            } else {
-                mat = outerBubbleMat.clone();
-            }
-
-            const sphere = new THREE.Mesh(sphereGeo, mat);
-            sphere.position.copy(pos);
-            sphere.visible = false;
-            sphere.userData = { ...nodeData, glow: 0.0 };
-            spheresGroup.add(sphere);
-            clickableSpheres.push(sphere);
-
-            const coinGroup = new THREE.Group();
-            coinGroup.position.copy(pos);
-            coinGroup.visible = false;
-            spheresGroup.add(coinGroup);
-
-            const planeGeo = isGroupB ? planeGeoB : planeGeoA;
+            // 1/2 size geometry: planeGeoA (0.12) or planeGeoB (0.085)
+            const planeGeo = isGroupA ? planeGeoA : planeGeoB;
             const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, isGroupA ? 'LA' : nodeData.id);
 
-            const frontMat = new THREE.MeshBasicMaterial({
-                map: fallbackTex, transparent: true, side: THREE.FrontSide,
+            // Double-sided Siddham image material (only C4 CTT Link, no C6 Pháp Bảo)
+            const planeMat = new THREE.MeshBasicMaterial({
+                map: fallbackTex, transparent: true, side: THREE.DoubleSide,
                 depthWrite: false, blending: THREE.AdditiveBlending
             });
-            const frontMesh = new THREE.Mesh(planeGeo, frontMat);
-            coinGroup.add(frontMesh);
 
-            const backMat = new THREE.MeshBasicMaterial({
-                map: fallbackTex, transparent: true, side: THREE.FrontSide,
-                depthWrite: false, blending: THREE.AdditiveBlending
-            });
-            const backMesh = new THREE.Mesh(planeGeo, backMat);
-            backMesh.rotation.y = Math.PI;
-            coinGroup.add(backMesh);
+            const plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.position.copy(pos);
+            plane.visible = false;
+            plane.userData = { ...nodeData, glow: 0.0 };
+            nodesGroup.add(plane);
+            clickablePlanes.push(plane);
 
+            // Asynchronously load Siddham texture from C4 CTT Link
             const siddhamSrc = nodeData.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : (nodeData.id + ".png"));
             loadRobustTexture(siddhamSrc, fallbackTex, isGroupA, (tex) => {
-                frontMat.map = tex;
-                frontMat.needsUpdate = true;
-                if (!nodeData.dharmaObjectImage) {
-                    backMat.map = tex;
-                    backMat.needsUpdate = true;
-                }
+                planeMat.map = tex;
+                planeMat.needsUpdate = true;
             });
 
-            if (nodeData.dharmaObjectImage) {
-                loadRobustTexture(nodeData.dharmaObjectImage, fallbackTex, false, (tex) => {
-                    backMat.map = tex;
-                    backMat.needsUpdate = true;
-                });
-            }
-
-            return { sphere, coinGroup, data: nodeData };
+            return { plane, data: nodeData };
         }
 
         function clearAllNodeObjects() {
-            clickableSpheres.forEach(s => {
-                spheresGroup.remove(s);
-                s.geometry.dispose();
-                if (s.material) s.material.dispose();
+            clickablePlanes.forEach(p => {
+                nodesGroup.remove(p);
+                p.geometry.dispose();
+                if (p.material) p.material.dispose();
             });
-            nodeObjectsMap.forEach(item => {
-                if (item.coinGroup) {
-                    spheresGroup.remove(item.coinGroup);
-                }
-            });
-            clickableSpheres = [];
+            clickablePlanes = [];
             nodeObjectsMap.clear();
         }
 
@@ -899,8 +842,7 @@
         }
 
         // =========================================================================
-        // SECTION 10: GOOGLE SHEET DATA LOADING (FILTER EXTRACT COLUMNS Z TO AH)
-        // Column Index 25 = Z, Column Index 33 = AH
+        // SECTION 10: GOOGLE SHEET DATA LOADING (COLUMNS Z TO AH & A2 LÝ)
         // =========================================================================
         async function fetchGoogleSheetData() {
             try {
@@ -942,11 +884,11 @@
             let cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
             let dataRows = table.rows;
 
-            // Handle cases where the first row contains the actual column header labels
+            // Handle merged or nested header row in sheet
             const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
                 if (!cell || cell.v === null) return false;
                 const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
-                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('hành') || v.toLowerCase().includes('link');
+                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('hành') || v.toLowerCase().includes('lý');
             });
 
             if (firstRowHasHeaders) {
@@ -963,14 +905,20 @@
 
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
             const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
-            const coordCol = colFind('a2 lý') || colFind('axis') || colFind('lý') || colFind('coord');
+            
+            // STRICTLY LOCATE A2 LÝ COLUMN FOR LOCATION / COORDINATES
+            const coordCol = cols.find(c => {
+                const l = c.label.toLowerCase();
+                return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
+            }) || colFind('axis') || colFind('coord');
+
+            // C4 CTT LINK FOR SIDDHAM IMAGE
             const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image');
             const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('siddham');
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
-            const dharmaImgCol = colFind('c6 pháp bảo link') || colFind('pháp bảo link');
 
-            // Strictly filter sequence columns from Column Index 25 (Z) to Column Index 33 (AH)
+            // STRICTLY EXTRACT SEQUENCE MATRIX FROM COLUMN INDEX 25 (Z) TO 33 (AH)
             filterColumns = cols.filter(c => {
                 return c.index >= 25 && c.index <= 33 && c.label.length > 0;
             });
@@ -1005,7 +953,7 @@
                 const id = getVal(idCol);
                 if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
-                // Alphanumeric sequence collection
+                // Alphanumeric sequence collection from Z to AH
                 const sequences = {};
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
@@ -1021,17 +969,17 @@
                 });
 
                 const isGroupA = id.startsWith('A');
+                const rawCoordsStr = getVal(coordCol);
 
                 rawSheetRows.push({
                     id: id,
                     spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
-                    coordsStr: getVal(coordCol),
-                    coords: parseCoordinates(getVal(coordCol)),
+                    coordsStr: rawCoordsStr,
+                    coords: parseCoordinates(rawCoordsStr), // Strictly provided from A2 Lý
                     siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
                     siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
                     dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
                     mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
-                    dharmaObjectImage: getVal(dharmaImgCol),
                     sequences: sequences
                 });
             });
@@ -1183,6 +1131,7 @@
                 filterSelect.appendChild(opt);
             });
 
+            // Ensure 40 spiral nodes exist
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1203,8 +1152,11 @@
                     if (r.id.startsWith('A')) {
                         const num = parseInt(r.id.replace(/\D/g, ''));
                         if (!isNaN(num) && num >= 1 && num <= 40) {
-                            const sp = getSpiralPosition(num - 1);
-                            r.coords = [sp.x, sp.y, sp.z];
+                            // If A2 Lý coordinate was provided in sheet, preserve it; otherwise spiral
+                            if (!r.coords || (r.coords[0] === 0 && r.coords[1] === 0 && r.coords[2] === 0)) {
+                                const sp = getSpiralPosition(num - 1);
+                                r.coords = [sp.x, sp.y, sp.z];
+                            }
                             if (!r.siddhamImage) r.siddhamImage = '06_LA_Gold.PNG';
                         }
                     }
@@ -1231,7 +1183,7 @@
                 return r.sequences && r.sequences[selectedFilter] !== undefined && String(r.sequences[selectedFilter]).trim().length > 0;
             });
 
-            // Sort with Natural Alphanumeric Ordering (e.g. 1, 2, ... 9, 10, A1, B2a)
+            // Sort strictly using Natural Alphanumeric Ordering
             matchingRows.sort((a, b) => {
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
@@ -1264,12 +1216,11 @@
                     currentSequenceNodes = [...matchingRows];
                 }
             } else {
-                // When Column of Light Spiral is unchecked: Completely exclude A-nodes
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
 
             seqStatusText.innerText = selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter;
-            seqStatusCount.innerText = `${currentSequenceNodes.length} Steps`;
+            seqStatusCount.innerText = `${currentSequenceNodes.length} Nodes`;
         }
 
         function resetAnimation() {
@@ -1277,24 +1228,11 @@
             currentSeqIndex = -1;
             seqTimer = 0;
 
-            clickableSpheres.forEach(sphere => {
-                sphere.visible = false;
-                sphere.userData.glow = 0.0;
-                sphere.scale.setScalar(1.0);
-                if (sphere.userData.id.startsWith('B')) {
-                    sphere.material.color.copy(getNodeBaseColor(sphere.userData.id));
-                    sphere.material.emissive.setHex(0x000000);
-                } else {
-                    sphere.material.color.setHex(0xffffff);
-                    sphere.material.emissive.setHex(0x000000);
-                }
-            });
-
-            nodeObjectsMap.forEach(item => {
-                if (item.coinGroup) {
-                    item.coinGroup.visible = false;
-                    item.coinGroup.scale.setScalar(1.0);
-                }
+            // Turn off ALL Siddham images
+            clickablePlanes.forEach(plane => {
+                plane.visible = false;
+                plane.userData.glow = 0.0;
+                plane.scale.setScalar(1.0);
             });
 
             wallMesh.visible = false;
@@ -1303,33 +1241,27 @@
             startBtn.innerText = "Start Formation";
         }
 
+        // =========================================================================
+        // SEQUENCING THROUGH ONE AT A TIME:
+        // Turning OFF the previous one BEFORE the next one appears!
+        // =========================================================================
         function triggerNextStep() {
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
+                // STEP 1: TURN OFF ALL PREVIOUS SIDDHAM IMAGES
+                clickablePlanes.forEach(plane => {
+                    plane.visible = false;
+                    plane.userData.glow = 0.0;
+                });
+
+                // Advance index
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
                 const nodeObj = nodeObjectsMap.get(nodeData.id);
 
-                const isGroupB = nodeData.id.startsWith('B');
-                const prevNode = currentSeqIndex > 0 ? currentSequenceNodes[currentSeqIndex - 1] : null;
-                const transitionedToB = isGroupB && (!prevNode || prevNode.id.startsWith('A'));
-
-                if (transitionedToB) {
-                    clickableSpheres.forEach(sphere => {
-                        if (sphere.userData.id.startsWith('B')) {
-                            sphere.visible = false;
-                            sphere.userData.glow = 0.0;
-                            const item = nodeObjectsMap.get(sphere.userData.id);
-                            if (item && item.coinGroup) item.coinGroup.visible = false;
-                            sphere.material.color.copy(getNodeBaseColor(sphere.userData.id));
-                            sphere.material.emissive.setHex(0x000000);
-                        }
-                    });
-                }
-
-                if (nodeObj) {
-                    nodeObj.sphere.visible = true;
-                    nodeObj.coinGroup.visible = true;
-                    nodeObj.sphere.userData.glow = 2.0;
+                // STEP 2: TURN ON ONLY THE CURRENT ACTIVE SIDDHAM IMAGE
+                if (nodeObj && nodeObj.plane) {
+                    nodeObj.plane.visible = true;
+                    nodeObj.plane.userData.glow = 2.0;
                 }
 
                 if (includeSpiralCheckbox.checked) {
@@ -1338,11 +1270,10 @@
 
                 const selectedFilter = filterSelect.value;
                 const stepKey = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
-                seqStatusCount.innerText = `Step ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
+                seqStatusCount.innerText = `Node ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
-                    clickableSpheres.forEach(s => { if (s.userData.id.startsWith('B')) s.userData.glow = 0.0; });
                     triggerNextStep();
                 } else {
                     isRunning = false;
@@ -1363,6 +1294,8 @@
             const selectedFilter = filterSelect.value;
             popupId.innerText = data.id || "-";
             popupPosition.innerText = data.spatialPosition || "Central Axis";
+            
+            // Strictly display coordinates from A2 Lý
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
             
             const stepVal = data.sequences && data.sequences[selectedFilter] !== undefined ? `#${data.sequences[selectedFilter]}` : '-';
@@ -1372,6 +1305,7 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
+            // Only Siddham image from C4 CTT Link
             const sSrc = data.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : "");
             if (sSrc) {
                 const sUrl = formatImageUrl(sSrc);
@@ -1389,18 +1323,6 @@
                 boxSiddhamImg.style.display = 'none';
             }
 
-            if (data.dharmaObjectImage) {
-                const dUrl = formatImageUrl(data.dharmaObjectImage);
-                popupDharmaImg.src = dUrl;
-                popupDharmaImg.onerror = () => {
-                    const fid = extractGoogleDriveFileId(data.dharmaObjectImage);
-                    if (fid) popupDharmaImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
-                };
-                boxDharmaImg.style.display = 'block';
-            } else {
-                boxDharmaImg.style.display = 'none';
-            }
-
             popupCard.classList.add('active');
         }
 
@@ -1409,19 +1331,18 @@
             removeHighlight();
         }
 
-        function highlightSphere(sphere) {
+        function highlightPlane(plane) {
             removeHighlight();
-            const outlineRadius = sphere.userData.id.startsWith('B') ? 0.12 : 0.16;
-            const outlineGeo = new THREE.SphereGeometry(outlineRadius, 16, 16);
-            const outlineMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, wireframe: true, transparent: true, opacity: 0.6 });
+            const outlineGeo = new THREE.RingGeometry(0.065, 0.08, 32);
+            const outlineMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.8 });
             activeOutline = new THREE.Mesh(outlineGeo, outlineMat);
-            activeOutline.position.copy(sphere.position);
-            spheresGroup.add(activeOutline);
+            activeOutline.position.copy(plane.position);
+            nodesGroup.add(activeOutline);
         }
 
         function removeHighlight() {
             if (activeOutline) {
-                spheresGroup.remove(activeOutline);
+                nodesGroup.remove(activeOutline);
                 activeOutline.geometry.dispose();
                 activeOutline.material.dispose();
                 activeOutline = null;
@@ -1441,12 +1362,14 @@
             mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
             mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
-            const visibleSpheres = clickableSpheres.filter(s => s.visible);
-            const intersects = raycaster.intersectObjects(visibleSpheres);
+
+            // Raycast on active/visible Siddham image planes
+            const visiblePlanes = clickablePlanes.filter(p => p.visible);
+            const intersects = raycaster.intersectObjects(visiblePlanes);
             if (intersects.length > 0) {
-                const targetSphere = intersects[0].object;
-                showPopup(targetSphere.userData);
-                highlightSphere(targetSphere);
+                const targetPlane = intersects[0].object;
+                showPopup(targetPlane.userData);
+                highlightPlane(targetPlane);
             } else {
                 hidePopup();
             }
@@ -1502,38 +1425,13 @@
         });
 
         // =========================================================================
-        // SECTION 14: ANIMATION LOOP & SEQUENTIAL LIGHTING
+        // SECTION 14: ANIMATION LOOP & ACTIVE NODE GLOW
         // =========================================================================
-        function updateSequentialLighting() {
-            clickableSpheres.forEach(sphere => {
-                if (!sphere.visible) return;
-                const nodeData = sphere.userData;
-                const isLatest = currentSequenceNodes[currentSeqIndex] && currentSequenceNodes[currentSeqIndex].id === nodeData.id;
-                const targetGlow = isLatest ? 2.0 : 0.6;
-                sphere.userData.glow = THREE.MathUtils.lerp(sphere.userData.glow, targetGlow, 0.08);
-
-                sphere.scale.setScalar(1.0 + (sphere.userData.glow * 0.25));
-
-                const item = nodeObjectsMap.get(nodeData.id);
-                if (item && item.coinGroup) {
-                    item.coinGroup.scale.setScalar(1.0 + (sphere.userData.glow * 0.15));
-                }
-
-                if (nodeData.id.startsWith('B')) {
-                    const baseColor = getNodeBaseColor(nodeData.id);
-                    const targetColor = isLatest ? new THREE.Color(0xff3333) : baseColor;
-                    const targetEmissive = isLatest ? new THREE.Color(0xff0000) : baseColor.clone().multiplyScalar(0.5);
-
-                    sphere.material.color.lerp(targetColor, 0.08);
-                    sphere.material.emissive.lerp(targetEmissive, 0.08);
-                    sphere.material.emissiveIntensity = sphere.userData.glow * 2.5;
-                    sphere.material.roughness = 0.05 + (sphere.userData.glow * 0.3);
-                } else {
-                    sphere.material.color.lerpColors(new THREE.Color(0xffffff), new THREE.Color(0xffd700), sphere.userData.glow);
-                    sphere.material.emissive.lerpColors(new THREE.Color(0x000000), new THREE.Color(0xffaa00), sphere.userData.glow);
-                    sphere.material.emissiveIntensity = sphere.userData.glow * 2.5;
-                    sphere.material.roughness = 0.05 + (sphere.userData.glow * 0.3);
-                }
+        function updateSingleActiveLighting() {
+            clickablePlanes.forEach(plane => {
+                if (!plane.visible) return;
+                plane.userData.glow = THREE.MathUtils.lerp(plane.userData.glow, 2.0, 0.08);
+                plane.scale.setScalar(1.0 + (plane.userData.glow * 0.15));
             });
         }
 
@@ -1559,25 +1457,35 @@
                 }
             }
 
-            // Central axis auto-rotation (around Z-axis)
+            // Central axis auto-rotation around Z-axis
             const rpm = parseFloat(rotationSpeedInput.value);
             const rotationStep = ((rpm * Math.PI * 2) / 60) * delta;
-            spheresGroup.rotation.z += rotationStep;
+            nodesGroup.rotation.z += rotationStep;
             buddhaGroup.rotation.z += rotationStep;
 
-            updateSequentialLighting();
+            updateSingleActiveLighting();
 
-            // Medallion coin 3D rotation / billboard modes
+            // Active Siddham Image orientation / Billboard modes
             nodeObjectsMap.forEach(item => {
-                const coinGroup = item.coinGroup;
-                if (coinGroup && coinGroup.visible) {
-                    const floatOffset = Math.sin(elapsedTime * 1.5 + item.data.coords[0] * 2) * 0.012;
-                    coinGroup.position.z = item.data.coords[2] + floatOffset;
+                const plane = item.plane;
+                if (plane && plane.visible) {
+                    const floatOffset = Math.sin(elapsedTime * 1.5 + item.data.coords[0] * 2) * 0.008;
+                    plane.position.z = item.data.coords[2] + floatOffset;
                     
                     if (billboardModeSelect.value === 'billboard') {
-                        coinGroup.quaternion.copy(camera.quaternion);
+                        plane.quaternion.copy(camera.quaternion);
                     } else {
-                        coinGroup.rotation.set(Math.PI / 2, elapsedTime * 1.2, 0);
+                        // Smoothly face front with gentle rotation
+                        plane.rotation.set(Math.PI / 2, 0, elapsedTime * 0.8);
+                    }
+
+                    if (activeOutline) {
+                        activeOutline.position.copy(plane.position);
+                        if (billboardModeSelect.value === 'billboard') {
+                            activeOutline.quaternion.copy(camera.quaternion);
+                        } else {
+                            activeOutline.rotation.copy(plane.rotation);
+                        }
                     }
                 }
             });
