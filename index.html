@@ -286,7 +286,6 @@
         let seqTimer = 0;
         const nodeInterval = 2.5;
 
-        // Visual nodes dictionary & clickable meshes array (planes only)
         let nodeObjectsMap = new Map();
         let clickablePlanes = [];
 
@@ -383,7 +382,6 @@
 
         // =========================================================================
         // SECTION 4: MATERIALS & GEOMETRIES (1/2 SIZE, NO SPHERE, JUST SIDDHAM IMAGE)
-        // 1/2 size geometry: 0.12 x 0.12 for Group A, 0.085 x 0.085 for Group B
         // =========================================================================
         const glassMaterial = new THREE.MeshPhysicalMaterial({
             color: 0x88ddff, emissive: 0x0044aa, emissiveIntensity: 0.35,
@@ -396,7 +394,7 @@
             depthWrite: false, blending: THREE.AdditiveBlending
         });
 
-        // 1/2 size Siddham image planes (reduced from 0.24 and 0.17 to 0.12 and 0.085)
+        // 1/2 size Siddham image planes (0.12 for Group A, 0.085 for Group B)
         const planeGeoA = new THREE.PlaneGeometry(0.12, 0.12);
         const planeGeoB = new THREE.PlaneGeometry(0.085, 0.085);
 
@@ -415,8 +413,6 @@
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
-        // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
-        // Offset: (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -755,18 +751,25 @@
         }
 
         // =========================================================================
-        // COORDINATE PARSER STRICTLY FOR A2 LÝ
-        // Handles: "(0, 0.8, -0.1)", "0, 0.8, -0.1", "[0, 0.8, -0.1]", etc.
+        // ROBUST COORDINATE PARSER FOR A2 LÝ
+        // Handles: "0, 0, -2", "(0.00, 0.00, −2.00)" with mathematical Unicode minus, etc.
         // =========================================================================
         function parseCoordinates(coordStr) {
             if (!coordStr) return [0, 0, 0];
             if (Array.isArray(coordStr)) return coordStr.map(Number);
-            const cleaned = String(coordStr).replace(/[()[\]{}'"]/g, '').trim();
-            const parts = cleaned.split(/[,;\s]+/).filter(p => p.length > 0 && !isNaN(Number(p)));
-            if (parts.length >= 3) {
-                return [parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2])];
-            } else if (parts.length === 2) {
-                return [parseFloat(parts[0]), parseFloat(parts[1]), 0];
+            
+            // Normalize all Unicode dashes and minus characters to standard ASCII hyphen-minus
+            let cleaned = String(coordStr)
+                .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
+                .replace(/[()[\]{}'"]/g, '')
+                .trim();
+
+            // Extract all signed floating-point numbers
+            const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
+            if (matches && matches.length >= 3) {
+                return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
+            } else if (matches && matches.length === 2) {
+                return [parseFloat(matches[0]), parseFloat(matches[1]), 0];
             }
             return [0, 0, 0];
         }
@@ -975,7 +978,7 @@
                     id: id,
                     spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
                     coordsStr: rawCoordsStr,
-                    coords: parseCoordinates(rawCoordsStr), // Strictly provided from A2 Lý
+                    coords: parseCoordinates(rawCoordsStr), // Strictly provided from A2 Lý with minus normalization
                     siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
                     siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
                     dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
@@ -1152,7 +1155,6 @@
                     if (r.id.startsWith('A')) {
                         const num = parseInt(r.id.replace(/\D/g, ''));
                         if (!isNaN(num) && num >= 1 && num <= 40) {
-                            // If A2 Lý coordinate was provided in sheet, preserve it; otherwise spiral
                             if (!r.coords || (r.coords[0] === 0 && r.coords[1] === 0 && r.coords[2] === 0)) {
                                 const sp = getSpiralPosition(num - 1);
                                 r.coords = [sp.x, sp.y, sp.z];
