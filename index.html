@@ -76,7 +76,7 @@
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
         #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 520px; opacity: 1; overflow: hidden; }
 
-        /* Collapsed Filter Box: ONLY displays selected sequence matrix name */
+        /* Collapsed Filter Box */
         #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; }
         #ui-container.collapsed #ui-header h1 { font-size: 11px; color: var(--accent-gold-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); margin-left: 10px; }
@@ -98,7 +98,7 @@
         details { background: rgba(12, 21, 36, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 7px 10px; margin-top: 8px; }
         summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; outline: none; }
 
-        /* Siddham Node Details Card (Non-blocking, right on Desktop, bottom on Mobile) */
+        /* Siddham Node Details Card */
         #popup-card {
             position: absolute;
             background: rgba(6, 12, 24, 0.94); border: 1px solid rgba(255, 215, 0, 0.35);
@@ -171,14 +171,14 @@
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #020409; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s ease;
+            justify-content: center; align-items: center; z-index: 100; transition: opacity 0.4s ease;
         }
         .spinner {
-            width: 46px; height: 46px; border: 2px solid rgba(255, 215, 0, 0.15);
-            border-top-color: var(--accent-gold); border-radius: 50%; animation: spin 1s linear infinite;
+            width: 44px; height: 44px; border: 2px solid rgba(255, 215, 0, 0.15);
+            border-top-color: var(--accent-gold); border-radius: 50%; animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #loading-text { margin-top: 18px; color: var(--accent-gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
+        #loading-text { margin-top: 16px; color: var(--accent-gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
     </style>
 
     <!-- Three.js + Controls + Loaders -->
@@ -190,14 +190,14 @@
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div id="loading-text">Initializing Sacred Bodhicitta Matrix...</div>
+        <div id="loading-text">Lotus Bodhicitta Matrix</div>
     </div>
 
     <div id="top-bar">
         <button id="start-btn">Start Formation</button>
         <div id="sync-status">
             <span id="sync-dot"></span>
-            <span id="sync-label">Connecting Sheet...</span>
+            <span id="sync-label">Matrix Ready</span>
         </div>
     </div>
 
@@ -292,7 +292,8 @@
         // =========================================================================
         const SHEET_ID = '1Gvl7SNXhVSrKBJiPgt78T2opWckb5OO59S-q_4S6Y7w';
         const SHEET_TAB = 'WBSID';
-        const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB)}`;
+        const GVIZ_JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB)}`;
+        const GVIZ_JSONP_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:handleGvizSheetData&sheet=${encodeURIComponent(SHEET_TAB)}`;
 
         let rawSheetRows = [];
         let filterColumns = [];
@@ -322,7 +323,6 @@
         const showAxesCheckbox = document.getElementById('show-axes');
         const showGridMarkersCheckbox = document.getElementById('show-grid-markers');
         const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
 
         // Details Popup Card Elements
         const popupCard = document.getElementById('popup-card');
@@ -343,17 +343,12 @@
                 loadingOverlay.style.opacity = '0';
                 setTimeout(() => {
                     loadingOverlay.style.display = 'none';
-                }, 500);
+                }, 400);
             }
         }
 
-        // FAIL-SAFE: Under no circumstance allow initialization to block longer than 2.0s
-        setTimeout(() => {
-            if (!isOverlayDismissed) {
-                console.warn("Safety timeout fired: dismissing initialization overlay.");
-                hideLoadingOverlay();
-            }
-        }, 2000);
+        // Instant Dismissal Safety Timer: dismiss within 800ms max so user never waits!
+        setTimeout(hideLoadingOverlay, 800);
 
         // Canonical mapping of WBS IDs to their known Siddham Gold PNG files
         const canonicalSiddhamFiles = {
@@ -500,7 +495,7 @@
         scene.add(gridMarkersGroup);
 
         // =========================================================================
-        // SECTION 5: BUDDHA 3D MODEL & PROCEDURAL BASELINE
+        // SECTION 5: BUDDHA 3D MODEL & PROCEDURAL BASELINE (0 MS DELAY)
         // =========================================================================
         function buildProceduralBuddha() {
             if (buddhaGroup.children.length > 0) return;
@@ -523,14 +518,13 @@
             buddhaGroup.add(fallback);
         }
 
-        // Immediately build procedural Buddha so user sees scene with 0 delay!
+        // Build procedural Buddha synchronously so scene is alive immediately
         buildProceduralBuddha();
 
-        // Asynchronously load external GLB model if available
+        // Optional background upgrade to GLB statue
         try {
             const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
             const loader = new THREE.GLTFLoader();
-
             loader.load(
                 MODEL_URL,
                 (gltf) => {
@@ -549,16 +543,11 @@
                     buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
                     buddhaMesh.position.set(0.0, 0.2, -0.5);
                     buddhaGroup.add(buddhaMesh);
-                    hideLoadingOverlay();
                 },
                 undefined,
-                () => {
-                    hideLoadingOverlay();
-                }
+                () => { /* procedural statue already present */ }
             );
-        } catch (e) {
-            hideLoadingOverlay();
-        }
+        } catch (e) { /* continue */ }
 
         // =========================================================================
         // SECTION 6: 3D COORDINATION INDICATORS & 0.5 UNIT MARKERS (DEFAULT OFF)
@@ -859,6 +848,24 @@
             return fallbackTex;
         }
 
+        function createFallbackGlyphTexture(char, label) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 512, 512);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 24;
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 220px sans-serif';
+            ctx.fillText(char || "𑖀", 256, 220);
+            if (label) {
+                ctx.shadowBlur = 8; ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px sans-serif';
+                ctx.fillText(label.toUpperCase(), 256, 400);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
         function parseCoordinates(coordStr) {
             if (!coordStr) return [0, 0, 0];
             if (Array.isArray(coordStr)) return coordStr.map(Number);
@@ -940,36 +947,61 @@
         }
 
         // =========================================================================
-        // SECTION 10: GOOGLE SHEET DATA LOADING ("A.xx" FILTER HEADERS ONLY)
-        // With 3.5s AbortController timeout to prevent any infinite network hang
+        // SECTION 10: FAST MULTI-TIER DATA INGESTION ENGINE
+        // Tier 1: Embedded matrix initialized immediately (0 ms)
+        // Tier 2: Cached LocalStorage if updated
+        // Tier 3: Asynchronous background JSONP / Fetch sync
         // =========================================================================
-        async function fetchGoogleSheetData() {
-            try {
-                syncLabel.innerText = "Connecting Google Sheet...";
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-                const response = await fetch(GVIZ_URL, { signal: controller.signal });
-                clearTimeout(timeoutId);
-
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                const text = await response.text();
-                
-                const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-                const gvizData = JSON.parse(jsonStr);
-                
-                if (gvizData.status !== 'ok') throw new Error("GViz status not ok");
-                parseGVizTable(gvizData.table);
-                syncLabel.innerText = "Synced with Google Sheet";
-                syncDot.style.background = "#00ff88";
-            } catch (err) {
-                console.warn("Direct Google Sheet JSON fetch fallback to cached matrix.", err);
-                useEmbeddedFallbackData();
-                syncLabel.innerText = "Cached Matrix Mode";
-                syncDot.style.background = "#ffd700";
-            } finally {
-                hideLoadingOverlay();
+        function initMatrixWithParsedData() {
+            if (!active3DActor) {
+                active3DActor = buildSingleActiveActorNode();
             }
+
+            filterSelect.innerHTML = '';
+            filterColumns.forEach((fc, idx) => {
+                const opt = document.createElement('option');
+                opt.value = fc.label;
+                opt.textContent = fc.label; // Full header starting with "A."
+                if (idx === 0) opt.selected = true;
+                filterSelect.appendChild(opt);
+            });
+
+            // Ensure 40 Column of Light Spiral nodes exist
+            const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
+            if (!hasSpiralNodes) {
+                for (let i = 0; i < 40; i++) {
+                    const sp = getSpiralPosition(i);
+                    rawSheetRows.push({
+                        id: `A${i + 1}`,
+                        spatialPosition: `Column of Light Node #${i + 1}`,
+                        coords: [sp.x, sp.y, sp.z],
+                        coordsStr: `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`,
+                        siddhamUnicode: "𑖩",
+                        siddhamImage: "06_LA_Gold.PNG",
+                        dharmaObject: "Vajra Scepter",
+                        mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
+                        sequences: { "A.Cột Trụ Quang Minh": String(i + 1) }
+                    });
+                }
+            } else {
+                rawSheetRows.forEach(r => {
+                    if (r.id.startsWith('A')) {
+                        const num = parseInt(r.id.replace(/\D/g, ''));
+                        if (!isNaN(num) && num >= 1 && num <= 40) {
+                            if (!r.coords || (r.coords[0] === 0 && r.coords[1] === 0 && r.coords[2] === 0)) {
+                                const sp = getSpiralPosition(num - 1);
+                                r.coords = [sp.x, sp.y, sp.z];
+                                r.coordsStr = `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`;
+                            }
+                            if (!r.siddhamImage) r.siddhamImage = '06_LA_Gold.PNG';
+                        }
+                    }
+                });
+            }
+
+            resetAnimation();
+            generateActiveSequence();
+            hideLoadingOverlay();
         }
 
         function parseGVizTable(table) {
@@ -1007,27 +1039,13 @@
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
 
-            // STRICTLY INCLUDE ALL COLUMNS STARTING WITH "A." ONLY as requested!
-            filterColumns = cols.filter(c => {
-                return c.label.startsWith('A.') && c.label.length > 2;
-            });
-
-            if (filterColumns.length === 0) {
-                filterColumns = [
-                    { label: "A.Tổng Thể Bồ Đề Tâm", index: 25 },
-                    { label: "A.Cột Trụ Quang Minh", index: 26 },
-                    { label: "A.Thường Trụ Bất Biến", index: 27 },
-                    { label: "A.Liên Hoa Bồ Đề Tâm", index: 28 },
-                    { label: "A.Lục Tý", index: 29 },
-                    { label: "A.Ending", index: 30 },
-                    { label: "A.A3/3/3", index: 31 },
-                    { label: "A.A4/3/3", index: 32 },
-                    { label: "A.A5/3/3", index: 33 },
-                    { label: "A.A5/5/5", index: 34 }
-                ];
+            // Strictly filter headers starting with "A."
+            const matchedFilterCols = cols.filter(c => c.label.startsWith('A.') && c.label.length > 2);
+            if (matchedFilterCols.length > 0) {
+                filterColumns = matchedFilterCols;
             }
 
-            rawSheetRows = [];
+            const parsedRows = [];
             dataRows.forEach(r => {
                 if (!r.c) return;
                 const getVal = (col) => {
@@ -1056,7 +1074,7 @@
                 const isGroupA = id.startsWith('A');
                 const rawCoordsStr = getVal(coordCol);
 
-                rawSheetRows.push({
+                parsedRows.push({
                     id: id,
                     spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
                     coordsStr: rawCoordsStr,
@@ -1069,8 +1087,86 @@
                 });
             });
 
-            mergeEmbeddedSequencesIfNeeded();
-            initMatrixWithParsedData();
+            if (parsedRows.length > 0) {
+                rawSheetRows = parsedRows;
+                mergeEmbeddedSequencesIfNeeded();
+                initMatrixWithParsedData();
+                syncLabel.innerText = "Synced with Google Sheet";
+                syncDot.style.background = "#00ff88";
+
+                // Save snapshot to local storage for instant future loads
+                try {
+                    localStorage.setItem('cached_bodhicitta_data', JSON.stringify({
+                        rows: rawSheetRows,
+                        cols: filterColumns
+                    }));
+                } catch (e) { /* ignore */ }
+            }
+        }
+
+        // Global JSONP callback handler (bypasses CORS restrictions)
+        window.handleGvizSheetData = function(gvizData) {
+            if (gvizData && gvizData.status === 'ok' && gvizData.table) {
+                parseGVizTable(gvizData.table);
+            }
+        };
+
+        function startDataIngestion() {
+            // STEP 1: Immediately initialize complete embedded baseline (0ms)
+            useEmbeddedFallbackData();
+
+            // STEP 2: Restore from LocalStorage cache if available
+            try {
+                const cached = localStorage.getItem('cached_bodhicitta_data');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.rows && parsed.rows.length > 0) {
+                        rawSheetRows = parsed.rows;
+                        filterColumns = parsed.cols;
+                        initMatrixWithParsedData();
+                        syncLabel.innerText = "Matrix Ready (Cached)";
+                        syncDot.style.background = "#00ff88";
+                    }
+                }
+            } catch (e) { /* continue */ }
+
+            // STEP 3: Asynchronously load live Google Sheet via JSONP (Fastest & Zero CORS blockage)
+            const script = document.createElement('script');
+            script.src = GVIZ_JSONP_URL;
+            script.async = true;
+            script.onerror = function() {
+                // If JSONP fails, try background fetch
+                tryBackgroundFetch();
+            };
+            document.head.appendChild(script);
+
+            // Timeout: if JSONP hasn't responded in 1.5s, keep embedded/cached version active
+            setTimeout(() => {
+                if (syncLabel.innerText.includes("Connecting")) {
+                    syncLabel.innerText = "Matrix Ready (Offline Mode)";
+                    syncDot.style.background = "#ffd700";
+                }
+            }, 1500);
+        }
+
+        async function tryBackgroundFetch() {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const response = await fetch(GVIZ_JSON_URL, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    const text = await response.text();
+                    const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+                    const gvizData = JSON.parse(jsonStr);
+                    if (gvizData.status === 'ok') {
+                        parseGVizTable(gvizData.table);
+                    }
+                }
+            } catch (e) {
+                /* already running smoothly with embedded/cached baseline */
+            }
         }
 
         function mergeEmbeddedSequencesIfNeeded() {
@@ -1114,7 +1210,7 @@
                 "B25": { "A.Tổng Thể Bồ Đề Tâm": "25", "A.Liên Hoa Bồ Đề Tâm": "19" },
                 "B26": { "A.Tổng Thể Bồ Đề Tâm": "26", "A.Lục Tý": "1" },
                 "B27": { "A.Tổng Thể Bồ Đề Tâm": "27", "A.Lục Tý": "2" },
-                "B28": { "A.Tổng Thể Bồ Đề Tâm": "28", "A.Lục TY": "3" },
+                "B28": { "A.Tổng Thể Bồ Đề Tâm": "28", "A.Lục Tý": "3" },
                 "B29": { "A.Tổng Thể Bồ Đề Tâm": "29", "A.Lục Tý": "4" },
                 "B30": { "A.Tổng Thể Bồ Đề Tâm": "30", "A.Lục Tý": "5" },
                 "B31": { "A.Tổng Thể Bồ Đề Tâm": "31", "A.Lục Tý": "6" },
@@ -1199,56 +1295,6 @@
         // SECTION 11: INITIALIZATION & INTERLEAVED SPIRAL SEQUENCE ENGINE
         // Rule 3: 4 spiral spheres of LA, then selected matrix, then next 4 LA, etc.
         // =========================================================================
-        function initMatrixWithParsedData() {
-            if (!active3DActor) {
-                active3DActor = buildSingleActiveActorNode();
-            }
-
-            filterSelect.innerHTML = '';
-            filterColumns.forEach((fc, idx) => {
-                const opt = document.createElement('option');
-                opt.value = fc.label;
-                opt.textContent = fc.label; // Full header starting with "A."
-                if (idx === 0) opt.selected = true;
-                filterSelect.appendChild(opt);
-            });
-
-            const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
-            if (!hasSpiralNodes) {
-                for (let i = 0; i < 40; i++) {
-                    const sp = getSpiralPosition(i);
-                    rawSheetRows.push({
-                        id: `A${i + 1}`,
-                        spatialPosition: `Column of Light Node #${i + 1}`,
-                        coords: [sp.x, sp.y, sp.z],
-                        coordsStr: `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`,
-                        siddhamUnicode: "𑖩",
-                        siddhamImage: "06_LA_Gold.PNG",
-                        dharmaObject: "Vajra Scepter",
-                        mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
-                        sequences: { "A.Cột Trụ Quang Minh": String(i + 1) }
-                    });
-                }
-            } else {
-                rawSheetRows.forEach(r => {
-                    if (r.id.startsWith('A')) {
-                        const num = parseInt(r.id.replace(/\D/g, ''));
-                        if (!isNaN(num) && num >= 1 && num <= 40) {
-                            if (!r.coords || (r.coords[0] === 0 && r.coords[1] === 0 && r.coords[2] === 0)) {
-                                const sp = getSpiralPosition(num - 1);
-                                r.coords = [sp.x, sp.y, sp.z];
-                                r.coordsStr = `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`;
-                            }
-                            if (!r.siddhamImage) r.siddhamImage = '06_LA_Gold.PNG';
-                        }
-                    }
-                });
-            }
-
-            resetAnimation();
-            generateActiveSequence();
-        }
-
         function generateActiveSequence() {
             const selectedFilter = filterSelect.value || (filterColumns[0] ? filterColumns[0].label : '');
             const includeSpiral = includeSpiralCheckbox.checked;
@@ -1536,7 +1582,8 @@
             renderer.render(scene, camera);
         }
 
-        fetchGoogleSheetData();
+        // Start ingestion pipeline immediately
+        startDataIngestion();
         animate();
     </script>
 </body>
