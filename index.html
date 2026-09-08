@@ -695,43 +695,48 @@
             }));
 
             const vertices = [], indices = [];
-            const segmentsPerNode = 24;
+            const segmentsPerNode = 20;
             const totalSegments = Math.round(maxT * segmentsPerNode);
-            // Ribbon half-height = 0.130 (total vertical width = 0.260), perfectly overlapping the 0.250 pitch per 360-deg turn
-            const halfH = 0.130;
 
             for (let j = 1; j <= totalSegments; j++) {
                 const tPrev = (j - 1) / segmentsPerNode;
                 const tCurr = j / segmentsPerNode;
+                const pPrev = getSpiralPosition(tPrev);
+                const pCurr = getSpiralPosition(tCurr);
 
-                const thetaPrev = Math.PI / 2 + tPrev * (Math.PI / 2);
-                const thetaCurr = Math.PI / 2 + tCurr * (Math.PI / 2);
+                // Bottom boundary: connect seamlessly to the turn directly below (t - 4),
+                // or clamp to the base circular plane (Z = -0.50, R = 1.35) for the first turn (t < 4).
+                // This naturally tapers from height 0 at t = 0 to full 0.25 height at t = 4 with zero blunt ends!
+                let bPrevX, bPrevY, bPrevZ;
+                if (tPrev >= 4) {
+                    const p = getSpiralPosition(tPrev - 4);
+                    bPrevX = p.x; bPrevY = p.y; bPrevZ = p.z;
+                } else {
+                    const thetaPrev = Math.PI / 2 + tPrev * (Math.PI / 2);
+                    const rBase = 1.35;
+                    bPrevX = rBase * Math.cos(thetaPrev);
+                    bPrevY = rBase * Math.sin(thetaPrev);
+                    bPrevZ = -0.50;
+                }
 
-                const zCenterPrev = -0.50 + tPrev * 0.0625;
-                const zCenterCurr = -0.50 + tCurr * 0.0625;
-
-                const zUpPrev = zCenterPrev + halfH;
-                const zLowPrev = zCenterPrev - halfH;
-                const zUpCurr = zCenterCurr + halfH;
-                const zLowCurr = zCenterCurr - halfH;
-
-                // Conforms precisely to cone surface: R(Z) = 1.35 + (Z + 0.50) * 0.34
-                const rUpPrev = 1.35 + (zUpPrev + 0.50) * 0.34;
-                const rLowPrev = 1.35 + (zLowPrev + 0.50) * 0.34;
-                const rUpCurr = 1.35 + (zUpCurr + 0.50) * 0.34;
-                const rLowCurr = 1.35 + (zLowCurr + 0.50) * 0.34;
-
-                const uPrev = new THREE.Vector3(rUpPrev * Math.cos(thetaPrev), rUpPrev * Math.sin(thetaPrev), zUpPrev);
-                const uCurr = new THREE.Vector3(rUpCurr * Math.cos(thetaCurr), rUpCurr * Math.sin(thetaCurr), zUpCurr);
-                const lPrev = new THREE.Vector3(rLowPrev * Math.cos(thetaPrev), rLowPrev * Math.sin(thetaPrev), zLowPrev);
-                const lCurr = new THREE.Vector3(rLowCurr * Math.cos(thetaCurr), rLowCurr * Math.sin(thetaCurr), zLowCurr);
+                let bCurrX, bCurrY, bCurrZ;
+                if (tCurr >= 4) {
+                    const p = getSpiralPosition(tCurr - 4);
+                    bCurrX = p.x; bCurrY = p.y; bCurrZ = p.z;
+                } else {
+                    const thetaCurr = Math.PI / 2 + tCurr * (Math.PI / 2);
+                    const rBase = 1.35;
+                    bCurrX = rBase * Math.cos(thetaCurr);
+                    bCurrY = rBase * Math.sin(thetaCurr);
+                    bCurrZ = -0.50;
+                }
 
                 const baseIndex = vertices.length / 3;
                 vertices.push(
-                    uPrev.x, uPrev.y, uPrev.z,
-                    uCurr.x, uCurr.y, uCurr.z,
-                    lPrev.x, lPrev.y, lPrev.z,
-                    lCurr.x, lCurr.y, lCurr.z
+                    pPrev.x, pPrev.y, pPrev.z,
+                    pCurr.x, pCurr.y, pCurr.z,
+                    bPrevX, bPrevY, bPrevZ,
+                    bCurrX, bCurrY, bCurrZ
                 );
                 indices.push(
                     baseIndex + 0, baseIndex + 2, baseIndex + 1,
