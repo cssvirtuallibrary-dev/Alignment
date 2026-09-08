@@ -7,8 +7,8 @@
     <style>
         :root {
             --bg-dark: #020409;
-            --panel-bg: rgba(6, 12, 24, 0.88);
-            --panel-border: rgba(255, 215, 0, 0.24);
+            --panel-bg: rgba(6, 12, 24, 0.90);
+            --panel-border: rgba(255, 215, 0, 0.28);
             --accent-gold: #ffd700;
             --accent-gold-bright: #fff07a;
             --accent-cyan: #00e5ff;
@@ -40,7 +40,7 @@
             color: #03060d; border: 1px solid rgba(255, 240, 120, 0.85);
             padding: 11px 22px; border-radius: 12px; font-weight: 800; cursor: pointer;
             text-transform: uppercase; letter-spacing: 1.4px; font-size: 11px;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 1px 1px rgba(255,255,255,0.6);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.45), inset 0 1px 1px rgba(255,255,255,0.6);
             transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
         }
         #start-btn:hover {
@@ -53,7 +53,7 @@
         #sync-status {
             pointer-events: auto;
             display: flex; align-items: center; gap: 8px;
-            background: rgba(4, 9, 18, 0.82); border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(4, 9, 18, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
             padding: 7px 14px; border-radius: 20px; font-size: 11px; color: var(--text-muted);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         }
@@ -62,7 +62,7 @@
             box-shadow: 0 0 8px #00ff88;
         }
 
-        /* Collapsible Filter Panel (Left Side on Desktop) */
+        /* Collapsible Filter Panel */
         #ui-container {
             position: absolute; top: calc(env(safe-area-inset-top, 16px) + 54px); left: 16px;
             background: var(--panel-bg); padding: 14px 18px; border-radius: 14px;
@@ -76,7 +76,7 @@
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
         #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 520px; opacity: 1; overflow: hidden; }
 
-        /* Collapsed Filter Box: ONLY displays selected sequence matrix */
+        /* Collapsed Filter Box: ONLY displays selected sequence matrix name */
         #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; }
         #ui-container.collapsed #ui-header h1 { font-size: 11px; color: var(--accent-gold-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); margin-left: 10px; }
@@ -98,10 +98,10 @@
         details { background: rgba(12, 21, 36, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 7px 10px; margin-top: 8px; }
         summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; outline: none; }
 
-        /* Siddham Node Details Card (Optimized: Non-blocking, right on Desktop, bottom on Mobile) */
+        /* Siddham Node Details Card (Non-blocking, right on Desktop, bottom on Mobile) */
         #popup-card {
             position: absolute;
-            background: rgba(6, 12, 24, 0.92); border: 1px solid rgba(255, 215, 0, 0.35);
+            background: rgba(6, 12, 24, 0.94); border: 1px solid rgba(255, 215, 0, 0.35);
             border-radius: 16px; padding: 16px 20px;
             box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 215, 0, 0.12);
             backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -122,11 +122,11 @@
 
         .popup-images { display: flex; gap: 10px; margin: 10px 0; }
         .popup-img-box {
-            flex: 1; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,215,0,0.18);
+            flex: 1; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,215,0,0.22);
             border-radius: 8px; padding: 6px; text-align: center;
         }
         .popup-img-box span { font-size: 9px; color: var(--accent-gold); display: block; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; }
-        .popup-img-box img { max-width: 100%; height: 75px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); }
+        .popup-img-box img { max-width: 100%; height: 75px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.45)); }
 
         .popup-mantra-section { margin-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; }
         .popup-mantra-val {
@@ -136,10 +136,7 @@
             padding: 8px 12px; border-radius: 0 8px 8px 0; white-space: pre-line;
         }
 
-        /* -------------------------------------------------------------
-           RESPONSIVE SCREEN FORMATS & OPTIMAL LAYOUTS
-           ------------------------------------------------------------- */
-        /* Landscape / Desktop / Tablet (Width >= 768px & Aspect >= 1.0) */
+        /* Landscape / Desktop / Tablet */
         @media (min-width: 768px) and (orientation: landscape), (min-aspect-ratio: 1/1) and (min-width: 640px) {
             #popup-card {
                 top: calc(env(safe-area-inset-top, 16px) + 54px);
@@ -158,7 +155,6 @@
             }
             #ui-container.collapsed { max-width: calc(100vw - 24px); width: calc(100vw - 24px); }
 
-            /* In Portrait Mobile, dock details card at bottom, taking at most 35% height so Buddha remains visible above */
             #popup-card {
                 bottom: env(safe-area-inset-bottom, 12px); left: 12px; right: 12px;
                 width: auto; max-width: none; max-height: 38vh;
@@ -175,7 +171,7 @@
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #020409; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 100; transition: opacity 0.6s ease;
+            justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s ease;
         }
         .spinner {
             width: 46px; height: 46px; border: 2px solid rgba(255, 215, 0, 0.15);
@@ -235,7 +231,6 @@
 
             <div class="control-group">
                 <label class="checkbox-container">
-                    <!-- Default UNCHECKED as requested -->
                     <input type="checkbox" id="show-axes">
                     <span>Show Coordination Axes</span>
                 </label>
@@ -243,7 +238,6 @@
 
             <div class="control-group">
                 <label class="checkbox-container">
-                    <!-- Default UNCHECKED as requested -->
                     <input type="checkbox" id="show-grid-markers">
                     <span>Show 0.5 Unit Markers</span>
                 </label>
@@ -294,7 +288,7 @@
 
     <script>
         // =========================================================================
-        // SECTION 1: GLOBAL STATE & CANONICAL FALLBACK GLYPH REGISTRY
+        // SECTION 1: GLOBAL STATE & CANONICAL SIDDHAM REGISTRY
         // =========================================================================
         const SHEET_ID = '1Gvl7SNXhVSrKBJiPgt78T2opWckb5OO59S-q_4S6Y7w';
         const SHEET_TAB = 'WBSID';
@@ -309,6 +303,7 @@
         const nodeInterval = 2.4;
 
         let active3DActor = null;
+        let isOverlayDismissed = false;
 
         // DOM elements
         const container = document.getElementById('canvas-container');
@@ -341,6 +336,25 @@
         const popupSiddhamImg = document.getElementById('popup-siddham-img');
         const boxSiddhamImg = document.getElementById('box-siddham-img');
 
+        function hideLoadingOverlay() {
+            if (isOverlayDismissed) return;
+            isOverlayDismissed = true;
+            if (loadingOverlay) {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        // FAIL-SAFE: Under no circumstance allow initialization to block longer than 2.0s
+        setTimeout(() => {
+            if (!isOverlayDismissed) {
+                console.warn("Safety timeout fired: dismissing initialization overlay.");
+                hideLoadingOverlay();
+            }
+        }, 2000);
+
         // Canonical mapping of WBS IDs to their known Siddham Gold PNG files
         const canonicalSiddhamFiles = {
             "B01": "01_A_Gold.png",   "B02": "03_PA_Gold.png",  "B03": "02_RA_Gold.png",
@@ -359,7 +373,6 @@
 
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
-        // Responsive camera framing with optimized distance for portrait and landscape
         // =========================================================================
         const scene = new THREE.Scene();
         scene.fog = new THREE.FogExp2(0x020409, 0.022);
@@ -389,7 +402,7 @@
                 camera.position.set(4.2, 5.6, 2.8);
                 controls.target.set(0, 0, 0.25);
             } else {
-                // Landscape / Tablet / Desktop: closer immersive framing
+                // Landscape / Tablet / Desktop: closer framing
                 camera.position.set(3.0, 4.2, 1.9);
                 controls.target.set(0, 0, 0.0);
             }
@@ -432,10 +445,6 @@
 
         // =========================================================================
         // SECTION 4: MATERIALS & GEOMETRIES
-        // Optimized colors:
-        // - Crystal Buddha: luminous sapphire-aquamarine with front-side render & depthWrite: false
-        // - Transparent Sphere: +50% enlarged auric pearl bubble
-        // - Siddham Image: molten gold on upright vertical plane spinning on Z-axis
         // =========================================================================
         const crystalBuddhaMat = new THREE.MeshPhysicalMaterial({
             color: 0x80d8ff,
@@ -443,18 +452,16 @@
             emissiveIntensity: 0.2,
             roughness: 0.16,
             metalness: 0.08,
-            transmission: 0.72,       // See-through crystal allows interior nodes to shine clearly
+            transmission: 0.72,
             opacity: 0.88,
             transparent: true,
-            depthWrite: false,        // Crucial: eliminates optical reverse-rotation illusion
+            depthWrite: false,
             side: THREE.FrontSide
         });
 
-        // +50% enlarged sphere geometries: Group A radius 0.21, Group B radius 0.15
         const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
         const sphereGeoB = new THREE.SphereGeometry(0.15, 32, 32);
 
-        // Siddham image planes scaled to fit comfortably inside the enlarged sphere
         const planeGeoA = new THREE.PlaneGeometry(0.25, 0.25);
         const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
 
@@ -476,7 +483,6 @@
             depthWrite: false, blending: THREE.AdditiveBlending
         });
 
-        // Groups hierarchy & render orders
         const buddhaGroup = new THREE.Group();
         buddhaGroup.renderOrder = 2;
         scene.add(buddhaGroup);
@@ -486,49 +492,18 @@
         scene.add(nodesGroup);
 
         const axesGroup = new THREE.Group();
-        axesGroup.visible = false; // Default UNCHECKED as requested
+        axesGroup.visible = false;
         scene.add(axesGroup);
 
         const gridMarkersGroup = new THREE.Group();
-        gridMarkersGroup.visible = false; // Default UNCHECKED as requested
+        gridMarkersGroup.visible = false;
         scene.add(gridMarkersGroup);
 
         // =========================================================================
-        // SECTION 5: BUDDHA 3D MODEL
+        // SECTION 5: BUDDHA 3D MODEL & PROCEDURAL BASELINE
         // =========================================================================
-        const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
-        const loader = new THREE.GLTFLoader();
-
-        loader.load(
-            MODEL_URL,
-            (gltf) => {
-                const buddhaMesh = gltf.scene;
-                buddhaMesh.traverse((node) => {
-                    if (node.isMesh) {
-                        node.material = crystalBuddhaMat;
-                        node.renderOrder = 2;
-                    }
-                });
-                buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                buddhaMesh.rotation.order = 'ZYX';
-                buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                buddhaMesh.position.set(0.0, 0.2, -0.5);
-                buddhaGroup.add(buddhaMesh);
-                hideLoadingOverlay();
-            },
-            (xhr) => {
-                if (xhr.total > 0) {
-                    const percent = Math.round((xhr.loaded / xhr.total) * 100);
-                    loadingText.innerText = `Calibrating Matrix (${percent}%)`;
-                }
-            },
-            () => {
-                buildProceduralBuddha();
-                hideLoadingOverlay();
-            }
-        );
-
         function buildProceduralBuddha() {
+            if (buddhaGroup.children.length > 0) return;
             const fallback = new THREE.Group();
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), crystalBuddhaMat);
             head.position.set(0, 0, 0.45); fallback.add(head);
@@ -548,9 +523,41 @@
             buddhaGroup.add(fallback);
         }
 
-        function hideLoadingOverlay() {
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => { loadingOverlay.style.display = 'none'; }, 600);
+        // Immediately build procedural Buddha so user sees scene with 0 delay!
+        buildProceduralBuddha();
+
+        // Asynchronously load external GLB model if available
+        try {
+            const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
+            const loader = new THREE.GLTFLoader();
+
+            loader.load(
+                MODEL_URL,
+                (gltf) => {
+                    while (buddhaGroup.children.length > 0) {
+                        buddhaGroup.remove(buddhaGroup.children[0]);
+                    }
+                    const buddhaMesh = gltf.scene;
+                    buddhaMesh.traverse((node) => {
+                        if (node.isMesh) {
+                            node.material = crystalBuddhaMat;
+                            node.renderOrder = 2;
+                        }
+                    });
+                    buddhaMesh.scale.set(1.4, 1.4, 1.4);
+                    buddhaMesh.rotation.order = 'ZYX';
+                    buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+                    buddhaMesh.position.set(0.0, 0.2, -0.5);
+                    buddhaGroup.add(buddhaMesh);
+                    hideLoadingOverlay();
+                },
+                undefined,
+                () => {
+                    hideLoadingOverlay();
+                }
+            );
+        } catch (e) {
+            hideLoadingOverlay();
         }
 
         // =========================================================================
@@ -663,7 +670,6 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
-        // Starts on +Y axis (PI/2), ascends Counterclockwise: theta = PI/2 + t * PI/2
         // =========================================================================
         function getSpiralPosition(t) {
             const theta = Math.PI / 2 + t * (Math.PI / 2);
@@ -732,7 +738,6 @@
 
         // =========================================================================
         // SECTION 8: RESILIENT MULTI-TIER IMAGE RESOLVER & PERMANENT TEXTURE CACHE
-        // Eliminates fallback text: guarantees display of actual Siddham Image!
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -751,7 +756,6 @@
             rawUrl = rawUrl.trim();
             const fileId = extractGoogleDriveFileId(rawUrl);
             if (fileId) {
-                // High-speed direct thumbnail CDN
                 return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
             return rawUrl;
@@ -850,40 +854,17 @@
                 } catch (e) { /* continue */ }
             }
 
-            // Fallback sacred glyph texture
             const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, nodeData.id);
             textureCache.set(cacheKey, fallbackTex);
             return fallbackTex;
         }
 
-        function createFallbackGlyphTexture(char, label) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 512; canvas.height = 512;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, 512, 512);
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 24;
-            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 220px sans-serif';
-            ctx.fillText(char || "𑖀", 256, 220);
-            if (label) {
-                ctx.shadowBlur = 8; ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px sans-serif';
-                ctx.fillText(label.toUpperCase(), 256, 400);
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.colorSpace = THREE.SRGBColorSpace;
-            return tex;
-        }
-
-        // =========================================================================
-        // ROBUST COORDINATE PARSER FOR A2 LÝ
-        // Handles: "0, 0, -2", "(0.00, 0.00, −2.00)" with mathematical Unicode minus, etc.
-        // =========================================================================
         function parseCoordinates(coordStr) {
             if (!coordStr) return [0, 0, 0];
             if (Array.isArray(coordStr)) return coordStr.map(Number);
             
             let cleaned = String(coordStr)
-                .replace(/[−‐‑‒–—―﹣－]/g, '-')
+                .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
                 .replace(/[()[\]{}'"]/g, '')
                 .trim();
 
@@ -918,7 +899,6 @@
             containerGroup.add(spinPivot);
 
             // 3. Upright Vertical Plane inside Pivot:
-            // Plane x=PI/2 keeps plane standing upright (its vertical axis aligns with world Z)
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -932,7 +912,7 @@
             planeMesh.renderOrder = 6;
             spinPivot.add(planeMesh);
 
-            // 4. Highlight Ring (inside spinPivot)
+            // 4. Highlight Ring
             const outlineGeo = new THREE.RingGeometry(0.16, 0.18, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
                 color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false
@@ -961,11 +941,17 @@
 
         // =========================================================================
         // SECTION 10: GOOGLE SHEET DATA LOADING ("A.xx" FILTER HEADERS ONLY)
+        // With 3.5s AbortController timeout to prevent any infinite network hang
         // =========================================================================
         async function fetchGoogleSheetData() {
             try {
                 syncLabel.innerText = "Connecting Google Sheet...";
-                const response = await fetch(GVIZ_URL);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+                const response = await fetch(GVIZ_URL, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const text = await response.text();
                 
@@ -977,10 +963,12 @@
                 syncLabel.innerText = "Synced with Google Sheet";
                 syncDot.style.background = "#00ff88";
             } catch (err) {
-                console.warn("Direct Google Sheet JSON fetch failed, using embedded matrix.", err);
+                console.warn("Direct Google Sheet JSON fetch fallback to cached matrix.", err);
                 useEmbeddedFallbackData();
                 syncLabel.innerText = "Cached Matrix Mode";
                 syncDot.style.background = "#ffd700";
+            } finally {
+                hideLoadingOverlay();
             }
         }
 
@@ -988,7 +976,6 @@
             let cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
             let dataRows = table.rows;
 
-            // Handle merged or nested header row in sheet
             const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
                 if (!cell || cell.v === null) return false;
                 const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
@@ -1010,7 +997,6 @@
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
             const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
             
-            // STRICTLY LOCATE A2 LÝ COLUMN FOR COORDINATES
             const coordCol = cols.find(c => {
                 const l = c.label.toLowerCase();
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
@@ -1036,7 +1022,8 @@
                     { label: "A.Ending", index: 30 },
                     { label: "A.A3/3/3", index: 31 },
                     { label: "A.A4/3/3", index: 32 },
-                    { label: "A.A5/3/3", index: 33 }
+                    { label: "A.A5/3/3", index: 33 },
+                    { label: "A.A5/5/5", index: 34 }
                 ];
             }
 
@@ -1073,14 +1060,11 @@
                     id: id,
                     spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
                     coordsStr: rawCoordsStr,
-                    coords: parseCoordinates(rawCoordsStr), // Strictly extracted from A2 Lý
+                    coords: parseCoordinates(rawCoordsStr),
                     siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
                     siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
                     dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
-                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La
-Om, Wa Dz La Jr Ning,
-Bo La Ni Bo Do Ye,
-So Po He' : ''),
+                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
                     sequences: sequences
                 });
             });
@@ -1130,7 +1114,7 @@ So Po He' : ''),
                 "B25": { "A.Tổng Thể Bồ Đề Tâm": "25", "A.Liên Hoa Bồ Đề Tâm": "19" },
                 "B26": { "A.Tổng Thể Bồ Đề Tâm": "26", "A.Lục Tý": "1" },
                 "B27": { "A.Tổng Thể Bồ Đề Tâm": "27", "A.Lục Tý": "2" },
-                "B28": { "A.Tổng Thể Bồ Đề Tâm": "28", "A.Lục Tý": "3" },
+                "B28": { "A.Tổng Thể Bồ Đề Tâm": "28", "A.Lục TY": "3" },
                 "B29": { "A.Tổng Thể Bồ Đề Tâm": "29", "A.Lục Tý": "4" },
                 "B30": { "A.Tổng Thể Bồ Đề Tâm": "30", "A.Lục Tý": "5" },
                 "B31": { "A.Tổng Thể Bồ Đề Tâm": "31", "A.Lục Tý": "6" },
@@ -1143,146 +1127,40 @@ So Po He' : ''),
         function useEmbeddedFallbackData() {
             const fallbackSeqMap = getFallbackSequenceMap();
             const embeddedData = [
-                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], coordsStr: "0.0, 0.8, -0.1", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La
-Om, Wa Dz La,
-Wa Do La,
-Hum Pan Ja", sequences: fallbackSeqMap["B01"] },
-                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], coordsStr: "0.0, -0.2, 0.0", siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,
-Om Jr Li Jr Li,
-Wa Jr La,
-Hum Pan Ja", sequences: fallbackSeqMap["B02"] },
-                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], coordsStr: "0.0, 0.0, -0.1", siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La
-Om, Jr Li Lai La,
-Mo Nai La,
-Hum Pan Ja", sequences: fallbackSeqMap["B03"] },
-                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], coordsStr: "0.0, 0.0, 0.1", siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li
-Namo La Da Nang
-Da La Ye Ye
-Om, E No Pe Di
-Wei Re Yi Syi Di Syi, To Li Ti
-So Po He", sequences: fallbackSeqMap["B04"] },
-                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], coordsStr: "0.5, 0.0, -0.5", siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen
-Om, E Dzo Wei Li
-So Po He.", sequences: fallbackSeqMap["B05"] },
-                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], coordsStr: "-0.5, 0.0, -0.5", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No
-Om, Jye No La,
-So Po He.", sequences: fallbackSeqMap["B06"] },
-                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], coordsStr: "0.0, 0.0, -2.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
-Om, Su Syi Di Jya Li
-So Po He", sequences: fallbackSeqMap["B07"] },
-                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], coordsStr: "0.0, 0.0, -1.0", siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye
-Om, Wa Dz La,
-Bo Shr Jye Li,
-Jye Nang Syin La Hum", sequences: fallbackSeqMap["B08"] },
-                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
-Om, Di Shr Di Re,
-Du Wei Ning Du Ti,
-So To Ye,
-Hum Pan Ja", sequences: fallbackSeqMap["B09"] },
-                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], coordsStr: "0.0, 0.0, 1.0", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu
-Om, Su Lu Su Lu,
-Bo La Su Lu, Bo La Su Lu,
-Su Lu Su Lu Ye,
-So Po He", sequences: fallbackSeqMap["B10"] },
-                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], coordsStr: "0.0, 0.0, 2.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
-Om, Du Bi Jya Ye Du Bi,
-Bo La Wa Li Ning
-So Po He.", sequences: fallbackSeqMap["B11"] },
-                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], coordsStr: "0.0, -2.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
-Om, Su Syi Di Jya Li
-So Po He", sequences: fallbackSeqMap["B12"] },
-                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], coordsStr: "0.0, -1.0, 0.0", siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye
-Om, Shang Jye Li,
-So Po He", sequences: fallbackSeqMap["B13"] },
-                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
-Om, Di Shr Di Re,
-Du Wei Ning Du Ti,
-So To Ye,
-Hum Pan Ja", sequences: fallbackSeqMap["B14"] },
-                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], coordsStr: "0.0, 1.0, 0.0", siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng
-Om, Wa Dz La,
-Wei La Ye,
-So Po He", sequences: fallbackSeqMap["B15"] },
-                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], coordsStr: "0.0, 2.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
-Om, Du Bi Jya Ye Du Bi,
-Bo La Wa Li Ning
-So Po He.", sequences: fallbackSeqMap["B16"] },
-                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], coordsStr: "2.0, 0.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
-Om, Su Syi Di Jya Li
-So Po He", sequences: fallbackSeqMap["B17"] },
-                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], coordsStr: "1.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye
-Om, Sa La Sa La,
-Wa Dz La, Jya La,
-Hum Pan Ja", sequences: fallbackSeqMap["B18"] },
-                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
-Om, Di Shr Di Re,
-Du Wei Ning Du Ti,
-So To Ye,
-Hum Pan Ja", sequences: fallbackSeqMap["B19"] },
-                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], coordsStr: "-1.0, 0.0, 0.0", siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun
-Om, Jr Li Jr Li,
-Wa Dz La,
-Bu La Pan To,
-Hum Pan Ja", sequences: fallbackSeqMap["B20"] },
-                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], coordsStr: "-2.0, 0.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
-Om, Du Bi Jya Ye Du Bi,
-Bo La Wa Li Ning
-So Po He.", sequences: fallbackSeqMap["B21"] },
-                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do
-Man Do La,
-Ba To Ye
-So Po He", sequences: fallbackSeqMap["B22"] },
-                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], coordsStr: "0.0, 0.1, 0.5", siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye
-Om, Wei La Ye,
-Wei La Ye
-So Po He", sequences: fallbackSeqMap["B23"] },
-                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], coordsStr: "0.0, 0.0, 0.5", siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr
-Om, Jye Li San Man Yen,
-So Po He", sequences: fallbackSeqMap["B24"] },
-                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], coordsStr: "0.0, 0.0, 1.5", siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye
-Om, Wa Dz Li Ni,
-Wa Dz Lan Yi,
-So Po He", sequences: fallbackSeqMap["B25"] },
-                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], coordsStr: "0.0, 0.3, 0.2", siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li
-Om, Bo Na Man
-Re Ling He Li.
-Om, Wei Sala Wei Sala
-Hum Pan Ja", sequences: fallbackSeqMap["B26"] },
-                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], coordsStr: "-0.2, 0.3, -0.1", siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye
-Om, Dz La Nan Ye
-Hum Pan Ja", sequences: fallbackSeqMap["B27"] },
-                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], coordsStr: "0.2, 0.3, -0.1", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu
-Om, Su Lu Su Lu,
-Bo La Su Lu, Bo La Su Lu,
-Su Lu Su Lu Ye,
-So Po He", sequences: fallbackSeqMap["B28"] },
-                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], coordsStr: "-0.5, 0.5, 0.3", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
-Om, Du Bi Jya Ye Du Bi,
-Bo La Wa Li Ning
-So Po He.", sequences: fallbackSeqMap["B29"] },
-                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], coordsStr: "0.5, 0.5, 0.3", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
-Om, Su Syi Di Jya Li
-So Po He", sequences: fallbackSeqMap["B30"] },
-                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye
-Om, Da Ni Ye To,
-Wa Lu Jr Di,
-Shr Wa La Ye,
-Sa Pe Du Shai,
-Ja Ming He Mi Ye,
-So Po He", sequences: fallbackSeqMap["B31"] },
-                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye
-Om, No Li Ti No Li Ti
-No Li Ja Bo Di
-No Li Di No
-Ye Bo Ning
-Hum Pan Ja", sequences: fallbackSeqMap["B32"] },
-                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La
-Om, Wa Dz La,
-Wa Do La,
-Hum Pan Ja", sequences: fallbackSeqMap["B33"] },
-                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)
-Om, She No Mi Dzo
-So Po He", sequences: fallbackSeqMap["B34"] }
+                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], coordsStr: "0.0, 0.8, -0.1", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B01"] },
+                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], coordsStr: "0.0, -0.2, 0.0", siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja", sequences: fallbackSeqMap["B02"] },
+                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], coordsStr: "0.0, 0.0, -0.1", siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja", sequences: fallbackSeqMap["B03"] },
+                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], coordsStr: "0.0, 0.0, 0.1", siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li\nNamo La Da Nang\nDa La Ye Ye\nOm, E No Pe Di\nWei Re Yi Syi Di Syi, To Li Ti\nSo Po He", sequences: fallbackSeqMap["B04"] },
+                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], coordsStr: "0.5, 0.0, -0.5", siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen\nOm, E Dzo Wei Li\nSo Po He.", sequences: fallbackSeqMap["B05"] },
+                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], coordsStr: "-0.5, 0.0, -0.5", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No\nOm, Jye No La,\nSo Po He.", sequences: fallbackSeqMap["B06"] },
+                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], coordsStr: "0.0, 0.0, -2.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B07"] },
+                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], coordsStr: "0.0, 0.0, -1.0", siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye\nOm, Wa Dz La,\nBo Shr Jye Li,\nJye Nang Syin La Hum", sequences: fallbackSeqMap["B08"] },
+                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B09"] },
+                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], coordsStr: "0.0, 0.0, 1.0", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B10"] },
+                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], coordsStr: "0.0, 0.0, 2.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B11"] },
+                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], coordsStr: "0.0, -2.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B12"] },
+                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], coordsStr: "0.0, -1.0, 0.0", siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye\nOm, Shang Jye Li,\nSo Po He", sequences: fallbackSeqMap["B13"] },
+                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B14"] },
+                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], coordsStr: "0.0, 1.0, 0.0", siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng\nOm, Wa Dz La,\nWei La Ye,\nSo Po He", sequences: fallbackSeqMap["B15"] },
+                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], coordsStr: "0.0, 2.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B16"] },
+                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], coordsStr: "2.0, 0.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B17"] },
+                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], coordsStr: "1.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye\nOm, Sa La Sa La,\nWa Dz La, Jya La,\nHum Pan Ja", sequences: fallbackSeqMap["B18"] },
+                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B19"] },
+                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], coordsStr: "-1.0, 0.0, 0.0", siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun\nOm, Jr Li Jr Li,\nWa Dz La,\nBu La Pan To,\nHum Pan Ja", sequences: fallbackSeqMap["B20"] },
+                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], coordsStr: "-2.0, 0.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B21"] },
+                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do\nMan Do La,\nBa To Ye\nSo Po He", sequences: fallbackSeqMap["B22"] },
+                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], coordsStr: "0.0, 0.1, 0.5", siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye\nOm, Wei La Ye,\nWei La Ye\nSo Po He", sequences: fallbackSeqMap["B23"] },
+                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], coordsStr: "0.0, 0.0, 0.5", siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr\nOm, Jye Li San Man Yen,\nSo Po He", sequences: fallbackSeqMap["B24"] },
+                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], coordsStr: "0.0, 0.0, 1.5", siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye\nOm, Wa Dz Li Ni,\nWa Dz Lan Yi,\nSo Po He", sequences: fallbackSeqMap["B25"] },
+                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], coordsStr: "0.0, 0.3, 0.2", siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li\nOm, Bo Na Man\nRe Ling He Li.\nOm, Wei Sala Wei Sala\nHum Pan Ja", sequences: fallbackSeqMap["B26"] },
+                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], coordsStr: "-0.2, 0.3, -0.1", siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye\nOm, Dz La Nan Ye\nHum Pan Ja", sequences: fallbackSeqMap["B27"] },
+                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], coordsStr: "0.2, 0.3, -0.1", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B28"] },
+                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], coordsStr: "-0.5, 0.5, 0.3", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B29"] },
+                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], coordsStr: "0.5, 0.5, 0.3", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B30"] },
+                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He", sequences: fallbackSeqMap["B31"] },
+                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: fallbackSeqMap["B32"] },
+                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
+                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] }
             ];
 
             for (let i = 0; i < 40; i++) {
@@ -1295,10 +1173,7 @@ So Po He", sequences: fallbackSeqMap["B34"] }
                     siddhamUnicode: "𑖩",
                     siddhamImage: "06_LA_Gold.PNG",
                     dharmaObject: "Vajra Scepter",
-                    mantra: "So La, So La
-Om, Wa Dz La Jr Ning,
-Bo La Ni Bo Do Ye,
-So Po He",
+                    mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
                     sequences: { "A.Tổng Thể Bồ Đề Tâm": String(i + 1), "A.Cột Trụ Quang Minh": String(i + 1) }
                 });
             }
@@ -1313,7 +1188,8 @@ So Po He",
                 { label: "A.Ending", index: 30 },
                 { label: "A.A3/3/3", index: 31 },
                 { label: "A.A4/3/3", index: 32 },
-                { label: "A.A5/3/3", index: 33 }
+                { label: "A.A5/3/3", index: 33 },
+                { label: "A.A5/5/5", index: 34 }
             ];
 
             initMatrixWithParsedData();
@@ -1337,7 +1213,6 @@ So Po He",
                 filterSelect.appendChild(opt);
             });
 
-            // Ensure 40 Column of Light Spiral nodes exist
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1350,10 +1225,7 @@ So Po He",
                         siddhamUnicode: "𑖩",
                         siddhamImage: "06_LA_Gold.PNG",
                         dharmaObject: "Vajra Scepter",
-                        mantra: "So La, So La
-Om, Wa Dz La Jr Ning,
-Bo La Ni Bo Do Ye,
-So Po He",
+                        mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
                         sequences: { "A.Cột Trụ Quang Minh": String(i + 1) }
                     });
                 }
@@ -1381,12 +1253,10 @@ So Po He",
             const selectedFilter = filterSelect.value || (filterColumns[0] ? filterColumns[0].label : '');
             const includeSpiral = includeSpiralCheckbox.checked;
 
-            // Extract matching rows with valid sequence values in the active column
             const matchingRows = rawSheetRows.filter(r => {
                 return r.sequences && r.sequences[selectedFilter] !== undefined && String(r.sequences[selectedFilter]).trim().length > 0;
             });
 
-            // Natural alphanumeric sort
             matchingRows.sort((a, b) => {
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
@@ -1402,24 +1272,19 @@ So Po He",
             if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral) {
-                // Rule 3: 4 sphere of LA, then selected sequence matrix, then next 4 LA, then sequence matrix,
-                // and so on until completion of all 40 LA spheres (10 cycles).
+                // Rule 3: Interleaved 4 LA spheres, then selected sequence matrix, then next 4 LA, etc.
                 const nonSpiral = matchingRows.filter(r => !r.id.startsWith('A'));
                 for (let k = 0; k < 10; k++) {
-                    // First 4 spheres of LA for this cycle
                     for (let s = 0; s < 4; s++) {
                         const sNode = spiralNodes[k * 4 + s];
                         if (sNode) currentSequenceNodes.push(sNode);
                     }
-                    // Followed by the selected sequence matrix
                     nonSpiral.forEach(node => currentSequenceNodes.push(node));
                 }
             } else {
-                // When spiral is unchecked: only the selected sequence matrix nodes
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
 
-            // Update title to active matrix
             uiTitle.innerText = selectedFilter || "Sequence Matrix";
         }
 
@@ -1441,13 +1306,8 @@ So Po He",
             startBtn.innerText = "Start Formation";
         }
 
-        // =========================================================================
-        // SEQUENCING: TURNS OFF PREVIOUS NODE BEFORE NEXT APPEARS
-        // EXTRACTS A2 LÝ DYNAMICALLY FOR EACH CALL
-        // =========================================================================
         async function triggerNextStep() {
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
-                // 1. Turn off previous node immediately
                 if (active3DActor) {
                     active3DActor.group.visible = false;
                     active3DActor.outline.visible = false;
@@ -1457,18 +1317,14 @@ So Po He",
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
 
-                // 2. Extract A2 Lý coordinate dynamically for this exact call
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
 
-                // 3. Configure active 3D actor node
                 if (active3DActor) {
                     const isGroupA = nodeData.id && nodeData.id.startsWith('A');
 
-                    // Set position strictly at A2 Lý coordinates
                     active3DActor.group.position.set(rawCoords[0], rawCoords[1], rawCoords[2]);
 
-                    // Adjust geometry sizes (+50% enlarged sphere)
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
 
@@ -1502,10 +1358,6 @@ So Po He",
             }
         }
 
-        // =========================================================================
-        // SECTION 12: SIDDHAM NODE DETAILS POPUP CARD
-        // Displays node data & image without blocking the central Buddha model
-        // =========================================================================
         function showPopup(data) {
             if (!data) return;
             const isGroupA = data.id && data.id.startsWith('A');
@@ -1522,7 +1374,6 @@ So Po He",
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            // Resolve image source for popup
             const sUrl = formatImageUrl(data.siddhamImage, data.id);
             if (sUrl) {
                 popupSiddhamImg.src = sUrl;
@@ -1554,7 +1405,6 @@ So Po He",
             hidePopup();
         });
 
-        // Click raycasting to open details for active node
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -1637,7 +1487,6 @@ So Po He",
 
         // =========================================================================
         // SECTION 14: ANIMATION LOOP
-        // Pure vertical rotation: glyph spins strictly around its local Z-axis
         // =========================================================================
         const clock = new THREE.Clock();
 
@@ -1661,17 +1510,11 @@ So Po He",
                 }
             }
 
-            // Central matrix auto-rotation around Z-axis
             const rpm = parseFloat(rotationSpeedInput.value);
             const rotationStep = ((rpm * Math.PI * 2) / 60) * delta;
             nodesGroup.rotation.z += rotationStep;
             buddhaGroup.rotation.z += rotationStep;
 
-            // =====================================================================
-            // ACTIVE SIDDHAM CHARACTER: PURE VERTICAL Z-AXIS SPIN
-            // Child plane remains upright at x = +PI/2
-            // Parent spinPivot spins cleanly around its local Z-axis (rotation.z = angle)
-            // =====================================================================
             if (active3DActor && active3DActor.group.visible) {
                 active3DActor.glow = THREE.MathUtils.lerp(active3DActor.glow, 1.0, 0.05);
 
