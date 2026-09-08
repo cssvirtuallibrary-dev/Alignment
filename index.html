@@ -186,7 +186,7 @@
             <button id="ui-toggle-btn">▲</button>
         </div>
         <div id="ui-content">
-            <p>Sequencing Siddham character inside a +50% enlarged transparent sphere, spinning on the vertical axis (Z-axis). Positions extracted individually per sequence step from A2 Lý.</p>
+            <p>Meditative matrix displaying the Buddha's core orientation (+Y facing, +X right, +Z crown) with clear internal see-through optics and pure vertical Z-axis glyph spinning.</p>
 
             <div class="control-group">
                 <label>Filter Sequence Matrix (Columns Z – AH)</label>
@@ -288,7 +288,6 @@
 
         // Visual 3D actor objects pool
         let active3DActor = null;
-        let activeOutline = null;
 
         // DOM elements
         const container = document.getElementById('canvas-container');
@@ -383,30 +382,28 @@
 
         // =========================================================================
         // SECTION 4: MATERIALS & GEOMETRIES
-        // 1. Buddha material: REDUCED TRANSPARENCY (transmission 0.18, opacity 0.94, depthWrite true)
-        //    to prevent depth ambiguity / optical illusion of reverse rotation!
-        // 2. Transparent Sphere: ENLARGED BY +50% (Group A radius 0.21, Group B radius 0.15)
+        // 1. Crystal Buddha material: Balanced glass shader with renderOrder & depthWrite: false
+        //    Allows nodes inside the Buddha body to be visible and eliminates reverse-rotation illusion!
+        // 2. Transparent Sphere: +50% Enlarged (Group A: 0.21 radius, Group B: 0.15 radius)
         // =========================================================================
-        const solidGlassBuddhaMat = new THREE.MeshPhysicalMaterial({
+        const crystalGlassBuddhaMat = new THREE.MeshPhysicalMaterial({
             color: 0x99ddff,
             emissive: 0x002244,
-            emissiveIntensity: 0.25,
-            roughness: 0.25,
-            metalness: 0.15,
-            transmission: 0.18,       // Substantially reduced transparency so back surfaces are occluded
-            opacity: 0.95,
+            emissiveIntensity: 0.15,
+            roughness: 0.18,
+            metalness: 0.1,
+            transmission: 0.72,       // Luminous glass allows interior nodes to be visible
+            opacity: 0.88,
             transparent: true,
-            depthWrite: true,         // Crucial: writes to depth buffer to maintain correct front/back occlusion
+            depthWrite: false,        // Crucial: Interior nodes render without depth occluding conflicts
             side: THREE.FrontSide
         });
 
-        // Enlarged by 50%:
-        // Previous Group A: 0.14 -> now 0.21 radius
-        // Previous Group B: 0.10 -> now 0.15 radius
+        // +50% enlarged sphere geometries
         const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
         const sphereGeoB = new THREE.SphereGeometry(0.15, 32, 32);
 
-        // Siddham image planes scaled to comfortably fit inside the enlarged transparent sphere
+        // Siddham image planes scaled to fit comfortably inside the sphere
         const planeGeoA = new THREE.PlaneGeometry(0.24, 0.24);
         const planeGeoB = new THREE.PlaneGeometry(0.17, 0.17);
 
@@ -414,7 +411,7 @@
             color: 0xffffff,
             roughness: 0.08,
             metalness: 0.1,
-            transmission: 0.92,
+            transmission: 0.94,
             ior: 1.5,
             thickness: 0.4,
             transparent: true,
@@ -430,9 +427,11 @@
 
         // Root groups
         const buddhaGroup = new THREE.Group();
+        buddhaGroup.renderOrder = 2; // Buddha renders over standard background, but inside nodes (renderOrder 5) show through
         scene.add(buddhaGroup);
 
         const nodesGroup = new THREE.Group();
+        nodesGroup.renderOrder = 5;  // Guarantees active Siddham and sphere are rendered clearly
         scene.add(nodesGroup);
 
         const axesGroup = new THREE.Group();
@@ -455,7 +454,8 @@
                 const buddhaMesh = gltf.scene;
                 buddhaMesh.traverse((node) => {
                     if (node.isMesh) {
-                        node.material = solidGlassBuddhaMat;
+                        node.material = crystalGlassBuddhaMat;
+                        node.renderOrder = 2;
                         node.castShadow = true;
                         node.receiveShadow = true;
                     }
@@ -482,16 +482,16 @@
 
         function buildProceduralBuddha() {
             const fallback = new THREE.Group();
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), solidGlassBuddhaMat);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), crystalGlassBuddhaMat);
             head.position.set(0, 0, 0.45); fallback.add(head);
 
-            const usnisa = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), solidGlassBuddhaMat);
+            const usnisa = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), crystalGlassBuddhaMat);
             usnisa.position.set(0, 0, 0.72); fallback.add(usnisa);
 
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.55, 32), solidGlassBuddhaMat);
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.55, 32), crystalGlassBuddhaMat);
             torso.rotation.x = Math.PI / 2; torso.position.set(0, 0, 0.08); fallback.add(torso);
 
-            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.13, 16, 64), solidGlassBuddhaMat);
+            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.13, 16, 64), crystalGlassBuddhaMat);
             legs.position.set(0, 0, -0.28); fallback.add(legs);
 
             fallback.rotation.order = 'ZYX';
@@ -615,7 +615,6 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
-        // Starts on +Y axis (PI/2), rotates Counterclockwise: theta = PI/2 + t * PI/2
         // =========================================================================
         function getSpiralPosition(t) {
             const theta = Math.PI / 2 + t * (Math.PI / 2);
@@ -683,7 +682,7 @@
         }
 
         // =========================================================================
-        // SECTION 8: RESILIENT IMAGE LOADING PIPELINE
+        // SECTION 8: RESILIENT MULTI-TIER IMAGE LOADING PIPELINE
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -801,7 +800,6 @@
 
         // =========================================================================
         // ROBUST COORDINATE PARSER FOR A2 LÝ
-        // Handles: "0, 0, -2", "(0.00, 0.00, −2.00)" with mathematical Unicode minus, etc.
         // =========================================================================
         function parseCoordinates(coordStr) {
             if (!coordStr) return [0, 0, 0];
@@ -840,23 +838,29 @@
         }
 
         // =========================================================================
-        // SECTION 9: REINTRODUCE TRANSPARENT SPHERE (+50% ENLARGED) & VERTICAL AXIS SPIN
-        // A single active 3D actor node container positioned dynamically per animation call
+        // SECTION 9: REINTRODUCED TRANSPARENT SPHERE (+50% ENLARGED)
+        // & HIERARCHICAL VERTICAL Z-AXIS ROTATION
         // =========================================================================
         function buildSingleActiveActorNode() {
             const containerGroup = new THREE.Group();
+            containerGroup.renderOrder = 5;
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
             // 1. +50% Enlarged Transparent Glass Sphere Mesh
-            // Outer sphere acts as interactive raycast target
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
-            sphereMesh.castShadow = false;
-            sphereMesh.receiveShadow = false;
+            sphereMesh.renderOrder = 4;
             containerGroup.add(sphereMesh);
 
-            // 2. Vertical Image Plane (faces forward in vertical orientation, spins around Z-axis)
+            // 2. Vertical Spin Pivot Group (SPINS PURELY AROUND Z-AXIS: rotation.z = angle)
+            const spinPivot = new THREE.Group();
+            spinPivot.renderOrder = 5;
+            containerGroup.add(spinPivot);
+
+            // 3. Upright Vertical Plane Inside Pivot:
+            // Rotating x = +PI/2 aligns plane's vertical geometry with world +Z (Crown).
+            // Normal faces forward towards +Y.
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -866,22 +870,25 @@
                 blending: THREE.AdditiveBlending
             });
             const planeMesh = new THREE.Mesh(planeGeoB, planeMat);
-            // Default plane in XY orientation stands vertically upright (normal along +Z, facing camera when viewed from above)
-            // To stand vertically facing +Y or camera, rotate plane around X by PI/2 so its vertical dimension aligns with Z-axis
             planeMesh.rotation.x = Math.PI / 2;
-            containerGroup.add(planeMesh);
+            planeMesh.renderOrder = 6;
+            spinPivot.add(planeMesh);
 
-            // 3. Highlight Aura Ring
+            // 4. Highlight Ring (inside spinPivot)
             const outlineGeo = new THREE.RingGeometry(0.16, 0.18, 32);
-            const outlineMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
+            const outlineMat = new THREE.MeshBasicMaterial({
+                color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false
+            });
             const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
             outlineMesh.rotation.x = Math.PI / 2;
             outlineMesh.visible = false;
-            containerGroup.add(outlineMesh);
+            outlineMesh.renderOrder = 6;
+            spinPivot.add(outlineMesh);
 
             return {
                 group: containerGroup,
                 sphere: sphereMesh,
+                spinPivot: spinPivot,
                 plane: planeMesh,
                 planeMat: planeMat,
                 outline: outlineMesh,
@@ -959,7 +966,7 @@
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
             const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
             
-            // STRICTLY LOCATE A2 LÝ COLUMN FOR LOCATION / COORDINATES
+            // STRICTLY LOCATE A2 LÝ COLUMN FOR COORDINATES
             const coordCol = cols.find(c => {
                 const l = c.label.toLowerCase();
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
@@ -971,7 +978,7 @@
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
 
-            // Strictly filter sequence columns from Column Index 25 (Z) to Column Index 33 (AH)
+            // STRICTLY EXTRACT SEQUENCE MATRIX FROM COLUMN INDEX 25 (Z) TO 33 (AH)
             filterColumns = cols.filter(c => {
                 return c.index >= 25 && c.index <= 33 && c.label.length > 0;
             });
@@ -1172,7 +1179,6 @@
         // SECTION 11: INITIALIZATION & SEQUENCE ENGINE
         // =========================================================================
         function initMatrixWithParsedData() {
-            // Build the single active 3D actor node
             if (!active3DActor) {
                 active3DActor = buildSingleActiveActorNode();
             }
@@ -1187,7 +1193,6 @@
                 filterSelect.appendChild(opt);
             });
 
-            // Ensure 40 spiral nodes exist
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1309,7 +1314,6 @@
                 const nodeData = currentSequenceNodes[currentSeqIndex];
 
                 // 2. Extract A2 Lý coordinate dynamically for this exact call
-                // If A2 Lý string exists, re-parse to guarantee latest updated placement even if repeating
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
 
@@ -1317,10 +1321,10 @@
                 if (active3DActor) {
                     const isGroupA = nodeData.id && nodeData.id.startsWith('A');
 
-                    // Set position strictly from A2 Lý
+                    // Position dynamic actor node strictly at A2 Lý coordinates
                     active3DActor.group.position.set(rawCoords[0], rawCoords[1], rawCoords[2]);
 
-                    // Adjust geometry sizes (+50% enlarged sphere)
+                    // Adjust geometry sizes (+50% enlarged transparent sphere)
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
 
@@ -1483,7 +1487,7 @@
         });
 
         // =========================================================================
-        // SECTION 14: ANIMATION LOOP (VERTICAL AXIS SPIN & SCENE ROTATION)
+        // SECTION 14: ANIMATION LOOP (VERTICAL AXIS SPIN & OPTICAL TRANSPARENCY)
         // =========================================================================
         const clock = new THREE.Clock();
 
@@ -1507,15 +1511,16 @@
                 }
             }
 
-            // Central axis auto-rotation around Z-axis
+            // Central matrix auto-rotation around Z-axis
             const rpm = parseFloat(rotationSpeedInput.value);
             const rotationStep = ((rpm * Math.PI * 2) / 60) * delta;
             nodesGroup.rotation.z += rotationStep;
             buddhaGroup.rotation.z += rotationStep;
 
             // =====================================================================
-            // ACTIVE SIDDHAM CHARACTER: VERTICAL ROTATION AXIS (Z-AXIS SPIN)
-            // Spins gracefully inside the enlarged transparent sphere
+            // ACTIVE SIDDHAM CHARACTER: PURE VERTICAL ROTATION AROUND Z-AXIS
+            // The spinPivot group rotates cleanly around its local Z-axis (rotation.z = angle),
+            // while the child plane remains upright at x = +PI/2!
             // =====================================================================
             if (active3DActor && active3DActor.group.visible) {
                 active3DActor.glow = THREE.MathUtils.lerp(active3DActor.glow, 1.0, 0.05);
@@ -1524,14 +1529,14 @@
                 active3DActor.sphere.scale.setScalar(pulseScale);
 
                 if (billboardModeSelect.value === 'billboard') {
+                    active3DActor.spinPivot.rotation.set(0, 0, 0);
                     active3DActor.plane.quaternion.copy(camera.quaternion);
                     active3DActor.outline.quaternion.copy(camera.quaternion);
                 } else {
-                    // Vertical axis spin: The character remains vertically upright while spinning around its local Z-axis
-                    // Plane geometry was rotated X=PI/2 so its up-vector is Z; spinning around Z rotates it smoothly like a vertical medallion
-                    const spinAngle = elapsedTime * 1.6;
-                    active3DActor.plane.rotation.set(Math.PI / 2, 0, spinAngle);
-                    active3DActor.outline.rotation.set(Math.PI / 2, 0, spinAngle);
+                    // Pure vertical spin around Z-axis:
+                    active3DActor.plane.rotation.set(Math.PI / 2, 0, 0);
+                    active3DActor.outline.rotation.set(Math.PI / 2, 0, 0);
+                    active3DActor.spinPivot.rotation.set(0, 0, elapsedTime * 1.6);
                 }
             }
 
