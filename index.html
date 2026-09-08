@@ -76,7 +76,7 @@
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
         #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 520px; opacity: 1; overflow: hidden; }
 
-        /* Collapsed Filter Box */
+        /* Collapsed Filter Box: ONLY displays selected sequence matrix name */
         #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; }
         #ui-container.collapsed #ui-header h1 { font-size: 11px; color: var(--accent-gold-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); margin-left: 10px; }
@@ -98,7 +98,7 @@
         details { background: rgba(12, 21, 36, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 7px 10px; margin-top: 8px; }
         summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; outline: none; }
 
-        /* Siddham Node Details Card */
+        /* Siddham Node Details Card (Non-blocking, right on Desktop, bottom on Mobile) */
         #popup-card {
             position: absolute;
             background: rgba(6, 12, 24, 0.94); border: 1px solid rgba(255, 215, 0, 0.35);
@@ -231,6 +231,7 @@
 
             <div class="control-group">
                 <label class="checkbox-container">
+                    <!-- Default UNCHECKED as requested -->
                     <input type="checkbox" id="show-axes">
                     <span>Show Coordination Axes</span>
                 </label>
@@ -238,6 +239,7 @@
 
             <div class="control-group">
                 <label class="checkbox-container">
+                    <!-- Default UNCHECKED as requested -->
                     <input type="checkbox" id="show-grid-markers">
                     <span>Show 0.5 Unit Markers</span>
                 </label>
@@ -247,8 +249,9 @@
                 <summary>Character Render Mode</summary>
                 <div style="margin-top: 8px;">
                     <select id="billboard-mode">
-                        <option value="rotate" selected>Vertical Z-Axis Spin</option>
-                        <option value="billboard">Face Camera (Billboard)</option>
+                        <!-- Default set to FACE CAMERA as requested -->
+                        <option value="billboard" selected>Face Camera (Billboard)</option>
+                        <option value="rotate">Vertical Z-Axis Spin</option>
                     </select>
                 </div>
             </details>
@@ -450,13 +453,15 @@
             transmission: 0.72,
             opacity: 0.88,
             transparent: true,
-            depthWrite: false,
+            depthWrite: false,        // Eliminates reverse-rotation optical illusion & lets interior chakras shine
             side: THREE.FrontSide
         });
 
+        // +50% enlarged transparent sphere: Group A radius 0.21, Group B radius 0.15
         const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
         const sphereGeoB = new THREE.SphereGeometry(0.15, 32, 32);
 
+        // Siddham image planes scaled to fit comfortably inside the sphere
         const planeGeoA = new THREE.PlaneGeometry(0.25, 0.25);
         const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
 
@@ -518,10 +523,8 @@
             buddhaGroup.add(fallback);
         }
 
-        // Build procedural Buddha synchronously so scene is alive immediately
         buildProceduralBuddha();
 
-        // Optional background upgrade to GLB statue
         try {
             const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
             const loader = new THREE.GLTFLoader();
@@ -545,7 +548,7 @@
                     buddhaGroup.add(buddhaMesh);
                 },
                 undefined,
-                () => { /* procedural statue already present */ }
+                () => { /* procedural statue baseline already active */ }
             );
         } catch (e) { /* continue */ }
 
@@ -658,12 +661,19 @@
         buildUnitGridMarkers();
 
         // =========================================================================
-        // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
+        // SECTION 7: RECALIBRATED SPIRAL FUNNEL CONE (0.25 UNIT HEIGHT PER 4 SPHERES)
+        // Layer 1: Starts at Z = -0.50
+        // Layer 2: Starts at Z approx -0.25
+        // Layer 3: Starts at Z approx 0.00
+        // Smooth cone integration: R(Z) = 1.35 + (Z + 0.50) * 0.34
         // =========================================================================
         function getSpiralPosition(t) {
+            // Counterclockwise rotation: Starts on +Y axis (PI/2), 4 spheres = 2*PI (one full turn)
             const theta = Math.PI / 2 + t * (Math.PI / 2);
-            const r = 1.6 + t * 0.045;
-            const z = -0.5 + t * 0.085;
+            // Exactly 0.25 unit height per layer of 4 spheres => 0.0625 per sphere
+            const z = -0.50 + t * 0.0625;
+            // Smoothly expanding linear cone: R = 1.35 at Z = -0.50, up to R = 2.20 at Z = 2.00
+            const r = 1.35 + (z + 0.50) * 0.34;
             return new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z);
         }
 
@@ -673,37 +683,48 @@
         nodesGroup.add(wallMesh);
 
         function rebuildWallGeometry() {
-            if (currentSeqIndex < 0 || currentSeqIndex >= currentSequenceNodes.length) return;
-            const nodeData = currentSequenceNodes[currentSeqIndex];
-            if (!nodeData || !nodeData.id || !nodeData.id.startsWith('A')) {
+            const activeLANodes = currentSequenceNodes.slice(0, currentSeqIndex + 1).filter(n => n.id && n.id.startsWith('A'));
+            if (activeLANodes.length < 2) {
                 wallGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(), 3));
                 wallGeometry.setIndex([]);
                 return;
             }
-
-            const num = parseInt(nodeData.id.replace(/\D/g, ''));
-            const maxT = isNaN(num) ? 0 : Math.max(0, num - 1);
-            if (maxT < 1) {
-                wallGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(), 3));
-                wallGeometry.setIndex([]);
-                return;
-            }
+            const maxT = Math.max(...activeLANodes.map(n => {
+                const num = parseInt(n.id.replace(/\D/g, ''));
+                return isNaN(num) ? 0 : num - 1;
+            }));
 
             const vertices = [], indices = [];
-            const segmentsPerNode = 20;
+            const segmentsPerNode = 24;
             const totalSegments = Math.round(maxT * segmentsPerNode);
-            const wallHeightExtent = 0.22;
+            // Ribbon half-height = 0.130 (total vertical width = 0.260), perfectly overlapping the 0.250 pitch per 360-deg turn
+            const halfH = 0.130;
 
             for (let j = 1; j <= totalSegments; j++) {
                 const tPrev = (j - 1) / segmentsPerNode;
                 const tCurr = j / segmentsPerNode;
-                const pPrev = getSpiralPosition(tPrev);
-                const pCurr = getSpiralPosition(tCurr);
 
-                const uPrev = new THREE.Vector3(pPrev.x * 1.04, pPrev.y * 1.04, pPrev.z + wallHeightExtent);
-                const uCurr = new THREE.Vector3(pCurr.x * 1.04, pCurr.y * 1.04, pCurr.z + wallHeightExtent);
-                const lPrev = new THREE.Vector3(pPrev.x * 0.94, pPrev.y * 0.94, pPrev.z - wallHeightExtent);
-                const lCurr = new THREE.Vector3(pCurr.x * 0.94, pCurr.y * 0.94, pCurr.z - wallHeightExtent);
+                const thetaPrev = Math.PI / 2 + tPrev * (Math.PI / 2);
+                const thetaCurr = Math.PI / 2 + tCurr * (Math.PI / 2);
+
+                const zCenterPrev = -0.50 + tPrev * 0.0625;
+                const zCenterCurr = -0.50 + tCurr * 0.0625;
+
+                const zUpPrev = zCenterPrev + halfH;
+                const zLowPrev = zCenterPrev - halfH;
+                const zUpCurr = zCenterCurr + halfH;
+                const zLowCurr = zCenterCurr - halfH;
+
+                // Conforms precisely to cone surface: R(Z) = 1.35 + (Z + 0.50) * 0.34
+                const rUpPrev = 1.35 + (zUpPrev + 0.50) * 0.34;
+                const rLowPrev = 1.35 + (zLowPrev + 0.50) * 0.34;
+                const rUpCurr = 1.35 + (zUpCurr + 0.50) * 0.34;
+                const rLowCurr = 1.35 + (zLowCurr + 0.50) * 0.34;
+
+                const uPrev = new THREE.Vector3(rUpPrev * Math.cos(thetaPrev), rUpPrev * Math.sin(thetaPrev), zUpPrev);
+                const uCurr = new THREE.Vector3(rUpCurr * Math.cos(thetaCurr), rUpCurr * Math.sin(thetaCurr), zUpCurr);
+                const lPrev = new THREE.Vector3(rLowPrev * Math.cos(thetaPrev), rLowPrev * Math.sin(thetaPrev), zLowPrev);
+                const lCurr = new THREE.Vector3(rLowCurr * Math.cos(thetaCurr), rLowCurr * Math.sin(thetaCurr), zLowCurr);
 
                 const baseIndex = vertices.length / 3;
                 vertices.push(
@@ -727,6 +748,8 @@
 
         // =========================================================================
         // SECTION 8: RESILIENT MULTI-TIER IMAGE RESOLVER & PERMANENT TEXTURE CACHE
+        // Sourced from Google Drive thumbnail CDN, direct CDN, local files & canonical map
+        // Guaranteed actual Siddham Image (no fallback text on repeating nodes!)
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -894,7 +917,7 @@
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. Transparent Sphere Mesh (+50% enlarged)
+            // 1. Transparent Sphere Mesh (+50% enlarged: Group A 0.21, Group B 0.15)
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
             sphereMesh.renderOrder = 4;
@@ -947,10 +970,7 @@
         }
 
         // =========================================================================
-        // SECTION 10: FAST MULTI-TIER DATA INGESTION ENGINE
-        // Tier 1: Embedded matrix initialized immediately (0 ms)
-        // Tier 2: Cached LocalStorage if updated
-        // Tier 3: Asynchronous background JSONP / Fetch sync
+        // SECTION 10: FAST MULTI-TIER DATA INGESTION ENGINE ("A.xx" HEADERS ONLY)
         // =========================================================================
         function initMatrixWithParsedData() {
             if (!active3DActor) {
@@ -966,7 +986,7 @@
                 filterSelect.appendChild(opt);
             });
 
-            // Ensure 40 Column of Light Spiral nodes exist
+            // Ensure 40 Column of Light Spiral nodes exist with exact calibrated positions
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -988,11 +1008,9 @@
                     if (r.id.startsWith('A')) {
                         const num = parseInt(r.id.replace(/\D/g, ''));
                         if (!isNaN(num) && num >= 1 && num <= 40) {
-                            if (!r.coords || (r.coords[0] === 0 && r.coords[1] === 0 && r.coords[2] === 0)) {
-                                const sp = getSpiralPosition(num - 1);
-                                r.coords = [sp.x, sp.y, sp.z];
-                                r.coordsStr = `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`;
-                            }
+                            const sp = getSpiralPosition(num - 1);
+                            r.coords = [sp.x, sp.y, sp.z];
+                            r.coordsStr = `${sp.x.toFixed(2)}, ${sp.y.toFixed(2)}, ${sp.z.toFixed(2)}`;
                             if (!r.siddhamImage) r.siddhamImage = '06_LA_Gold.PNG';
                         }
                     }
@@ -1094,7 +1112,6 @@
                 syncLabel.innerText = "Synced with Google Sheet";
                 syncDot.style.background = "#00ff88";
 
-                // Save snapshot to local storage for instant future loads
                 try {
                     localStorage.setItem('cached_bodhicitta_data', JSON.stringify({
                         rows: rawSheetRows,
@@ -1104,7 +1121,6 @@
             }
         }
 
-        // Global JSONP callback handler (bypasses CORS restrictions)
         window.handleGvizSheetData = function(gvizData) {
             if (gvizData && gvizData.status === 'ok' && gvizData.table) {
                 parseGVizTable(gvizData.table);
@@ -1130,17 +1146,15 @@
                 }
             } catch (e) { /* continue */ }
 
-            // STEP 3: Asynchronously load live Google Sheet via JSONP (Fastest & Zero CORS blockage)
+            // STEP 3: Asynchronously load live Google Sheet via JSONP
             const script = document.createElement('script');
             script.src = GVIZ_JSONP_URL;
             script.async = true;
             script.onerror = function() {
-                // If JSONP fails, try background fetch
                 tryBackgroundFetch();
             };
             document.head.appendChild(script);
 
-            // Timeout: if JSONP hasn't responded in 1.5s, keep embedded/cached version active
             setTimeout(() => {
                 if (syncLabel.innerText.includes("Connecting")) {
                     syncLabel.innerText = "Matrix Ready (Offline Mode)";
@@ -1164,9 +1178,7 @@
                         parseGVizTable(gvizData.table);
                     }
                 }
-            } catch (e) {
-                /* already running smoothly with embedded/cached baseline */
-            }
+            } catch (e) { /* already running with embedded/cached baseline */ }
         }
 
         function mergeEmbeddedSequencesIfNeeded() {
@@ -1259,6 +1271,7 @@
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] }
             ];
 
+            // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
             for (let i = 0; i < 40; i++) {
                 const sp = getSpiralPosition(i);
                 embeddedData.push({
@@ -1292,8 +1305,8 @@
         }
 
         // =========================================================================
-        // SECTION 11: INITIALIZATION & INTERLEAVED SPIRAL SEQUENCE ENGINE
-        // Rule 3: 4 spiral spheres of LA, then selected matrix, then next 4 LA, etc.
+        // SECTION 11: INTERLEAVED SPIRAL SEQUENCE ENGINE
+        // Rule: 4 spiral spheres of LA, then selected matrix, then next 4 LA, etc.
         // =========================================================================
         function generateActiveSequence() {
             const selectedFilter = filterSelect.value || (filterColumns[0] ? filterColumns[0].label : '');
@@ -1318,7 +1331,7 @@
             if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral) {
-                // Rule 3: Interleaved 4 LA spheres, then selected sequence matrix, then next 4 LA, etc.
+                // Interleaved 4 LA spheres, then selected matrix, then next 4 LA, etc.
                 const nonSpiral = matchingRows.filter(r => !r.id.startsWith('A'));
                 for (let k = 0; k < 10; k++) {
                     for (let s = 0; s < 4; s++) {
@@ -1391,7 +1404,7 @@
                     rebuildWallGeometry();
                 }
 
-                // Rule 5: Keep Siddham Node Details active and updated with live node data
+                // Show live updated details card
                 showPopup(nodeData);
             } else {
                 if (!includeSpiralCheckbox.checked) {
@@ -1487,7 +1500,7 @@
                 wallMesh.visible = includeSpiralCheckbox.checked;
                 startBtn.innerText = "Reset / Restart";
 
-                // Rule 5: Collapse filter box so it only shows the selected sequence matrix
+                // Collapse filter panel so it only shows the selected sequence matrix
                 uiContainer.classList.add('collapsed');
                 uiToggleBtn.innerText = '▼';
                 uiTitle.innerText = filterSelect.value || "Sequence Matrix";
@@ -1567,6 +1580,7 @@
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
 
+                // Billboard (Face Camera) is the default mode
                 if (billboardModeSelect.value === 'billboard') {
                     active3DActor.spinPivot.rotation.set(0, 0, 0);
                     active3DActor.plane.quaternion.copy(camera.quaternion);
