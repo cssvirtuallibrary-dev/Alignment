@@ -2,158 +2,187 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Lotus Bodhicitta System</title>
     <style>
         :root {
-            --bg-dark: #05070a;
+            --bg-dark: #020409;
+            --panel-bg: rgba(6, 12, 24, 0.88);
+            --panel-border: rgba(255, 215, 0, 0.24);
             --accent-gold: #ffd700;
-            --accent-glow: #ffe240;
-            --accent-blue: #00d2ff;
-            --panel-bg: rgba(10, 15, 25, 0.92);
-            --panel-border: rgba(255, 215, 0, 0.28);
+            --accent-gold-bright: #fff07a;
+            --accent-cyan: #00e5ff;
             --text-main: #ffffff;
-            --text-muted: #8e9bb0;
+            --text-muted: #8fa0b8;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            margin: 0; padding: 0; overflow: hidden;
-            background-color: var(--bg-dark);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            width: 100vw; height: 100vh; overflow: hidden;
+            background: radial-gradient(circle at 50% 45%, #081122 0%, #03060d 60%, #010206 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: var(--text-main); user-select: none; -webkit-user-select: none;
         }
 
-        #canvas-container { width: 100vw; height: 100vh; display: block; }
+        #canvas-container { width: 100vw; height: 100vh; display: block; position: absolute; top: 0; left: 0; z-index: 1; }
 
-        /* Floating Start / Reset Action Button */
-        #action-container {
-            position: absolute; top: 18px; left: 18px; z-index: 30; pointer-events: auto;
+        /* Floating Top Control Bar */
+        #top-bar {
+            position: absolute; top: env(safe-area-inset-top, 16px); left: 16px; right: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            pointer-events: none; z-index: 30;
         }
+
         #start-btn {
-            background: linear-gradient(135deg, #ffd700, #ffb300);
-            color: #05070a; border: 1px solid rgba(255, 215, 0, 0.85);
-            padding: 12px 26px; border-radius: 12px; font-weight: 700; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 1.5px; font-size: 12px;
-            box-shadow: 0 0 24px rgba(255, 215, 0, 0.45);
-            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            pointer-events: auto;
+            background: linear-gradient(135deg, #ffd700 0%, #ff9900 100%);
+            color: #03060d; border: 1px solid rgba(255, 240, 120, 0.85);
+            padding: 11px 22px; border-radius: 12px; font-weight: 800; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 1.4px; font-size: 11px;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4), inset 0 1px 1px rgba(255,255,255,0.6);
+            transition: all 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
         }
         #start-btn:hover {
-            background: linear-gradient(135deg, #ffe240, #ffc400);
-            box-shadow: 0 0 35px rgba(255, 215, 0, 0.75);
+            background: linear-gradient(135deg, #fff07a 0%, #ffaa00 100%);
+            box-shadow: 0 0 35px rgba(255, 215, 0, 0.7);
             transform: translateY(-2px);
         }
         #start-btn:active { transform: translateY(1px); }
 
-        /* Data Sync Status Pill */
         #sync-status {
-            position: absolute; top: 22px; right: 20px; z-index: 30;
+            pointer-events: auto;
             display: flex; align-items: center; gap: 8px;
-            background: rgba(10, 15, 25, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);
-            padding: 6px 14px; border-radius: 20px; font-size: 11px; color: var(--text-muted);
-            backdrop-filter: blur(10px);
+            background: rgba(4, 9, 18, 0.82); border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 7px 14px; border-radius: 20px; font-size: 11px; color: var(--text-muted);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         }
         #sync-dot {
             width: 8px; height: 8px; border-radius: 50%; background: #00ff88;
             box-shadow: 0 0 8px #00ff88;
         }
 
-        /* Collapsible UI Control Panel */
+        /* Collapsible Filter Panel (Left Side on Desktop) */
         #ui-container {
-            position: absolute; top: 76px; left: 18px;
-            background: var(--panel-bg); padding: 16px 20px; border-radius: 14px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8); border: 1px solid var(--panel-border);
-            width: 320px; pointer-events: auto;
+            position: absolute; top: calc(env(safe-area-inset-top, 16px) + 54px); left: 16px;
+            background: var(--panel-bg); padding: 14px 18px; border-radius: 14px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75); border: 1px solid var(--panel-border);
+            width: 310px; pointer-events: auto;
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); z-index: 10;
+            transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1); z-index: 25;
         }
         #ui-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        h1 { font-size: 14px; margin: 0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; }
+        h1 { font-size: 13px; margin: 0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; }
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
-        #ui-content { margin-top: 14px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 580px; opacity: 1; }
-        #ui-container.collapsed { width: 230px; }
-        #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); }
-        #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; overflow: hidden; pointer-events: none; }
+        #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 520px; opacity: 1; overflow: hidden; }
 
-        p { font-size: 11px; color: #a0aec0; margin: 0 0 14px 0; line-height: 1.45; }
-        .control-group { margin-bottom: 12px; }
-        label { display: block; font-size: 10px; color: #8e9bb0; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+        /* Collapsed Filter Box: ONLY displays selected sequence matrix */
+        #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; }
+        #ui-container.collapsed #ui-header h1 { font-size: 11px; color: var(--accent-gold-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); margin-left: 10px; }
+        #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
+
+        .control-group { margin-bottom: 11px; }
+        label { display: block; font-size: 10px; color: #8fa0b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
         select, input[type="range"] {
-            width: 100%; background: #121824; border: 1px solid #283548; color: #fff;
+            width: 100%; background: #0c1524; border: 1px solid #1c2b42; color: #fff;
             padding: 8px 10px; border-radius: 7px; outline: none; box-sizing: border-box; font-size: 11px;
             transition: border-color 0.2s;
         }
         select:focus { border-color: var(--accent-gold); }
 
-        .checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
-        .checkbox-container input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent-gold); cursor: pointer; }
-        .checkbox-container span { font-size: 11px; color: #e2e8f0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 6px; cursor: pointer; }
+        .checkbox-container input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent-gold); cursor: pointer; }
+        .checkbox-container span { font-size: 11px; color: #e2e8f0; letter-spacing: 0.3px; }
 
-        details { background: rgba(18, 24, 36, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
-        summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; outline: none; user-select: none; }
+        details { background: rgba(12, 21, 36, 0.5); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 7px 10px; margin-top: 8px; }
+        summary { font-size: 10px; color: var(--accent-gold); cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; outline: none; }
 
-        /* Sequence Status Bar */
-        #seq-status-box {
-            background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.25);
-            border-radius: 8px; padding: 8px 12px; margin-top: 10px; font-size: 11px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        #seq-status-text { color: var(--accent-gold); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 65%; }
-        #seq-status-count { color: #fff; font-size: 10px; white-space: nowrap; }
-
-        /* Interactive Details Popup Card */
+        /* Siddham Node Details Card (Optimized: Non-blocking, right on Desktop, bottom on Mobile) */
         #popup-card {
-            position: absolute; bottom: 25px; left: 50%;
-            transform: translateX(-50%) translateY(160px);
-            background: rgba(8, 12, 22, 0.95); border: 1px solid rgba(255, 215, 0, 0.4);
-            border-radius: 16px; padding: 18px 22px; width: 90%; max-width: 380px;
-            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 215, 0, 0.15);
+            position: absolute;
+            background: rgba(6, 12, 24, 0.92); border: 1px solid rgba(255, 215, 0, 0.35);
+            border-radius: 16px; padding: 16px 20px;
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 215, 0, 0.12);
             backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
-            opacity: 0; pointer-events: none; z-index: 20; max-height: 80vh; overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease;
+            opacity: 0; pointer-events: none; z-index: 28; max-height: 80vh; overflow-y: auto;
         }
-        #popup-card.active { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
-        #popup-close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: #8e9bb0; font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
+        #popup-card.active { opacity: 1; pointer-events: auto; }
+        #popup-close { position: absolute; top: 10px; right: 12px; background: none; border: none; color: #8fa0b8; font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
         #popup-close:hover { color: #fff; }
         #popup-title {
-            color: var(--accent-gold); margin: 0 0 12px 0; font-size: 15px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 8px;
+            color: var(--accent-gold); margin: 0 0 10px 0; font-size: 13px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2); padding-bottom: 6px;
         }
-        .popup-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; font-size: 12px; }
-        .popup-label { color: #77849a; font-weight: 500; }
-        .popup-val { font-weight: 600; color: #fff; text-align: right; max-width: 60%; }
+        .popup-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; }
+        .popup-label { color: #8fa0b8; font-weight: 600; }
+        .popup-val { font-weight: 700; color: #fff; text-align: right; max-width: 65%; }
 
-        .popup-images { display: flex; gap: 10px; margin: 12px 0; }
-        .popup-img-box { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px; text-align: center; }
-        .popup-img-box span { font-size: 9px; color: #8e9bb0; display: block; margin-bottom: 4px; text-transform: uppercase; }
-        .popup-img-box img { max-width: 100%; max-height: 80px; object-fit: contain; border-radius: 4px; }
+        .popup-images { display: flex; gap: 10px; margin: 10px 0; }
+        .popup-img-box {
+            flex: 1; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,215,0,0.18);
+            border-radius: 8px; padding: 6px; text-align: center;
+        }
+        .popup-img-box span { font-size: 9px; color: var(--accent-gold); display: block; margin-bottom: 4px; text-transform: uppercase; font-weight: 600; }
+        .popup-img-box img { max-width: 100%; height: 75px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); }
 
-        .popup-mantra-section { margin-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 10px; }
+        .popup-mantra-section { margin-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 8px; }
         .popup-mantra-val {
-            font-family: Georgia, Cambria, "Times New Roman", Times, serif; font-style: italic;
-            font-size: 12px; line-height: 1.55; color: var(--accent-gold);
+            font-family: Georgia, Cambria, 'Times New Roman', serif; font-style: italic;
+            font-size: 11.5px; line-height: 1.5; color: var(--accent-gold-bright);
             background: rgba(255, 215, 0, 0.05); border-left: 2px solid var(--accent-gold);
-            padding: 10px 14px; border-radius: 0 8px 8px 0; letter-spacing: 0.3px; white-space: pre-line;
+            padding: 8px 12px; border-radius: 0 8px 8px 0; white-space: pre-line;
         }
 
+        /* -------------------------------------------------------------
+           RESPONSIVE SCREEN FORMATS & OPTIMAL LAYOUTS
+           ------------------------------------------------------------- */
+        /* Landscape / Desktop / Tablet (Width >= 768px & Aspect >= 1.0) */
+        @media (min-width: 768px) and (orientation: landscape), (min-aspect-ratio: 1/1) and (min-width: 640px) {
+            #popup-card {
+                top: calc(env(safe-area-inset-top, 16px) + 54px);
+                right: 16px; width: 330px;
+                transform: translateX(40px);
+            }
+            #popup-card.active { transform: translateX(0); }
+        }
+
+        /* Portrait Mobile Phone */
+        @media (max-width: 767px) and (orientation: portrait), (max-aspect-ratio: 1/1) {
+            #top-bar { top: env(safe-area-inset-top, 12px); left: 12px; right: 12px; }
+            #ui-container {
+                top: calc(env(safe-area-inset-top, 12px) + 50px); left: 12px;
+                width: calc(100vw - 24px); max-width: none;
+            }
+            #ui-container.collapsed { max-width: calc(100vw - 24px); width: calc(100vw - 24px); }
+
+            /* In Portrait Mobile, dock details card at bottom, taking at most 35% height so Buddha remains visible above */
+            #popup-card {
+                bottom: env(safe-area-inset-bottom, 12px); left: 12px; right: 12px;
+                width: auto; max-width: none; max-height: 38vh;
+                transform: translateY(30px);
+                padding: 12px 16px;
+            }
+            #popup-card.active { transform: translateY(0); }
+            .popup-img-box img { height: 55px; }
+            .popup-row { margin-bottom: 4px; font-size: 10.5px; }
+            .popup-mantra-val { font-size: 10.5px; padding: 6px 10px; }
+        }
+
+        /* Loading Screen */
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: #05070a; display: flex; flex-direction: column;
+            background: #020409; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 100; transition: opacity 0.6s ease;
         }
-        .spinner { width: 44px; height: 44px; border: 2px solid rgba(255, 215, 0, 0.15); border-top-color: var(--accent-gold); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        #loading-text { margin-top: 18px; color: var(--accent-gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
-
-        @media (max-width: 600px) {
-            #action-container { width: calc(100% - 36px); left: 18px; top: 12px; }
-            #start-btn { width: 100%; text-align: center; }
-            #sync-status { display: none; }
-            #ui-container { width: calc(100% - 36px); max-width: none; top: 70px; left: 18px; }
-            #ui-container.collapsed { width: calc(100% - 36px); }
+        .spinner {
+            width: 46px; height: 46px; border: 2px solid rgba(255, 215, 0, 0.15);
+            border-top-color: var(--accent-gold); border-radius: 50%; animation: spin 1s linear infinite;
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-text { margin-top: 18px; color: var(--accent-gold); font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700; }
     </style>
 
     <!-- Three.js + Controls + Loaders -->
@@ -168,41 +197,28 @@
         <div id="loading-text">Initializing Sacred Bodhicitta Matrix...</div>
     </div>
 
-    <div id="action-container">
+    <div id="top-bar">
         <button id="start-btn">Start Formation</button>
-    </div>
-
-    <div id="sync-status">
-        <span id="sync-dot"></span>
-        <span id="sync-label">Loading Google Sheet Data...</span>
+        <div id="sync-status">
+            <span id="sync-dot"></span>
+            <span id="sync-label">Connecting Sheet...</span>
+        </div>
     </div>
 
     <div id="canvas-container"></div>
 
-    <!-- UI Control Panel -->
+    <!-- Collapsible UI Filter Panel -->
     <div id="ui-container">
         <div id="ui-header">
-            <h1>Lotus Bodhicitta</h1>
+            <h1 id="ui-title">Sequence Matrix</h1>
             <button id="ui-toggle-btn">▲</button>
         </div>
         <div id="ui-content">
-            <p>Meditative matrix displaying the Buddha's core orientation (+Y facing, +X right, +Z crown) with clear internal see-through optics and pure vertical Z-axis glyph spinning.</p>
-
             <div class="control-group">
-                <label>Filter Sequence Matrix (Columns Z – AH)</label>
+                <label>Filter Sequence Matrix ("A.xx" Only)</label>
                 <select id="filter-select">
                     <option value="" disabled selected>Loading sequences...</option>
                 </select>
-            </div>
-
-            <div id="seq-status-box">
-                <span id="seq-status-text">Matrix Ready</span>
-                <span id="seq-status-count">0 Nodes</span>
-            </div>
-
-            <div class="control-group" style="margin-top: 12px;">
-                <label>Auto-Rotation Speed (RPM)</label>
-                <input type="range" id="rotation-speed" min="0" max="10" step="0.1" value="0">
             </div>
 
             <div class="control-group">
@@ -213,15 +229,22 @@
             </div>
 
             <div class="control-group">
+                <label>Auto-Rotation Speed (RPM)</label>
+                <input type="range" id="rotation-speed" min="0" max="10" step="0.1" value="0">
+            </div>
+
+            <div class="control-group">
                 <label class="checkbox-container">
-                    <input type="checkbox" id="show-axes" checked>
+                    <!-- Default UNCHECKED as requested -->
+                    <input type="checkbox" id="show-axes">
                     <span>Show Coordination Axes</span>
                 </label>
             </div>
 
             <div class="control-group">
                 <label class="checkbox-container">
-                    <input type="checkbox" id="show-grid-markers" checked>
+                    <!-- Default UNCHECKED as requested -->
+                    <input type="checkbox" id="show-grid-markers">
                     <span>Show 0.5 Unit Markers</span>
                 </label>
             </div>
@@ -236,7 +259,7 @@
                 </div>
             </details>
 
-            <details style="margin-top: 10px;">
+            <details style="margin-top: 8px;">
                 <summary>Core Glow Intensity</summary>
                 <div style="margin-top: 8px;">
                     <input type="range" id="glow-intensity" min="0" max="3" step="0.1" value="1.5">
@@ -245,7 +268,7 @@
         </div>
     </div>
 
-    <!-- Interactive Node Details Popup -->
+    <!-- Siddham Node Details Card -->
     <div id="popup-card">
         <button id="popup-close">&times;</button>
         <div id="popup-title">Siddham Node Details</div>
@@ -255,28 +278,27 @@
         <div class="popup-row"><span class="popup-label">Sequence Step:</span><span class="popup-val" id="popup-seq-step">-</span></div>
         <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-siddham">-</span></div>
         <div class="popup-row"><span class="popup-label">Dharma Object:</span><span class="popup-val" id="popup-dharma">-</span></div>
-        
-        <div class="popup-images" id="popup-images-container">
-            <div class="popup-img-box" id="box-siddham-img" style="display:none; width: 100%;">
+
+        <div class="popup-images">
+            <div class="popup-img-box" id="box-siddham-img">
                 <span>Siddham Image (C4 CTT Link)</span>
                 <img id="popup-siddham-img" src="" alt="Siddham">
             </div>
         </div>
 
         <div class="popup-mantra-section">
-            <div class="popup-label" style="margin-bottom: 6px; text-transform: uppercase; font-size: 10px; letter-spacing: 0.6px;">Sacred Mantra:</div>
+            <div class="popup-label" style="margin-bottom: 4px; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.6px;">Sacred Mantra:</div>
             <div class="popup-mantra-val" id="popup-mantra">-</div>
         </div>
     </div>
 
     <script>
         // =========================================================================
-        // SECTION 1: SYSTEM CONFIGURATION & GLOBAL STATE
+        // SECTION 1: GLOBAL STATE & CANONICAL FALLBACK GLYPH REGISTRY
         // =========================================================================
         const SHEET_ID = '1Gvl7SNXhVSrKBJiPgt78T2opWckb5OO59S-q_4S6Y7w';
         const SHEET_TAB = 'WBSID';
         const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_TAB)}`;
-        const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_TAB)}`;
 
         let rawSheetRows = [];
         let filterColumns = [];
@@ -284,9 +306,8 @@
         let currentSeqIndex = -1;
         let isRunning = false;
         let seqTimer = 0;
-        const nodeInterval = 2.5;
+        const nodeInterval = 2.4;
 
-        // Visual 3D actor objects pool
         let active3DActor = null;
 
         // DOM elements
@@ -295,21 +316,20 @@
         const syncLabel = document.getElementById('sync-label');
         const syncDot = document.getElementById('sync-dot');
         const filterSelect = document.getElementById('filter-select');
-        const seqStatusText = document.getElementById('seq-status-text');
-        const seqStatusCount = document.getElementById('seq-status-count');
+        const uiContainer = document.getElementById('ui-container');
+        const uiHeader = document.getElementById('ui-header');
+        const uiTitle = document.getElementById('ui-title');
+        const uiToggleBtn = document.getElementById('ui-toggle-btn');
         const rotationSpeedInput = document.getElementById('rotation-speed');
         const billboardModeSelect = document.getElementById('billboard-mode');
         const glowIntensityInput = document.getElementById('glow-intensity');
         const includeSpiralCheckbox = document.getElementById('include-spiral');
         const showAxesCheckbox = document.getElementById('show-axes');
         const showGridMarkersCheckbox = document.getElementById('show-grid-markers');
-        const uiContainer = document.getElementById('ui-container');
-        const uiHeader = document.getElementById('ui-header');
-        const uiToggleBtn = document.getElementById('ui-toggle-btn');
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
 
-        // Popup elements
+        // Details Popup Card Elements
         const popupCard = document.getElementById('popup-card');
         const popupId = document.getElementById('popup-id');
         const popupPosition = document.getElementById('popup-position');
@@ -321,32 +341,62 @@
         const popupSiddhamImg = document.getElementById('popup-siddham-img');
         const boxSiddhamImg = document.getElementById('box-siddham-img');
 
+        // Canonical mapping of WBS IDs to their known Siddham Gold PNG files
+        const canonicalSiddhamFiles = {
+            "B01": "01_A_Gold.png",   "B02": "03_PA_Gold.png",  "B03": "02_RA_Gold.png",
+            "B04": "36_NNA_Gold.png", "B05": "10_SSA_Gold.png", "B06": "11_VA_Gold.png",
+            "B07": "09_DDA_Gold.png", "B08": "13_YA_Gold.png",  "B09": "04_CA_Gold.png",
+            "B10": "16_SA_Gold.png",  "B11": "08_BA_Gold.png",  "B12": "09_DDA_Gold.png",
+            "B13": "25_KSSA_Gold.png","B14": "04_CA_Gold.png",  "B15": "18_GA_Gold.png",
+            "B16": "08_BA_Gold.png",  "B17": "09_DDA_Gold.png", "B18": "21_SVA_Gold.png",
+            "B19": "04_CA_Gold.png",  "B20": "19_THA_Gold.png", "B21": "08_BA_Gold.png",
+            "B22": "11_VA_Gold.png",  "B23": "33_TSA_Gold.png", "B24": "14_SSTTA_Gold.png",
+            "B25": "39_YSA_Gold.png", "B26": "34_GHA_Gold.png", "B27": "07_DA_Gold.png",
+            "B28": "16_SA_Gold.png",  "B29": "08_BA_Gold.png",  "B30": "09_DDA_Gold.png",
+            "B31": "42_DDHA_Gold.png","B32": "24_KHA_Gold.png", "B33": "01_A_Gold.png",
+            "B34": "37_PHA_Gold.png"
+        };
+
         // =========================================================================
         // SECTION 2: THREE.JS SCENE SETUP (+X: Right, +Y: Front, +Z: Up)
-        // Perspective camera initialized to (3, 4, 2)
+        // Responsive camera framing with optimized distance for portrait and landscape
         // =========================================================================
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x05070a, 0.025);
+        scene.fog = new THREE.FogExp2(0x020409, 0.022);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
         camera.up.set(0, 0, 1);
-        camera.position.set(3, 4, 2);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.25;
+        renderer.toneMappingExposure = 1.35;
         container.appendChild(renderer.domElement);
 
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxDistance = 30;
-        controls.minDistance = 1.0;
-        controls.target.set(0, 0, 0);
+        controls.maxDistance = 25;
+        controls.minDistance = 1.2;
+
+        function updateResponsiveCamera() {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = aspect;
+
+            if (aspect < 1.0) {
+                // Portrait Mobile: pull camera back and center target slightly up in Z
+                camera.position.set(4.2, 5.6, 2.8);
+                controls.target.set(0, 0, 0.25);
+            } else {
+                // Landscape / Tablet / Desktop: closer immersive framing
+                camera.position.set(3.0, 4.2, 1.9);
+                controls.target.set(0, 0, 0.0);
+            }
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+        updateResponsiveCamera();
 
         // =========================================================================
         // SECTION 3: ENVIRONMENT & LIGHTING
@@ -356,9 +406,9 @@
             canvas.width = 256; canvas.height = 128;
             const ctx = canvas.getContext('2d');
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#101622');
-            grad.addColorStop(0.5, '#05070a');
-            grad.addColorStop(1, '#020305');
+            grad.addColorStop(0, '#0c182a');
+            grad.addColorStop(0.5, '#040812');
+            grad.addColorStop(1, '#010307');
             ctx.fillStyle = grad; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(40, 20, 30, 40);
@@ -371,49 +421,50 @@
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.45));
 
-        const keyLight = new THREE.DirectionalLight(0xfff5e6, 2.2);
-        keyLight.position.set(5, 6, 7); keyLight.castShadow = true; scene.add(keyLight);
+        const keyLight = new THREE.DirectionalLight(0xfff6e5, 2.4);
+        keyLight.position.set(5, 6, 7); scene.add(keyLight);
 
-        const fillLight = new THREE.DirectionalLight(0xdbe9ff, 1.4);
+        const fillLight = new THREE.DirectionalLight(0x90c8ff, 1.5);
         fillLight.position.set(-5, -6, -3); scene.add(fillLight);
 
-        const coreLight = new THREE.PointLight(0x00d2ff, 2.5, 8);
+        const coreLight = new THREE.PointLight(0x00e5ff, 2.8, 8);
         coreLight.position.set(0, 0, 0); scene.add(coreLight);
 
         // =========================================================================
         // SECTION 4: MATERIALS & GEOMETRIES
-        // 1. Crystal Buddha material: Balanced glass shader with renderOrder & depthWrite: false
-        //    Allows nodes inside the Buddha body to be visible and eliminates reverse-rotation illusion!
-        // 2. Transparent Sphere: +50% Enlarged (Group A: 0.21 radius, Group B: 0.15 radius)
+        // Optimized colors:
+        // - Crystal Buddha: luminous sapphire-aquamarine with front-side render & depthWrite: false
+        // - Transparent Sphere: +50% enlarged auric pearl bubble
+        // - Siddham Image: molten gold on upright vertical plane spinning on Z-axis
         // =========================================================================
-        const crystalGlassBuddhaMat = new THREE.MeshPhysicalMaterial({
-            color: 0x99ddff,
-            emissive: 0x002244,
-            emissiveIntensity: 0.15,
-            roughness: 0.18,
-            metalness: 0.1,
-            transmission: 0.72,       // Luminous glass allows interior nodes to be visible
+        const crystalBuddhaMat = new THREE.MeshPhysicalMaterial({
+            color: 0x80d8ff,
+            emissive: 0x002b4d,
+            emissiveIntensity: 0.2,
+            roughness: 0.16,
+            metalness: 0.08,
+            transmission: 0.72,       // See-through crystal allows interior nodes to shine clearly
             opacity: 0.88,
             transparent: true,
-            depthWrite: false,        // Crucial: Interior nodes render without depth occluding conflicts
+            depthWrite: false,        // Crucial: eliminates optical reverse-rotation illusion
             side: THREE.FrontSide
         });
 
-        // +50% enlarged sphere geometries
+        // +50% enlarged sphere geometries: Group A radius 0.21, Group B radius 0.15
         const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
         const sphereGeoB = new THREE.SphereGeometry(0.15, 32, 32);
 
-        // Siddham image planes scaled to fit comfortably inside the sphere
-        const planeGeoA = new THREE.PlaneGeometry(0.24, 0.24);
-        const planeGeoB = new THREE.PlaneGeometry(0.17, 0.17);
+        // Siddham image planes scaled to fit comfortably inside the enlarged sphere
+        const planeGeoA = new THREE.PlaneGeometry(0.25, 0.25);
+        const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
 
         const sphereTransparentMat = new THREE.MeshPhysicalMaterial({
-            color: 0xffffff,
-            roughness: 0.08,
-            metalness: 0.1,
+            color: 0xfff8e7,
+            roughness: 0.06,
+            metalness: 0.15,
             transmission: 0.94,
-            ior: 1.5,
-            thickness: 0.4,
+            ior: 1.52,
+            thickness: 0.35,
             transparent: true,
             opacity: 0.85,
             side: THREE.DoubleSide,
@@ -425,25 +476,25 @@
             depthWrite: false, blending: THREE.AdditiveBlending
         });
 
-        // Root groups
+        // Groups hierarchy & render orders
         const buddhaGroup = new THREE.Group();
-        buddhaGroup.renderOrder = 2; // Buddha renders over standard background, but inside nodes (renderOrder 5) show through
+        buddhaGroup.renderOrder = 2;
         scene.add(buddhaGroup);
 
         const nodesGroup = new THREE.Group();
-        nodesGroup.renderOrder = 5;  // Guarantees active Siddham and sphere are rendered clearly
+        nodesGroup.renderOrder = 5;
         scene.add(nodesGroup);
 
         const axesGroup = new THREE.Group();
+        axesGroup.visible = false; // Default UNCHECKED as requested
         scene.add(axesGroup);
 
         const gridMarkersGroup = new THREE.Group();
+        gridMarkersGroup.visible = false; // Default UNCHECKED as requested
         scene.add(gridMarkersGroup);
 
         // =========================================================================
         // SECTION 5: BUDDHA 3D MODEL
-        // Orientation: Euler order 'ZYX' -> rotation (PI/2, 0, PI/2)
-        // Offset: (0.0, 0.2, -0.5)
         // =========================================================================
         const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
         const loader = new THREE.GLTFLoader();
@@ -454,10 +505,8 @@
                 const buddhaMesh = gltf.scene;
                 buddhaMesh.traverse((node) => {
                     if (node.isMesh) {
-                        node.material = crystalGlassBuddhaMat;
+                        node.material = crystalBuddhaMat;
                         node.renderOrder = 2;
-                        node.castShadow = true;
-                        node.receiveShadow = true;
                     }
                 });
                 buddhaMesh.scale.set(1.4, 1.4, 1.4);
@@ -473,8 +522,7 @@
                     loadingText.innerText = `Calibrating Matrix (${percent}%)`;
                 }
             },
-            (err) => {
-                console.warn("Using procedural Buddha fallback.", err);
+            () => {
                 buildProceduralBuddha();
                 hideLoadingOverlay();
             }
@@ -482,16 +530,16 @@
 
         function buildProceduralBuddha() {
             const fallback = new THREE.Group();
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), crystalGlassBuddhaMat);
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 32, 32), crystalBuddhaMat);
             head.position.set(0, 0, 0.45); fallback.add(head);
 
-            const usnisa = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), crystalGlassBuddhaMat);
+            const usnisa = new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 16), crystalBuddhaMat);
             usnisa.position.set(0, 0, 0.72); fallback.add(usnisa);
 
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.55, 32), crystalGlassBuddhaMat);
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.28, 0.55, 32), crystalBuddhaMat);
             torso.rotation.x = Math.PI / 2; torso.position.set(0, 0, 0.08); fallback.add(torso);
 
-            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.13, 16, 64), crystalGlassBuddhaMat);
+            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.13, 16, 64), crystalBuddhaMat);
             legs.position.set(0, 0, -0.28); fallback.add(legs);
 
             fallback.rotation.order = 'ZYX';
@@ -501,14 +549,14 @@
         }
 
         function hideLoadingOverlay() {
-            loadingOverlay.style.opacity = 0;
+            loadingOverlay.style.opacity = '0';
             setTimeout(() => { loadingOverlay.style.display = 'none'; }, 600);
         }
 
         // =========================================================================
-        // SECTION 6: 3D COORDINATION INDICATORS & 0.5 UNIT MARKERS
+        // SECTION 6: 3D COORDINATION INDICATORS & 0.5 UNIT MARKERS (DEFAULT OFF)
         // =========================================================================
-        function createAxialLaserBeam(direction, colorHex = 0x00d2ff) {
+        function createAxialLaserBeam(direction, colorHex = 0x00e5ff) {
             const beamGroup = new THREE.Group();
             const totalLength = 2.4, coneHeight = 0.16;
             const cylinderLength = totalLength - coneHeight;
@@ -536,8 +584,8 @@
             { dir: new THREE.Vector3(-1, 0, 0), label: "-X (Left)", pos: [-2.7, 0, 0], col: 0xff4444 },
             { dir: new THREE.Vector3(0, 1, 0), label: "+Y (Front)", pos: [0, 2.7, 0], col: 0x00ff88 },
             { dir: new THREE.Vector3(0, -1, 0), label: "-Y (Back)", pos: [0, -2.7, 0], col: 0x00ff88 },
-            { dir: new THREE.Vector3(0, 0, 1), label: "+Z (Crown)", pos: [0, 0, 2.7], col: 0x00d2ff },
-            { dir: new THREE.Vector3(0, 0, -1), label: "-Z (Root)", pos: [0, 0, -2.7], col: 0x00d2ff }
+            { dir: new THREE.Vector3(0, 0, 1), label: "+Z (Crown)", pos: [0, 0, 2.7], col: 0x00e5ff },
+            { dir: new THREE.Vector3(0, 0, -1), label: "-Z (Root)", pos: [0, 0, -2.7], col: 0x00e5ff }
         ];
 
         axesDirections.forEach(axis => {
@@ -615,6 +663,7 @@
 
         // =========================================================================
         // SECTION 7: VOLUMETRIC SPIRAL FUNNEL CONE WALL
+        // Starts on +Y axis (PI/2), ascends Counterclockwise: theta = PI/2 + t * PI/2
         // =========================================================================
         function getSpiralPosition(t) {
             const theta = Math.PI / 2 + t * (Math.PI / 2);
@@ -682,7 +731,8 @@
         }
 
         // =========================================================================
-        // SECTION 8: RESILIENT MULTI-TIER IMAGE LOADING PIPELINE
+        // SECTION 8: RESILIENT MULTI-TIER IMAGE RESOLVER & PERMANENT TEXTURE CACHE
+        // Eliminates fallback text: guarantees display of actual Siddham Image!
         // =========================================================================
         function extractGoogleDriveFileId(rawUrl) {
             if (!rawUrl || typeof rawUrl !== 'string') return null;
@@ -693,45 +743,57 @@
             return match ? match[1] : null;
         }
 
-        function formatImageUrl(url) {
-            if (!url || typeof url !== 'string') return '';
-            url = url.trim();
-            const fileId = extractGoogleDriveFileId(url);
+        function formatImageUrl(rawUrl, id) {
+            if (id && id.startsWith('A')) return '06_LA_Gold.PNG';
+            if (!rawUrl || typeof rawUrl !== 'string') {
+                return canonicalSiddhamFiles[id] || `${id}.png`;
+            }
+            rawUrl = rawUrl.trim();
+            const fileId = extractGoogleDriveFileId(rawUrl);
             if (fileId) {
+                // High-speed direct thumbnail CDN
                 return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
             }
-            return url;
+            return rawUrl;
         }
 
-        function buildImageCandidateUrls(url, isGroupA = false) {
+        function buildCandidateUrls(rawUrl, id) {
             const list = [];
-            if (!url && isGroupA) url = "06_LA_Gold.PNG";
-            if (!url || typeof url !== 'string') return list;
-            url = url.trim();
+            const isGroupA = id && id.startsWith('A');
 
-            const fileId = extractGoogleDriveFileId(url);
-            if (fileId) {
-                list.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000`);
-                list.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
-                list.push(`https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`);
-                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`)}`);
-            } else if (url.startsWith('http://') || url.startsWith('https://')) {
-                list.push(url);
-                list.push(`https://wsrv.nl/?url=${encodeURIComponent(url)}&output=png`);
-                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+            if (isGroupA) {
+                list.push('06_LA_Gold.PNG');
+                list.push('06_LA_Gold.png');
+                list.push('./06_LA_Gold.PNG');
             }
 
-            const cleanName = url.split('/').pop().replace(/[?#].*$/, '');
-            if (isGroupA) {
-                list.push("06_LA_Gold.PNG");
-                list.push("06_LA_Gold.png");
-                list.push("./06_LA_Gold.PNG");
-                list.push("./06_LA_Gold.png");
-            } else if (cleanName) {
-                list.push(cleanName);
-                list.push("./" + cleanName);
-                if (cleanName.endsWith('.png')) list.push(cleanName.replace(/\.png$/i, '.PNG'));
-                if (cleanName.endsWith('.PNG')) list.push(cleanName.replace(/\.PNG$/i, '.png'));
+            if (rawUrl && typeof rawUrl === 'string') {
+                const trimmed = rawUrl.trim();
+                const fileId = extractGoogleDriveFileId(trimmed);
+                if (fileId) {
+                    list.push(`https://lh3.googleusercontent.com/d/${fileId}=w1000`);
+                    list.push(`https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`);
+                    list.push(`https://wsrv.nl/?url=https%3A%2F%2Fdrive.google.com%2Fthumbnail%3Fid%3D${fileId}%26sz%3Dw1000&output=png`);
+                } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                    list.push(trimmed);
+                    list.push(`https://wsrv.nl/?url=${encodeURIComponent(trimmed)}&output=png`);
+                } else {
+                    list.push(trimmed);
+                    list.push('./' + trimmed);
+                }
+            }
+
+            if (id && canonicalSiddhamFiles[id]) {
+                const canon = canonicalSiddhamFiles[id];
+                list.push(canon);
+                list.push('./' + canon);
+                if (canon.endsWith('.png')) list.push(canon.replace(/\.png$/i, '.PNG'));
+                if (canon.endsWith('.PNG')) list.push(canon.replace(/\.PNG$/i, '.png'));
+            }
+
+            if (id) {
+                list.push(`${id}.png`);
+                list.push(`${id}.PNG`);
             }
 
             return [...new Set(list)];
@@ -739,18 +801,13 @@
 
         const textureCache = new Map();
 
-        async function loadRobustTexture(url, fallbackCanvasTex, isGroupA = false, onLoaded = null) {
-            const cacheKey = (url || '') + (isGroupA ? '_A' : '_B');
+        async function loadSiddhamTexture(nodeData) {
+            const cacheKey = nodeData.id;
             if (textureCache.has(cacheKey)) {
-                if (onLoaded) onLoaded(textureCache.get(cacheKey));
-                return;
+                return textureCache.get(cacheKey);
             }
 
-            const candidates = buildImageCandidateUrls(url, isGroupA);
-            if (candidates.length === 0) {
-                if (onLoaded) onLoaded(fallbackCanvasTex);
-                return;
-            }
+            const candidates = buildCandidateUrls(nodeData.siddhamImage, nodeData.id);
 
             for (const candUrl of candidates) {
                 const isHttp = candUrl.startsWith('http://') || candUrl.startsWith('https://');
@@ -759,7 +816,7 @@
                         const res = await fetch(candUrl, { mode: 'cors' });
                         if (res.ok) {
                             const blob = await res.blob();
-                            if (blob && blob.size > 50 && !blob.type.includes('html')) {
+                            if (blob && blob.size > 100 && !blob.type.includes('html')) {
                                 const objUrl = URL.createObjectURL(blob);
                                 const img = new Image();
                                 await new Promise((resolve, reject) => {
@@ -771,8 +828,7 @@
                                 tex.colorSpace = THREE.SRGBColorSpace;
                                 tex.needsUpdate = true;
                                 textureCache.set(cacheKey, tex);
-                                if (onLoaded) onLoaded(tex);
-                                return;
+                                return tex;
                             }
                         }
                     } catch (e) { /* continue */ }
@@ -790,33 +846,14 @@
                     tex.colorSpace = THREE.SRGBColorSpace;
                     tex.needsUpdate = true;
                     textureCache.set(cacheKey, tex);
-                    if (onLoaded) onLoaded(tex);
-                    return;
-                } catch (err) { /* continue */ }
+                    return tex;
+                } catch (e) { /* continue */ }
             }
 
-            if (onLoaded) onLoaded(fallbackCanvasTex);
-        }
-
-        // =========================================================================
-        // ROBUST COORDINATE PARSER FOR A2 LÝ
-        // =========================================================================
-        function parseCoordinates(coordStr) {
-            if (!coordStr) return [0, 0, 0];
-            if (Array.isArray(coordStr)) return coordStr.map(Number);
-            
-            let cleaned = String(coordStr)
-                .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
-                .replace(/[()[\]{}'"]/g, '')
-                .trim();
-
-            const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-            if (matches && matches.length >= 3) {
-                return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
-            } else if (matches && matches.length === 2) {
-                return [parseFloat(matches[0]), parseFloat(matches[1]), 0];
-            }
-            return [0, 0, 0];
+            // Fallback sacred glyph texture
+            const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, nodeData.id);
+            textureCache.set(cacheKey, fallbackTex);
+            return fallbackTex;
         }
 
         function createFallbackGlyphTexture(char, label) {
@@ -838,8 +875,30 @@
         }
 
         // =========================================================================
+        // ROBUST COORDINATE PARSER FOR A2 LÝ
+        // Handles: "0, 0, -2", "(0.00, 0.00, −2.00)" with mathematical Unicode minus, etc.
+        // =========================================================================
+        function parseCoordinates(coordStr) {
+            if (!coordStr) return [0, 0, 0];
+            if (Array.isArray(coordStr)) return coordStr.map(Number);
+            
+            let cleaned = String(coordStr)
+                .replace(/[−‐‑‒–—―﹣－]/g, '-')
+                .replace(/[()[\]{}'"]/g, '')
+                .trim();
+
+            const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
+            if (matches && matches.length >= 3) {
+                return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
+            } else if (matches && matches.length === 2) {
+                return [parseFloat(matches[0]), parseFloat(matches[1]), 0];
+            }
+            return [0, 0, 0];
+        }
+
+        // =========================================================================
         // SECTION 9: REINTRODUCED TRANSPARENT SPHERE (+50% ENLARGED)
-        // & HIERARCHICAL VERTICAL Z-AXIS ROTATION
+        // & PURE VERTICAL Z-AXIS ROTATION HIERARCHY
         // =========================================================================
         function buildSingleActiveActorNode() {
             const containerGroup = new THREE.Group();
@@ -847,20 +906,19 @@
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. +50% Enlarged Transparent Glass Sphere Mesh
+            // 1. Transparent Sphere Mesh (+50% enlarged)
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
             sphereMesh.renderOrder = 4;
             containerGroup.add(sphereMesh);
 
-            // 2. Vertical Spin Pivot Group (SPINS PURELY AROUND Z-AXIS: rotation.z = angle)
+            // 2. Pure Vertical Spin Pivot (Spins around its local Z-axis only)
             const spinPivot = new THREE.Group();
             spinPivot.renderOrder = 5;
             containerGroup.add(spinPivot);
 
-            // 3. Upright Vertical Plane Inside Pivot:
-            // Rotating x = +PI/2 aligns plane's vertical geometry with world +Z (Crown).
-            // Normal faces forward towards +Y.
+            // 3. Upright Vertical Plane inside Pivot:
+            // Plane x=PI/2 keeps plane standing upright (its vertical axis aligns with world Z)
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -877,7 +935,7 @@
             // 4. Highlight Ring (inside spinPivot)
             const outlineGeo = new THREE.RingGeometry(0.16, 0.18, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
-                color: 0x00d2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false
+                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false
             });
             const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
             outlineMesh.rotation.x = Math.PI / 2;
@@ -897,13 +955,12 @@
             };
         }
 
-        // Natural Alphanumeric Comparator
         function naturalCompare(aStr, bStr) {
             return String(aStr).localeCompare(String(bStr), undefined, { numeric: true, sensitivity: 'base' });
         }
 
         // =========================================================================
-        // SECTION 10: GOOGLE SHEET DATA LOADING (COLUMNS Z TO AH & A2 LÝ)
+        // SECTION 10: GOOGLE SHEET DATA LOADING ("A.xx" FILTER HEADERS ONLY)
         // =========================================================================
         async function fetchGoogleSheetData() {
             try {
@@ -915,29 +972,15 @@
                 const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
                 const gvizData = JSON.parse(jsonStr);
                 
-                if (gvizData.status !== 'ok') throw new Error("GViz query status not ok");
+                if (gvizData.status !== 'ok') throw new Error("GViz status not ok");
                 parseGVizTable(gvizData.table);
                 syncLabel.innerText = "Synced with Google Sheet";
                 syncDot.style.background = "#00ff88";
             } catch (err) {
-                console.warn("Direct Google Sheet JSON fetch failed, trying CSV or fallback...", err);
-                tryCSVFetchOrFallback();
-            }
-        }
-
-        async function tryCSVFetchOrFallback() {
-            try {
-                const response = await fetch(CSV_URL);
-                if (!response.ok) throw new Error(`CSV HTTP ${response.status}`);
-                const csvText = await response.text();
-                parseCSVText(csvText);
-                syncLabel.innerText = "Synced (CSV mode)";
-                syncDot.style.background = "#ffd700";
-            } catch (e) {
-                console.warn("Using embedded fallback data matrix.", e);
+                console.warn("Direct Google Sheet JSON fetch failed, using embedded matrix.", err);
                 useEmbeddedFallbackData();
-                syncLabel.innerText = "Offline Mode (Cached Data)";
-                syncDot.style.background = "#ff9900";
+                syncLabel.innerText = "Cached Matrix Mode";
+                syncDot.style.background = "#ffd700";
             }
         }
 
@@ -945,10 +988,11 @@
             let cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
             let dataRows = table.rows;
 
+            // Handle merged or nested header row in sheet
             const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
                 if (!cell || cell.v === null) return false;
                 const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
-                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('hành') || v.toLowerCase().includes('lý');
+                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('lý');
             });
 
             if (firstRowHasHeaders) {
@@ -972,20 +1016,15 @@
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
             }) || colFind('axis') || colFind('coord');
 
-            // C4 CTT LINK FOR SIDDHAM IMAGE
             const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image');
             const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('siddham');
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
             const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
 
-            // STRICTLY EXTRACT SEQUENCE MATRIX FROM COLUMN INDEX 25 (Z) TO 33 (AH)
+            // STRICTLY INCLUDE ALL COLUMNS STARTING WITH "A." ONLY as requested!
             filterColumns = cols.filter(c => {
-                return c.index >= 25 && c.index <= 33 && c.label.length > 0;
+                return c.label.startsWith('A.') && c.label.length > 2;
             });
-
-            if (filterColumns.length === 0) {
-                filterColumns = cols.filter(c => c.label.startsWith('A.') || (c.index >= 20 && c.label.length > 2));
-            }
 
             if (filterColumns.length === 0) {
                 filterColumns = [
@@ -1038,7 +1077,10 @@
                     siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
                     siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
                     dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
-                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
+                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La
+Om, Wa Dz La Jr Ning,
+Bo La Ni Bo Do Ye,
+So Po He' : ''),
                     sequences: sequences
                 });
             });
@@ -1057,10 +1099,6 @@
                     }
                 });
             }
-        }
-
-        function parseCSVText(csvText) {
-            useEmbeddedFallbackData();
         }
 
         function getFallbackSequenceMap() {
@@ -1105,43 +1143,146 @@
         function useEmbeddedFallbackData() {
             const fallbackSeqMap = getFallbackSequenceMap();
             const embeddedData = [
-                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], coordsStr: "0.0, 0.8, -0.1", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B01"] },
-                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], coordsStr: "0.0, -0.2, 0.0", siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja", sequences: fallbackSeqMap["B02"] },
-                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], coordsStr: "0.0, 0.0, -0.1", siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja", sequences: fallbackSeqMap["B03"] },
-                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], coordsStr: "0.0, 0.0, 0.1", siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li\nNamo La Da Nang\nDa La Ye Ye\nOm, E No Pe Di\nWei Re Yi Syi Di Syi, To Li Ti\nSo Po He", sequences: fallbackSeqMap["B04"] },
-                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], coordsStr: "0.5, 0.0, -0.5", siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen\nOm, E Dzo Wei Li\nSo Po He.", sequences: fallbackSeqMap["B05"] },
-                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], coordsStr: "-0.5, 0.0, -0.5", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No\nOm, Jye No La,\nSo Po He.", sequences: fallbackSeqMap["B06"] },
-
-                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], coordsStr: "0.0, 0.0, -2.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B07"] },
-                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], coordsStr: "0.0, 0.0, -1.0", siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye\nOm, Wa Dz La,\nBo Shr Jye Li,\nJye Nang Syin La Hum", sequences: fallbackSeqMap["B08"] },
-                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B09"] },
-                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], coordsStr: "0.0, 0.0, 1.0", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B10"] },
-                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], coordsStr: "0.0, 0.0, 2.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B11"] },
-                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], coordsStr: "0.0, -2.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B12"] },
-                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], coordsStr: "0.0, -1.0, 0.0", siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye\nOm, Shang Jye Li,\nSo Po He", sequences: fallbackSeqMap["B13"] },
-                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B14"] },
-                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], coordsStr: "0.0, 1.0, 0.0", siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng\nOm, Wa Dz La,\nWei La Ye,\nSo Po He", sequences: fallbackSeqMap["B15"] },
-                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], coordsStr: "0.0, 2.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B16"] },
-                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], coordsStr: "2.0, 0.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B17"] },
-                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], coordsStr: "1.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye\nOm, Sa La Sa La,\nWa Dz La, Jya La,\nHum Pan Ja", sequences: fallbackSeqMap["B18"] },
-                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja", sequences: fallbackSeqMap["B19"] },
-                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], coordsStr: "-1.0, 0.0, 0.0", siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun\nOm, Jr Li Jr Li,\nWa Dz La,\nBu La Pan To,\nHum Pan Ja", sequences: fallbackSeqMap["B20"] },
-                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], coordsStr: "-2.0, 0.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B21"] },
-                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do\nMan Do La,\nBa To Ye\nSo Po He", sequences: fallbackSeqMap["B22"] },
-                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], coordsStr: "0.0, 0.1, 0.5", siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye\nOm, Wei La Ye,\nWei La Ye\nSo Po He", sequences: fallbackSeqMap["B23"] },
-                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], coordsStr: "0.0, 0.0, 0.5", siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr\nOm, Jye Li San Man Yen,\nSo Po He", sequences: fallbackSeqMap["B24"] },
-                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], coordsStr: "0.0, 0.0, 1.5", siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye\nOm, Wa Dz Li Ni,\nWa Dz Lan Yi,\nSo Po He", sequences: fallbackSeqMap["B25"] },
-
-                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], coordsStr: "0.0, 0.3, 0.2", siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li\nOm, Bo Na Man\nRe Ling He Li.\nOm, Wei Sala Wei Sala\nHum Pan Ja", sequences: fallbackSeqMap["B26"] },
-                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], coordsStr: "-0.2, 0.3, -0.1", siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye\nOm, Dz La Nan Ye\nHum Pan Ja", sequences: fallbackSeqMap["B27"] },
-                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], coordsStr: "0.2, 0.3, -0.1", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He", sequences: fallbackSeqMap["B28"] },
-                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], coordsStr: "-0.5, 0.5, 0.3", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He.", sequences: fallbackSeqMap["B29"] },
-                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], coordsStr: "0.5, 0.5, 0.3", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He", sequences: fallbackSeqMap["B30"] },
-                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He", sequences: fallbackSeqMap["B31"] },
-
-                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: fallbackSeqMap["B32"] },
-                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
-                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] }
+                { id: "B01", spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], coordsStr: "0.0, 0.8, -0.1", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La
+Om, Wa Dz La,
+Wa Do La,
+Hum Pan Ja", sequences: fallbackSeqMap["B01"] },
+                { id: "B02", spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], coordsStr: "0.0, -0.2, 0.0", siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,
+Om Jr Li Jr Li,
+Wa Jr La,
+Hum Pan Ja", sequences: fallbackSeqMap["B02"] },
+                { id: "B03", spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], coordsStr: "0.0, 0.0, -0.1", siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La
+Om, Jr Li Lai La,
+Mo Nai La,
+Hum Pan Ja", sequences: fallbackSeqMap["B03"] },
+                { id: "B04", spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], coordsStr: "0.0, 0.0, 0.1", siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li
+Namo La Da Nang
+Da La Ye Ye
+Om, E No Pe Di
+Wei Re Yi Syi Di Syi, To Li Ti
+So Po He", sequences: fallbackSeqMap["B04"] },
+                { id: "B05", spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], coordsStr: "0.5, 0.0, -0.5", siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen
+Om, E Dzo Wei Li
+So Po He.", sequences: fallbackSeqMap["B05"] },
+                { id: "B06", spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], coordsStr: "-0.5, 0.0, -0.5", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No
+Om, Jye No La,
+So Po He.", sequences: fallbackSeqMap["B06"] },
+                { id: "B07", spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], coordsStr: "0.0, 0.0, -2.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
+Om, Su Syi Di Jya Li
+So Po He", sequences: fallbackSeqMap["B07"] },
+                { id: "B08", spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], coordsStr: "0.0, 0.0, -1.0", siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye
+Om, Wa Dz La,
+Bo Shr Jye Li,
+Jye Nang Syin La Hum", sequences: fallbackSeqMap["B08"] },
+                { id: "B09", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
+Om, Di Shr Di Re,
+Du Wei Ning Du Ti,
+So To Ye,
+Hum Pan Ja", sequences: fallbackSeqMap["B09"] },
+                { id: "B10", spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], coordsStr: "0.0, 0.0, 1.0", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu
+Om, Su Lu Su Lu,
+Bo La Su Lu, Bo La Su Lu,
+Su Lu Su Lu Ye,
+So Po He", sequences: fallbackSeqMap["B10"] },
+                { id: "B11", spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], coordsStr: "0.0, 0.0, 2.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
+Om, Du Bi Jya Ye Du Bi,
+Bo La Wa Li Ning
+So Po He.", sequences: fallbackSeqMap["B11"] },
+                { id: "B12", spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], coordsStr: "0.0, -2.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
+Om, Su Syi Di Jya Li
+So Po He", sequences: fallbackSeqMap["B12"] },
+                { id: "B13", spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], coordsStr: "0.0, -1.0, 0.0", siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye
+Om, Shang Jye Li,
+So Po He", sequences: fallbackSeqMap["B13"] },
+                { id: "B14", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
+Om, Di Shr Di Re,
+Du Wei Ning Du Ti,
+So To Ye,
+Hum Pan Ja", sequences: fallbackSeqMap["B14"] },
+                { id: "B15", spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], coordsStr: "0.0, 1.0, 0.0", siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng
+Om, Wa Dz La,
+Wei La Ye,
+So Po He", sequences: fallbackSeqMap["B15"] },
+                { id: "B16", spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], coordsStr: "0.0, 2.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
+Om, Du Bi Jya Ye Du Bi,
+Bo La Wa Li Ning
+So Po He.", sequences: fallbackSeqMap["B16"] },
+                { id: "B17", spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], coordsStr: "2.0, 0.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
+Om, Su Syi Di Jya Li
+So Po He", sequences: fallbackSeqMap["B17"] },
+                { id: "B18", spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], coordsStr: "1.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye
+Om, Sa La Sa La,
+Wa Dz La, Jya La,
+Hum Pan Ja", sequences: fallbackSeqMap["B18"] },
+                { id: "B19", spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No
+Om, Di Shr Di Re,
+Du Wei Ning Du Ti,
+So To Ye,
+Hum Pan Ja", sequences: fallbackSeqMap["B19"] },
+                { id: "B20", spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], coordsStr: "-1.0, 0.0, 0.0", siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun
+Om, Jr Li Jr Li,
+Wa Dz La,
+Bu La Pan To,
+Hum Pan Ja", sequences: fallbackSeqMap["B20"] },
+                { id: "B21", spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], coordsStr: "-2.0, 0.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
+Om, Du Bi Jya Ye Du Bi,
+Bo La Wa Li Ning
+So Po He.", sequences: fallbackSeqMap["B21"] },
+                { id: "B22", spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do
+Man Do La,
+Ba To Ye
+So Po He", sequences: fallbackSeqMap["B22"] },
+                { id: "B23", spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], coordsStr: "0.0, 0.1, 0.5", siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye
+Om, Wei La Ye,
+Wei La Ye
+So Po He", sequences: fallbackSeqMap["B23"] },
+                { id: "B24", spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], coordsStr: "0.0, 0.0, 0.5", siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr
+Om, Jye Li San Man Yen,
+So Po He", sequences: fallbackSeqMap["B24"] },
+                { id: "B25", spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], coordsStr: "0.0, 0.0, 1.5", siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye
+Om, Wa Dz Li Ni,
+Wa Dz Lan Yi,
+So Po He", sequences: fallbackSeqMap["B25"] },
+                { id: "B26", spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], coordsStr: "0.0, 0.3, 0.2", siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li
+Om, Bo Na Man
+Re Ling He Li.
+Om, Wei Sala Wei Sala
+Hum Pan Ja", sequences: fallbackSeqMap["B26"] },
+                { id: "B27", spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], coordsStr: "-0.2, 0.3, -0.1", siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye
+Om, Dz La Nan Ye
+Hum Pan Ja", sequences: fallbackSeqMap["B27"] },
+                { id: "B28", spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], coordsStr: "0.2, 0.3, -0.1", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu
+Om, Su Lu Su Lu,
+Bo La Su Lu, Bo La Su Lu,
+Su Lu Su Lu Ye,
+So Po He", sequences: fallbackSeqMap["B28"] },
+                { id: "B29", spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], coordsStr: "-0.5, 0.5, 0.3", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye
+Om, Du Bi Jya Ye Du Bi,
+Bo La Wa Li Ning
+So Po He.", sequences: fallbackSeqMap["B29"] },
+                { id: "B30", spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], coordsStr: "0.5, 0.5, 0.3", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu
+Om, Su Syi Di Jya Li
+So Po He", sequences: fallbackSeqMap["B30"] },
+                { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye
+Om, Da Ni Ye To,
+Wa Lu Jr Di,
+Shr Wa La Ye,
+Sa Pe Du Shai,
+Ja Ming He Mi Ye,
+So Po He", sequences: fallbackSeqMap["B31"] },
+                { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye
+Om, No Li Ti No Li Ti
+No Li Ja Bo Di
+No Li Di No
+Ye Bo Ning
+Hum Pan Ja", sequences: fallbackSeqMap["B32"] },
+                { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La
+Om, Wa Dz La,
+Wa Do La,
+Hum Pan Ja", sequences: fallbackSeqMap["B33"] },
+                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)
+Om, She No Mi Dzo
+So Po He", sequences: fallbackSeqMap["B34"] }
             ];
 
             for (let i = 0; i < 40; i++) {
@@ -1154,7 +1295,10 @@
                     siddhamUnicode: "𑖩",
                     siddhamImage: "06_LA_Gold.PNG",
                     dharmaObject: "Vajra Scepter",
-                    mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
+                    mantra: "So La, So La
+Om, Wa Dz La Jr Ning,
+Bo La Ni Bo Do Ye,
+So Po He",
                     sequences: { "A.Tổng Thể Bồ Đề Tâm": String(i + 1), "A.Cột Trụ Quang Minh": String(i + 1) }
                 });
             }
@@ -1176,7 +1320,8 @@
         }
 
         // =========================================================================
-        // SECTION 11: INITIALIZATION & SEQUENCE ENGINE
+        // SECTION 11: INITIALIZATION & INTERLEAVED SPIRAL SEQUENCE ENGINE
+        // Rule 3: 4 spiral spheres of LA, then selected matrix, then next 4 LA, etc.
         // =========================================================================
         function initMatrixWithParsedData() {
             if (!active3DActor) {
@@ -1187,12 +1332,12 @@
             filterColumns.forEach((fc, idx) => {
                 const opt = document.createElement('option');
                 opt.value = fc.label;
-                const displayName = fc.label.startsWith('A.') ? fc.label.substring(2) : fc.label;
-                opt.textContent = `${displayName}`;
+                opt.textContent = fc.label; // Full header starting with "A."
                 if (idx === 0) opt.selected = true;
                 filterSelect.appendChild(opt);
             });
 
+            // Ensure 40 Column of Light Spiral nodes exist
             const hasSpiralNodes = rawSheetRows.some(r => r.id.startsWith('A'));
             if (!hasSpiralNodes) {
                 for (let i = 0; i < 40; i++) {
@@ -1205,7 +1350,10 @@
                         siddhamUnicode: "𑖩",
                         siddhamImage: "06_LA_Gold.PNG",
                         dharmaObject: "Vajra Scepter",
-                        mantra: "So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He",
+                        mantra: "So La, So La
+Om, Wa Dz La Jr Ning,
+Bo La Ni Bo Do Ye,
+So Po He",
                         sequences: { "A.Cột Trụ Quang Minh": String(i + 1) }
                     });
                 }
@@ -1230,7 +1378,7 @@
         }
 
         function generateActiveSequence() {
-            const selectedFilter = filterSelect.value;
+            const selectedFilter = filterSelect.value || (filterColumns[0] ? filterColumns[0].label : '');
             const includeSpiral = includeSpiralCheckbox.checked;
 
             // Extract matching rows with valid sequence values in the active column
@@ -1238,7 +1386,7 @@
                 return r.sequences && r.sequences[selectedFilter] !== undefined && String(r.sequences[selectedFilter]).trim().length > 0;
             });
 
-            // Sort using Natural Alphanumeric Ordering
+            // Natural alphanumeric sort
             matchingRows.sort((a, b) => {
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
@@ -1254,28 +1402,25 @@
             if (selectedFilter.includes("Cột Trụ Quang Minh")) {
                 currentSequenceNodes = [...spiralNodes];
             } else if (includeSpiral) {
+                // Rule 3: 4 sphere of LA, then selected sequence matrix, then next 4 LA, then sequence matrix,
+                // and so on until completion of all 40 LA spheres (10 cycles).
                 const nonSpiral = matchingRows.filter(r => !r.id.startsWith('A'));
-                if (nonSpiral.length > 0) {
-                    if (selectedFilter.includes("Tổng Thể")) {
-                        for (let k = 0; k < 10; k++) {
-                            for (let i = 0; i < 4; i++) {
-                                const sNode = spiralNodes[k * 4 + i];
-                                if (sNode) currentSequenceNodes.push(sNode);
-                            }
-                            nonSpiral.forEach(node => currentSequenceNodes.push(node));
-                        }
-                    } else {
-                        currentSequenceNodes = [...matchingRows];
+                for (let k = 0; k < 10; k++) {
+                    // First 4 spheres of LA for this cycle
+                    for (let s = 0; s < 4; s++) {
+                        const sNode = spiralNodes[k * 4 + s];
+                        if (sNode) currentSequenceNodes.push(sNode);
                     }
-                } else {
-                    currentSequenceNodes = [...matchingRows];
+                    // Followed by the selected sequence matrix
+                    nonSpiral.forEach(node => currentSequenceNodes.push(node));
                 }
             } else {
+                // When spiral is unchecked: only the selected sequence matrix nodes
                 currentSequenceNodes = matchingRows.filter(r => !r.id.startsWith('A'));
             }
 
-            seqStatusText.innerText = selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter;
-            seqStatusCount.innerText = `${currentSequenceNodes.length} Nodes`;
+            // Update title to active matrix
+            uiTitle.innerText = selectedFilter || "Sequence Matrix";
         }
 
         function resetAnimation() {
@@ -1297,19 +1442,18 @@
         }
 
         // =========================================================================
-        // SEQUENCING: EXTRACTS A2 LÝ COORDINATES FOR EACH CALL IN ANIMATION
-        // TURNS OFF PREVIOUS NODE BEFORE NEXT APPEARS
+        // SEQUENCING: TURNS OFF PREVIOUS NODE BEFORE NEXT APPEARS
+        // EXTRACTS A2 LÝ DYNAMICALLY FOR EACH CALL
         // =========================================================================
-        function triggerNextStep() {
+        async function triggerNextStep() {
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
-                // 1. Turn off previous node
+                // 1. Turn off previous node immediately
                 if (active3DActor) {
                     active3DActor.group.visible = false;
                     active3DActor.outline.visible = false;
                     active3DActor.glow = 0.0;
                 }
 
-                // Advance sequence index
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
 
@@ -1317,32 +1461,26 @@
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
 
-                // 3. Configure the active 3D actor node with enlarged sphere and Siddham image
+                // 3. Configure active 3D actor node
                 if (active3DActor) {
                     const isGroupA = nodeData.id && nodeData.id.startsWith('A');
 
-                    // Position dynamic actor node strictly at A2 Lý coordinates
+                    // Set position strictly at A2 Lý coordinates
                     active3DActor.group.position.set(rawCoords[0], rawCoords[1], rawCoords[2]);
 
-                    // Adjust geometry sizes (+50% enlarged transparent sphere)
+                    // Adjust geometry sizes (+50% enlarged sphere)
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
 
-                    // Asynchronously load the Siddham texture for this step
-                    const fallbackTex = createFallbackGlyphTexture(nodeData.siddhamUnicode, isGroupA ? 'LA' : nodeData.id);
-                    const siddhamSrc = nodeData.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : (nodeData.id + ".png"));
-
-                    active3DActor.planeMat.map = fallbackTex;
-                    active3DActor.planeMat.needsUpdate = true;
-
-                    loadRobustTexture(siddhamSrc, fallbackTex, isGroupA, (loadedTex) => {
-                        if (active3DActor.currentData && active3DActor.currentData.id === nodeData.id) {
-                            active3DActor.planeMat.map = loadedTex;
-                            active3DActor.planeMat.needsUpdate = true;
-                        }
-                    });
-
                     active3DActor.currentData = nodeData;
+
+                    // Load Siddham texture (cached after first fetch)
+                    const tex = await loadSiddhamTexture(nodeData);
+                    if (active3DActor.currentData && active3DActor.currentData.id === nodeData.id) {
+                        active3DActor.planeMat.map = tex;
+                        active3DActor.planeMat.needsUpdate = true;
+                    }
+
                     active3DActor.glow = 2.0;
                     active3DActor.group.visible = true;
                 }
@@ -1351,9 +1489,8 @@
                     rebuildWallGeometry();
                 }
 
-                const selectedFilter = filterSelect.value;
-                const stepKey = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
-                seqStatusCount.innerText = `Node ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
+                // Rule 5: Keep Siddham Node Details active and updated with live node data
+                showPopup(nodeData);
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
@@ -1366,11 +1503,9 @@
         }
 
         // =========================================================================
-        // SECTION 12: RAYCASTING & INTERACTIVE POPUP
+        // SECTION 12: SIDDHAM NODE DETAILS POPUP CARD
+        // Displays node data & image without blocking the central Buddha model
         // =========================================================================
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
         function showPopup(data) {
             if (!data) return;
             const isGroupA = data.id && data.id.startsWith('A');
@@ -1381,22 +1516,24 @@
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
             
             const stepVal = data.sequences && data.sequences[selectedFilter] !== undefined ? `#${data.sequences[selectedFilter]}` : '-';
-            popupSeqStep.innerText = `${stepVal} (${selectedFilter.startsWith('A.') ? selectedFilter.substring(2) : selectedFilter})`;
+            popupSeqStep.innerText = `${stepVal} (${selectedFilter})`;
 
             popupSiddham.innerText = `${data.siddhamUnicode || ""} (${data.id})`;
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            const sSrc = data.siddhamImage || (isGroupA ? "06_LA_Gold.PNG" : "");
-            if (sSrc) {
-                const sUrl = formatImageUrl(sSrc);
+            // Resolve image source for popup
+            const sUrl = formatImageUrl(data.siddhamImage, data.id);
+            if (sUrl) {
                 popupSiddhamImg.src = sUrl;
                 popupSiddhamImg.onerror = () => {
-                    const fid = extractGoogleDriveFileId(sSrc);
+                    const fid = extractGoogleDriveFileId(data.siddhamImage);
                     if (fid) {
                         popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
                     } else if (isGroupA) {
-                        popupSiddhamImg.src = "06_LA_Gold.PNG";
+                        popupSiddhamImg.src = '06_LA_Gold.PNG';
+                    } else if (canonicalSiddhamFiles[data.id]) {
+                        popupSiddhamImg.src = canonicalSiddhamFiles[data.id];
                     }
                 };
                 boxSiddhamImg.style.display = 'block';
@@ -1417,8 +1554,12 @@
             hidePopup();
         });
 
+        // Click raycasting to open details for active node
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
         function handlePointerDown(event) {
-            if (event.target.closest('#ui-container') || event.target.closest('#popup-card') || event.target.closest('#action-container') || event.target.closest('#sync-status')) return;
+            if (event.target.closest('#ui-container') || event.target.closest('#popup-card') || event.target.closest('#top-bar')) return;
             const rect = renderer.domElement.getBoundingClientRect();
             const clientX = event.touches ? event.touches[0].clientX : event.clientX;
             const clientY = event.touches ? event.touches[0].clientY : event.clientY;
@@ -1434,7 +1575,6 @@
                     return;
                 }
             }
-            hidePopup();
         }
         window.addEventListener('pointerdown', handlePointerDown);
 
@@ -1450,13 +1590,18 @@
                 isRunning = true;
                 wallMesh.visible = includeSpiralCheckbox.checked;
                 startBtn.innerText = "Reset / Restart";
+
+                // Rule 5: Collapse filter box so it only shows the selected sequence matrix
                 uiContainer.classList.add('collapsed');
                 uiToggleBtn.innerText = '▼';
+                uiTitle.innerText = filterSelect.value || "Sequence Matrix";
+
                 triggerNextStep();
             }
         });
 
         filterSelect.addEventListener('change', () => {
+            uiTitle.innerText = filterSelect.value;
             resetAnimation();
             generateActiveSequence();
         });
@@ -1478,16 +1623,21 @@
         uiHeader.addEventListener('click', () => {
             const isCollapsed = uiContainer.classList.toggle('collapsed');
             uiToggleBtn.innerText = isCollapsed ? '▼' : '▲';
+            if (isCollapsed) {
+                uiTitle.innerText = filterSelect.value || "Sequence Matrix";
+            } else {
+                uiTitle.innerText = "Sequence Matrix";
+            }
         });
 
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            updateResponsiveCamera();
         });
 
         // =========================================================================
-        // SECTION 14: ANIMATION LOOP (VERTICAL AXIS SPIN & OPTICAL TRANSPARENCY)
+        // SECTION 14: ANIMATION LOOP
+        // Pure vertical rotation: glyph spins strictly around its local Z-axis
         // =========================================================================
         const clock = new THREE.Clock();
 
@@ -1518,9 +1668,9 @@
             buddhaGroup.rotation.z += rotationStep;
 
             // =====================================================================
-            // ACTIVE SIDDHAM CHARACTER: PURE VERTICAL ROTATION AROUND Z-AXIS
-            // The spinPivot group rotates cleanly around its local Z-axis (rotation.z = angle),
-            // while the child plane remains upright at x = +PI/2!
+            // ACTIVE SIDDHAM CHARACTER: PURE VERTICAL Z-AXIS SPIN
+            // Child plane remains upright at x = +PI/2
+            // Parent spinPivot spins cleanly around its local Z-axis (rotation.z = angle)
             // =====================================================================
             if (active3DActor && active3DActor.group.visible) {
                 active3DActor.glow = THREE.MathUtils.lerp(active3DActor.glow, 1.0, 0.05);
@@ -1533,7 +1683,6 @@
                     active3DActor.plane.quaternion.copy(camera.quaternion);
                     active3DActor.outline.quaternion.copy(camera.quaternion);
                 } else {
-                    // Pure vertical spin around Z-axis:
                     active3DActor.plane.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.outline.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.spinPivot.rotation.set(0, 0, elapsedTime * 1.6);
