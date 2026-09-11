@@ -921,11 +921,20 @@
         }
 
         // =========================================================================
-        // SECTION 6c: TORUS IN & TORUS OUT HORN TORUS ENERGY SYSTEMS (IMAGE 2)
-        // Perfectly correlated height/width proportions (not lopsided, symmetric)
-        // 1. Torus In: Converges at Crown (0, 0, 1.0), enters body core down to Seat (0, 0, -0.5), stays inside Bubble (R = 1.45 <= 2.1)
-        // 2. Torus Out: Exits Crown (0, 0, 1.0), expands BEYOND Bubble of Ego (R = 2.75 > 2.1), wraps back to Seat (0, 0, -0.5)
-        // Dynamic flowing energy particle system to show continuous flow and direction clearly
+        // SECTION 6c: TORUS IN & TORUS OUT HORN TORUS ENERGY SYSTEMS (IMAGE 2, 4, 5)
+        // 1. Torus In:
+        //    - Uses ALL the space within the Bubble of Ego (R <= 2.05, Z from -1.95 to +2.05),
+        //      including all the height between the bubble ceiling and the crown position.
+        //    - Trumpet vortex funnels: funnels smoothly into Crown (1.0), through core to Seat (-0.5), and funnels out.
+        //    - Absolutely no horizontal latitudinal rings.
+        //    - Flow direction: Crown -> Body Core -> Seat -> Bottom Funnel -> Outer Bubble Shell -> Top Funnel -> Crown.
+        // 2. Torus Out:
+        //    - Height is NOT limited within the bubble. Extends much higher and beyond (Z up to +3.45 > 2.1, R up to 3.75 > 2.1).
+        //    - Trumpet vortex funnels: erupts from Crown in ascending high fountain cone, expands wide beyond bubble, wraps under seat.
+        //    - Absolutely no horizontal latitudinal rings.
+        //    - Flow direction: Seat -> Body Core -> Crown -> High Fountain Flare -> Outer Perimeter -> Seat.
+        // 3. Dynamic Flowing Energy Particles:
+        //    - 72 glowing particles per torus traveling along streamlines to clearly show continuous flow and direction.
         // =========================================================================
         const torusInGroup = new THREE.Group();
         torusInGroup.renderOrder = 6;
@@ -938,11 +947,11 @@
         scene.add(torusOutGroup);
 
         const numStreamlines = 18;
-        const segsPerStreamline = 64;
+        const segsPerStreamline = 80;
         const particlesPerStreamline = 4;
         const totalTorusParticles = numStreamlines * particlesPerStreamline;
 
-        // Glowing particle circular sprite texture
+        // Radial glowing particle sprite texture
         function createGlowPointTexture(hexColor) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
@@ -959,44 +968,67 @@
             return tex;
         }
 
-        // Parametric Horn Torus curve evaluation (Symmetric, smoothly correlated top-to-bottom)
-        // Crown: Z = 1.0, Seat: Z = -0.5, Z_center = 0.25
-        function evaluateHornTorusPoint(tau, azimuth, rMax, direction) {
-            const Z_c = 0.25;
-            const R_core = 0.04;
-            let z, r;
+        // 2D Closed Catmull-Rom Spline Evaluator
+        function catmullRom2D(p0, p1, p2, p3, t) {
+            const t2 = t * t;
+            const t3 = t2 * t;
+            const v0x = (p2[0] - p0[0]) * 0.5, v0y = (p2[1] - p0[1]) * 0.5;
+            const v1x = (p3[0] - p1[0]) * 0.5, v1y = (p3[1] - p1[1]) * 0.5;
+            const rx = (2 * p1[0] - 2 * p2[0] + v0x + v1x) * t3 + (-3 * p1[0] + 3 * p2[0] - 2 * v0x - v1x) * t2 + v0x * t + p1[0];
+            const ry = (2 * p1[1] - 2 * p2[1] + v0y + v1y) * t3 + (-3 * p1[1] + 3 * p2[1] - 2 * v0y - v1y) * t2 + v0y * t + p1[1];
+            return [rx, ry];
+        }
 
-            if (direction === 'in') {
-                const H = 0.75; // Z spans exactly from Crown (1.0) to Seat (-0.5)
-                if (tau < 0.35) {
-                    // Core descent: enters Crown (1.0), travels straight down through body core to Seat (-0.5)
-                    const s = tau / 0.35;
-                    z = 1.0 - s * 1.5;
-                    r = R_core;
-                } else {
-                    // Outer loop: exits Seat (-0.5), arches outward (R <= 1.45) and curves back up into Crown (1.0)
-                    const s = (tau - 0.35) / 0.65;
-                    const psi = -Math.PI / 2 + s * Math.PI;
-                    z = Z_c + H * Math.sin(psi);
-                    r = R_core + (rMax - R_core) * Math.cos(psi);
-                }
-            } else {
-                // Torus Out: fountains out of Crown (1.0), expands BEYOND bubble (R = 2.75 > 2.1) to Seat (-0.5)
-                const H_out = 0.90; // Balanced dome height matching wide 2.75 radius
-                if (tau < 0.65) {
-                    // Expanding fountain downward
-                    const s = tau / 0.65;
-                    const psi = Math.PI / 2 - s * Math.PI;
-                    z = Z_c + H_out * Math.sin(psi);
-                    r = R_core + (rMax - R_core) * Math.cos(psi);
-                } else {
-                    // Core ascent from Seat (-0.5) back to Crown (1.0)
-                    const s = (tau - 0.65) / 0.35;
-                    z = -0.5 + s * 1.5;
-                    r = R_core;
-                }
-            }
+        function evaluateSplineClosed(pts, u) {
+            const N = pts.length;
+            const p = ((u % 1.0) + 1.0) % 1.0 * N;
+            const i = Math.floor(p) % N;
+            const t = p - Math.floor(p);
+            const p0 = pts[(i - 1 + N) % N];
+            const p1 = pts[i];
+            const p2 = pts[(i + 1) % N];
+            const p3 = pts[(i + 2) % N];
+            return catmullRom2D(p0, p1, p2, p3, t);
+        }
 
+        // Torus In Profile: Spans all the height between bubble ceiling (Z=2.05) and crown (Z=1.00),
+        // with polar trumpet funnels at Crown and Seat, filling entire Bubble of Ego (R=2.05 <= 2.1).
+        const waypointsTorusIn = [
+            [0.05, 1.00],   // Crown entrance (entering body core)
+            [0.04, 0.25],   // Heart core
+            [0.05, -0.50],  // Seat exit
+            [0.60, -1.25],  // Trumpet funnel flare out below seat
+            [1.40, -1.95],  // Bottom sweep filling bubble bottom (Z=-1.95)
+            [1.95, -0.90],  // Lower outer wall filling bubble
+            [2.05, 0.20],   // Equator max width filling bubble (R=2.05 <= 2.1)
+            [1.95, 1.35],   // Upper outer wall filling bubble
+            [1.45, 2.05],   // Top dome filling all space to bubble ceiling (Z=2.05)
+            [0.70, 1.70],   // Top funnel rim arching inward
+            [0.22, 1.25]    // Top funnel cone sloping down into Crown
+        ];
+
+        // Torus Out Profile: Not limited by bubble. Extends higher and beyond (Z up to +3.45, R up to 3.75).
+        // Trumpet vortex funnels: erupts upward from crown into ascending fountain cone, wraps far below seat.
+        const waypointsTorusOut = [
+            [0.05, -0.50],  // Seat entrance (core ascending)
+            [0.04, 0.25],   // Heart core
+            [0.05, 1.00],   // Crown exit
+            [0.40, 1.70],   // Upward polar funnel cone exiting crown
+            [1.20, 2.60],   // Ascending fountain flare
+            [2.40, 3.45],   // High fountain arch (extending higher and beyond bubble Z=2.1!)
+            [3.50, 2.30],   // Outer upper flank (extending beyond bubble R=2.1!)
+            [3.75, 0.25],   // Equator maximum width (~3.75!)
+            [3.40, -1.80],  // Outer lower flank
+            [2.20, -2.95],  // Bottom sweep extending below bubble
+            [1.00, -2.00],  // Inward funnel rim below seat
+            [0.25, -1.15]   // Inward funnel throat entering seat
+        ];
+
+        function evaluateHornTorusPoint(tau, azimuth, direction) {
+            const pts = direction === 'in' ? waypointsTorusIn : waypointsTorusOut;
+            const rz = evaluateSplineClosed(pts, tau);
+            const r = Math.max(0.005, rz[0]);
+            const z = rz[1];
             return {
                 x: r * Math.cos(azimuth),
                 y: r * Math.sin(azimuth),
@@ -1004,13 +1036,13 @@
             };
         }
 
-        function buildHornTorusSystem(colorHex, colorHexStr, rMax, direction) {
-            // 1. Poloidal Streamlines (vertical wireframe cage like Image 2)
+        function buildHornTorusSystem(colorHex, colorHexStr, direction) {
+            // 1. Poloidal Streamlines (Smooth, continuous vortex curves - No horizontal rings)
             const streamlines = [];
             const lineMat = new THREE.LineBasicMaterial({
                 color: colorHex,
                 transparent: true,
-                opacity: 0.80,
+                opacity: 0.85,
                 blending: THREE.AdditiveBlending
             });
 
@@ -1020,44 +1052,17 @@
                 const geo = new THREE.BufferGeometry();
                 geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
                 const line = new THREE.Line(geo, lineMat);
-                streamlines.push({ line, geo, positions, azimuth, rMax });
+                streamlines.push({ line, geo, positions, azimuth });
             }
 
-            // 2. Horizontal Latitudinal Rings (as seen in Image 2)
-            const ringGroup = new THREE.Group();
-            const ringMat = new THREE.LineBasicMaterial({
-                color: colorHex,
-                transparent: true,
-                opacity: 0.55,
-                blending: THREE.AdditiveBlending
-            });
-
-            const Z_c = 0.25;
-            const H_span = direction === 'in' ? 0.75 : 0.90;
-            const zRings = [-0.65, -0.4, -0.15, 0.25, 0.55, 0.75, 0.95];
-
-            zRings.forEach(zLevel => {
-                const zNorm = Math.max(-0.95, Math.min(0.95, (zLevel - Z_c) / H_span));
-                const cosPsi = Math.sqrt(Math.max(0, 1.0 - zNorm * zNorm));
-                const ringR = 0.04 + (rMax - 0.04) * cosPsi;
-                const pts = [];
-                const ringSegs = 64;
-                for (let k = 0; k <= ringSegs; k++) {
-                    const th = (k / ringSegs) * Math.PI * 2;
-                    pts.push(new THREE.Vector3(ringR * Math.cos(th), ringR * Math.sin(th), zLevel));
-                }
-                const rGeo = new THREE.BufferGeometry().setFromPoints(pts);
-                ringGroup.add(new THREE.Line(rGeo, ringMat));
-            });
-
-            // 3. Dynamic Flowing Energy Particles (showing continuous flow and direction clearly)
+            // 2. Dynamic Flowing Energy Particles (Continuous flow & direction clearly visible)
             const particlePositions = new Float32Array(totalTorusParticles * 3);
             const particleGeo = new THREE.BufferGeometry();
             particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
 
             const particleMat = new THREE.PointsMaterial({
                 map: createGlowPointTexture(colorHexStr),
-                size: direction === 'in' ? 0.12 : 0.14,
+                size: direction === 'in' ? 0.13 : 0.16,
                 transparent: true,
                 opacity: 0.95,
                 blending: THREE.AdditiveBlending,
@@ -1067,23 +1072,19 @@
 
             return {
                 streamlines,
-                ringGroup,
                 particles,
                 particleGeo,
                 particlePositions,
-                rMax,
                 direction
             };
         }
 
-        const torusInData = buildHornTorusSystem(0x00ffaa, '#00ffaa', 1.45, 'in');
+        const torusInData = buildHornTorusSystem(0x00ffaa, '#00ffaa', 'in');
         torusInData.streamlines.forEach(item => torusInGroup.add(item.line));
-        torusInGroup.add(torusInData.ringGroup);
         torusInGroup.add(torusInData.particles);
 
-        const torusOutData = buildHornTorusSystem(0xff9900, '#ff9900', 2.75, 'out');
+        const torusOutData = buildHornTorusSystem(0xff9900, '#ff9900', 'out');
         torusOutData.streamlines.forEach(item => torusOutGroup.add(item.line));
-        torusOutGroup.add(torusOutData.ringGroup);
         torusOutGroup.add(torusOutData.particles);
 
         function updateHornTorusSystem(torusData, flowOffset, progress) {
@@ -1093,7 +1094,7 @@
                 let ptr = 0;
                 for (let j = 0; j < segsPerStreamline; j++) {
                     const baseTau = (j / (segsPerStreamline - 1));
-                    const pt = evaluateHornTorusPoint(baseTau, item.azimuth, item.rMax, torusData.direction);
+                    const pt = evaluateHornTorusPoint(baseTau, item.azimuth, torusData.direction);
                     item.positions[ptr++] = pt.x;
                     item.positions[ptr++] = pt.y;
                     item.positions[ptr++] = pt.z;
@@ -1102,7 +1103,7 @@
                 item.geo.attributes.position.needsUpdate = true;
             });
 
-            // Update Dynamic Flowing Energy Particles (Continuous direction flow)
+            // Update Dynamic Flowing Energy Particles (showing direction of energy circulation)
             let pPtr = 0;
             const activeParticleCount = Math.round(progress * totalTorusParticles);
             for (let i = 0; i < numStreamlines; i++) {
@@ -1110,7 +1111,7 @@
                 for (let p = 0; p < particlesPerStreamline; p++) {
                     const baseTau = p / particlesPerStreamline;
                     const tau = (baseTau + flowOffset) % 1.0;
-                    const pt = evaluateHornTorusPoint(tau, azimuth, torusData.rMax, torusData.direction);
+                    const pt = evaluateHornTorusPoint(tau, azimuth, torusData.direction);
                     torusData.particlePositions[pPtr++] = pt.x;
                     torusData.particlePositions[pPtr++] = pt.y;
                     torusData.particlePositions[pPtr++] = pt.z;
@@ -1142,12 +1143,12 @@
 
             showPopup({
                 id: "TORUS_IN",
-                spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)",
+                spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5) [Filling Bubble of Ego]",
                 coords: [0, 0, 0.25],
                 coordsStr: "0.00, 0.00, 0.25",
                 siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾",
                 dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)",
-                mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu (0,0,1), Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen (0,0,-0.5)",
+                mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu (0,0,1), Quán Triệt Thân Kim Cương, Chiếm Trọn Không Gian Bản Ngã",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_IN" }
             });
         }
@@ -1162,19 +1163,21 @@
 
             showPopup({
                 id: "TORUS_OUT",
-                spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=2.75) -> Seat (0,0,-0.5)",
+                spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.75, Z=3.45) -> Seat",
                 coords: [0, 0, 0.25],
                 coordsStr: "0.00, 0.00, 0.25",
                 siddhamUnicode: "𑖌𑖼",
                 dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)",
-                mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu (0,0,1), Vượt Thoát Bản Ngã (R>2.1), Phổ Chiếu Mười Phương",
+                mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu (0,0,1), Vượt Thoát Bản Ngã (R>2.1, Z>2.1), Phổ Chiếu Mười Phương",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_OUT" }
             });
         }
 
         // =========================================================================
         // SECTION 6d: EXPANDING CONICAL SPIRAL BEAMS OF LIGHT (IMAGE 3)
-        // Starts at a single point (0, 0, 0), spiraling outward in an expanding, widening conical helix!
+        // - Starts at a single point (0, 0, 0) with r = 0
+        // - Twice as many helical coils (tight coils, 10.5 turns!)
+        // - Widens in expanding conical helix along each of the 6 cardinal axes
         // =========================================================================
         const spiralBeamsGroup = new THREE.Group();
         spiralBeamsGroup.renderOrder = 7;
@@ -1183,9 +1186,9 @@
 
         const spiralBeamItems = [];
         const spiralLength = 2.4;
-        const maxSpiralRadius = 0.22; // Expanding, widening conical helix (Image 3)
-        const spiralTurns = 5.0;      // 5 coiling loops
-        const spiralPtsPerBeam = 120;
+        const maxSpiralRadius = 0.22;
+        const spiralTurns = 10.5; // Twice as many rotation helical coils (tight coils!)
+        const spiralPtsPerBeam = 240; // Silky smooth resolution for tight helical coils
 
         axesDirections.forEach(axis => {
             const d = axis.dir.clone().normalize();
@@ -1281,6 +1284,14 @@
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "SPIRAL" }
             });
         }
+
+        const updateHornTorusStreamlines = updateHornTorusSystem;
+// =========================================================================
+        // SECTION 7: RECALIBRATED SPIRAL FUNNEL CONE (0.25 UNIT HEIGHT PER 4 SPHERES)
+        // Layer 1: Starts at Z = -0.50
+        // Layer 2: Starts at Z approx -0.25
+        // Layer 3: Starts at Z approx 0.00
+        // Smooth cone integration: R(Z) = 1.35 + (Z + 0.50) * 0.34
         // =========================================================================
         function getSpiralPosition(t) {
             // Counterclockwise rotation: Starts on +Y axis (PI/2), 4 spheres = 2*PI (one full turn)
@@ -2492,7 +2503,7 @@
                 updateSpiralBeams(1.0, elapsedTime * 4.0);
             }
 
-            // 4. Advance Torus In energy flow (Crown -> Core -> Seat, within bubble)
+            // 4. Advance Torus In energy flow (Crown -> Core -> Seat -> Outer bubble -> Crown)
             if (isTorusInAnimating) {
                 const elapsed = (performance.now() - torusInStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / torusInDuration);
@@ -2515,7 +2526,7 @@
                 updateHornTorusSystem(torusInData, flowOffset, 1.0);
             }
 
-            // 5. Advance Torus Out energy flow (Crown -> Expanding beyond bubble -> Seat)
+            // 5. Advance Torus Out energy flow (Crown -> High fountain arch -> Outer perimeter -> Seat)
             if (isTorusOutAnimating) {
                 const elapsed = (performance.now() - torusOutStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / torusOutDuration);
