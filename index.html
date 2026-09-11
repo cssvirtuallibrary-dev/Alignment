@@ -921,9 +921,11 @@
         }
 
         // =========================================================================
-        // SECTION 6c: TORUS IN & TORUS OUT HORN TORUS ENERGY SYSTEMS
-        // 1. Torus In: Converges at Crown (0, 0, 1.0), enters body core down to Seat (0, 0, -0.5), stays inside Bubble (R <= 1.7)
-        // 2. Torus Out: Exits Crown (0, 0, 1.0), expands BEYOND Bubble of Ego (R >= 3.1), wraps back to Seat (0, 0, -0.5)
+        // SECTION 6c: TORUS IN & TORUS OUT HORN TORUS ENERGY SYSTEMS (IMAGE 2)
+        // Perfectly correlated height/width proportions (not lopsided, symmetric)
+        // 1. Torus In: Converges at Crown (0, 0, 1.0), enters body core down to Seat (0, 0, -0.5), stays inside Bubble (R = 1.45 <= 2.1)
+        // 2. Torus Out: Exits Crown (0, 0, 1.0), expands BEYOND Bubble of Ego (R = 2.75 > 2.1), wraps back to Seat (0, 0, -0.5)
+        // Dynamic flowing energy particle system to show continuous flow and direction clearly
         // =========================================================================
         const torusInGroup = new THREE.Group();
         torusInGroup.renderOrder = 6;
@@ -935,61 +937,63 @@
         torusOutGroup.visible = false;
         scene.add(torusOutGroup);
 
-        const numStreamlines = 16;
+        const numStreamlines = 18;
         const segsPerStreamline = 64;
+        const particlesPerStreamline = 4;
+        const totalTorusParticles = numStreamlines * particlesPerStreamline;
 
-        function buildHornTorusStreamlines(colorHex, rMax) {
-            const lines = [];
-            const mat = new THREE.LineBasicMaterial({
-                color: colorHex,
-                transparent: true,
-                opacity: 0.85,
-                blending: THREE.AdditiveBlending
-            });
-
-            for (let i = 0; i < numStreamlines; i++) {
-                const azimuth = (i / numStreamlines) * Math.PI * 2;
-                const positions = new Float32Array(segsPerStreamline * 3);
-                const geo = new THREE.BufferGeometry();
-                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-                const line = new THREE.Line(geo, mat);
-                lines.push({ line, geo, positions, azimuth, rMax });
-            }
-            return { lines, mat };
+        // Glowing particle circular sprite texture
+        function createGlowPointTexture(hexColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.25, hexColor);
+            grad.addColorStop(0.65, hexColor + '88');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 64, 64);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
         }
 
-        const torusInData = buildHornTorusStreamlines(0x00ffaa, 1.7);
-        torusInData.lines.forEach(item => torusInGroup.add(item.line));
-
-        const torusOutData = buildHornTorusStreamlines(0xff9900, 3.1);
-        torusOutData.lines.forEach(item => torusOutGroup.add(item.line));
-
+        // Parametric Horn Torus curve evaluation (Symmetric, smoothly correlated top-to-bottom)
+        // Crown: Z = 1.0, Seat: Z = -0.5, Z_center = 0.25
         function evaluateHornTorusPoint(tau, azimuth, rMax, direction) {
             const Z_c = 0.25;
-            const H = 0.75;
+            const R_core = 0.04;
             let z, r;
 
             if (direction === 'in') {
+                const H = 0.75; // Z spans exactly from Crown (1.0) to Seat (-0.5)
                 if (tau < 0.35) {
+                    // Core descent: enters Crown (1.0), travels straight down through body core to Seat (-0.5)
                     const s = tau / 0.35;
                     z = 1.0 - s * 1.5;
-                    r = 0.05 * Math.sin(s * Math.PI) + 0.03;
+                    r = R_core;
                 } else {
+                    // Outer loop: exits Seat (-0.5), arches outward (R <= 1.45) and curves back up into Crown (1.0)
                     const s = (tau - 0.35) / 0.65;
-                    const angle = -Math.PI / 2 + s * Math.PI;
-                    z = Z_c + H * Math.sin(angle);
-                    r = 0.03 + rMax * Math.cos(angle);
+                    const psi = -Math.PI / 2 + s * Math.PI;
+                    z = Z_c + H * Math.sin(psi);
+                    r = R_core + (rMax - R_core) * Math.cos(psi);
                 }
             } else {
+                // Torus Out: fountains out of Crown (1.0), expands BEYOND bubble (R = 2.75 > 2.1) to Seat (-0.5)
+                const H_out = 0.90; // Balanced dome height matching wide 2.75 radius
                 if (tau < 0.65) {
+                    // Expanding fountain downward
                     const s = tau / 0.65;
-                    const angle = Math.PI / 2 - s * Math.PI;
-                    z = Z_c + H * Math.sin(angle);
-                    r = 0.03 + rMax * Math.cos(angle);
+                    const psi = Math.PI / 2 - s * Math.PI;
+                    z = Z_c + H_out * Math.sin(psi);
+                    r = R_core + (rMax - R_core) * Math.cos(psi);
                 } else {
+                    // Core ascent from Seat (-0.5) back to Crown (1.0)
                     const s = (tau - 0.65) / 0.35;
                     z = -0.5 + s * 1.5;
-                    r = 0.05 * Math.sin(s * Math.PI) + 0.03;
+                    r = R_core;
                 }
             }
 
@@ -1000,14 +1004,96 @@
             };
         }
 
-        function updateHornTorusStreamlines(streamlineData, flowOffset, direction, progress) {
+        function buildHornTorusSystem(colorHex, colorHexStr, rMax, direction) {
+            // 1. Poloidal Streamlines (vertical wireframe cage like Image 2)
+            const streamlines = [];
+            const lineMat = new THREE.LineBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.80,
+                blending: THREE.AdditiveBlending
+            });
+
+            for (let i = 0; i < numStreamlines; i++) {
+                const azimuth = (i / numStreamlines) * Math.PI * 2;
+                const positions = new Float32Array(segsPerStreamline * 3);
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const line = new THREE.Line(geo, lineMat);
+                streamlines.push({ line, geo, positions, azimuth, rMax });
+            }
+
+            // 2. Horizontal Latitudinal Rings (as seen in Image 2)
+            const ringGroup = new THREE.Group();
+            const ringMat = new THREE.LineBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.55,
+                blending: THREE.AdditiveBlending
+            });
+
+            const Z_c = 0.25;
+            const H_span = direction === 'in' ? 0.75 : 0.90;
+            const zRings = [-0.65, -0.4, -0.15, 0.25, 0.55, 0.75, 0.95];
+
+            zRings.forEach(zLevel => {
+                const zNorm = Math.max(-0.95, Math.min(0.95, (zLevel - Z_c) / H_span));
+                const cosPsi = Math.sqrt(Math.max(0, 1.0 - zNorm * zNorm));
+                const ringR = 0.04 + (rMax - 0.04) * cosPsi;
+                const pts = [];
+                const ringSegs = 64;
+                for (let k = 0; k <= ringSegs; k++) {
+                    const th = (k / ringSegs) * Math.PI * 2;
+                    pts.push(new THREE.Vector3(ringR * Math.cos(th), ringR * Math.sin(th), zLevel));
+                }
+                const rGeo = new THREE.BufferGeometry().setFromPoints(pts);
+                ringGroup.add(new THREE.Line(rGeo, ringMat));
+            });
+
+            // 3. Dynamic Flowing Energy Particles (showing continuous flow and direction clearly)
+            const particlePositions = new Float32Array(totalTorusParticles * 3);
+            const particleGeo = new THREE.BufferGeometry();
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+
+            const particleMat = new THREE.PointsMaterial({
+                map: createGlowPointTexture(colorHexStr),
+                size: direction === 'in' ? 0.12 : 0.14,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const particles = new THREE.Points(particleGeo, particleMat);
+
+            return {
+                streamlines,
+                ringGroup,
+                particles,
+                particleGeo,
+                particlePositions,
+                rMax,
+                direction
+            };
+        }
+
+        const torusInData = buildHornTorusSystem(0x00ffaa, '#00ffaa', 1.45, 'in');
+        torusInData.streamlines.forEach(item => torusInGroup.add(item.line));
+        torusInGroup.add(torusInData.ringGroup);
+        torusInGroup.add(torusInData.particles);
+
+        const torusOutData = buildHornTorusSystem(0xff9900, '#ff9900', 2.75, 'out');
+        torusOutData.streamlines.forEach(item => torusOutGroup.add(item.line));
+        torusOutGroup.add(torusOutData.ringGroup);
+        torusOutGroup.add(torusOutData.particles);
+
+        function updateHornTorusSystem(torusData, flowOffset, progress) {
+            // Update Streamlines
             const maxPts = Math.max(2, Math.round(progress * segsPerStreamline));
-            streamlineData.lines.forEach(item => {
+            torusData.streamlines.forEach(item => {
                 let ptr = 0;
                 for (let j = 0; j < segsPerStreamline; j++) {
                     const baseTau = (j / (segsPerStreamline - 1));
-                    const tau = (baseTau + flowOffset) % 1.0;
-                    const pt = evaluateHornTorusPoint(tau, item.azimuth, item.rMax, direction);
+                    const pt = evaluateHornTorusPoint(baseTau, item.azimuth, item.rMax, torusData.direction);
                     item.positions[ptr++] = pt.x;
                     item.positions[ptr++] = pt.y;
                     item.positions[ptr++] = pt.z;
@@ -1015,6 +1101,23 @@
                 item.geo.setDrawRange(0, maxPts);
                 item.geo.attributes.position.needsUpdate = true;
             });
+
+            // Update Dynamic Flowing Energy Particles (Continuous direction flow)
+            let pPtr = 0;
+            const activeParticleCount = Math.round(progress * totalTorusParticles);
+            for (let i = 0; i < numStreamlines; i++) {
+                const azimuth = (i / numStreamlines) * Math.PI * 2;
+                for (let p = 0; p < particlesPerStreamline; p++) {
+                    const baseTau = p / particlesPerStreamline;
+                    const tau = (baseTau + flowOffset) % 1.0;
+                    const pt = evaluateHornTorusPoint(tau, azimuth, torusData.rMax, torusData.direction);
+                    torusData.particlePositions[pPtr++] = pt.x;
+                    torusData.particlePositions[pPtr++] = pt.y;
+                    torusData.particlePositions[pPtr++] = pt.z;
+                }
+            }
+            torusData.particleGeo.setDrawRange(0, activeParticleCount);
+            torusData.particleGeo.attributes.position.needsUpdate = true;
         }
 
         let isTorusInAnimating = false;
@@ -1043,9 +1146,8 @@
                 coords: [0, 0, 0.25],
                 coordsStr: "0.00, 0.00, 0.25",
                 siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾",
-                siddhamImage: "",
                 dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)",
-                mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen",
+                mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu (0,0,1), Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen (0,0,-0.5)",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_IN" }
             });
         }
@@ -1060,19 +1162,19 @@
 
             showPopup({
                 id: "TORUS_OUT",
-                spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)",
+                spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=2.75) -> Seat (0,0,-0.5)",
                 coords: [0, 0, 0.25],
                 coordsStr: "0.00, 0.00, 0.25",
                 siddhamUnicode: "𑖌𑖼",
-                siddhamImage: "",
                 dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)",
-                mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương",
+                mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu (0,0,1), Vượt Thoát Bản Ngã (R>2.1), Phổ Chiếu Mười Phương",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_OUT" }
             });
         }
 
         // =========================================================================
-        // SECTION 6d: SPIRAL BEAMS OF LIGHT (6 CARDINAL HELICAL BEAMS FROM 0,0,0)
+        // SECTION 6d: EXPANDING CONICAL SPIRAL BEAMS OF LIGHT (IMAGE 3)
+        // Starts at a single point (0, 0, 0), spiraling outward in an expanding, widening conical helix!
         // =========================================================================
         const spiralBeamsGroup = new THREE.Group();
         spiralBeamsGroup.renderOrder = 7;
@@ -1081,9 +1183,9 @@
 
         const spiralBeamItems = [];
         const spiralLength = 2.4;
-        const spiralRadius = 0.08;
-        const spiralTurns = 4.5;
-        const spiralPtsPerBeam = 96;
+        const maxSpiralRadius = 0.22; // Expanding, widening conical helix (Image 3)
+        const spiralTurns = 5.0;      // 5 coiling loops
+        const spiralPtsPerBeam = 120;
 
         axesDirections.forEach(axis => {
             const d = axis.dir.clone().normalize();
@@ -1107,6 +1209,7 @@
             const line = new THREE.Line(geo, mat);
             spiralBeamsGroup.add(line);
 
+            // Leading traveling luminous pearl
             const tipMesh = new THREE.Mesh(
                 new THREE.SphereGeometry(0.045, 16, 16),
                 new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })
@@ -1132,8 +1235,9 @@
 
                 for (let j = 0; j < spiralPtsPerBeam; j++) {
                     const s = (j / (spiralPtsPerBeam - 1)) * currentL;
+                    // Starts strictly at 0, 0, 0 (radius = 0), then widens and expands outward along the axis (Image 3)
+                    const r = maxSpiralRadius * Math.pow(s / spiralLength, 0.85);
                     const theta = (s / spiralLength) * Math.PI * 2 * spiralTurns + spinOffset;
-                    const r = spiralRadius * Math.min(1.0, (s / 0.25));
 
                     const x = s * item.d.x + r * (Math.cos(theta) * item.v1.x + Math.sin(theta) * item.v2.x);
                     const y = s * item.d.y + r * (Math.cos(theta) * item.v1.y + Math.sin(theta) * item.v2.y);
@@ -1168,23 +1272,15 @@
 
             showPopup({
                 id: "SPIRAL",
-                spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes",
+                spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Expanding Helixes",
                 coords: [0, 0, 0],
                 coordsStr: "0.00, 0.00, 0.00",
                 siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽",
-                siddhamImage: "",
                 dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)",
-                mantra: "Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian",
+                mantra: "Six Expanding Conical Helices / Khởi Từ Tâm Điểm (0,0,0), Phóng Lục Đạo Xoắn Ốc Mở Rộng Xuyên Suốt Không Gian",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "SPIRAL" }
             });
         }
-
-        // =========================================================================
-        // SECTION 7: RECALIBRATED SPIRAL FUNNEL CONE (0.25 UNIT HEIGHT PER 4 SPHERES)
-        // Layer 1: Starts at Z = -0.50
-        // Layer 2: Starts at Z approx -0.25
-        // Layer 3: Starts at Z approx 0.00
-        // Smooth cone integration: R(Z) = 1.35 + (Z + 0.50) * 0.34
         // =========================================================================
         function getSpiralPosition(t) {
             // Counterclockwise rotation: Starts on +Y axis (PI/2), 4 spheres = 2*PI (one full turn)
@@ -2271,7 +2367,7 @@
         if (showTorusInCheckbox) {
             showTorusInCheckbox.addEventListener('change', (e) => {
                 torusInGroup.visible = e.target.checked;
-                if (e.target.checked) updateHornTorusStreamlines(torusInData, 0, 'in', 1.0);
+                if (e.target.checked) updateHornTorusSystem(torusInData, 0, 1.0);
             });
         }
 
@@ -2288,7 +2384,7 @@
         if (showTorusOutCheckbox) {
             showTorusOutCheckbox.addEventListener('change', (e) => {
                 torusOutGroup.visible = e.target.checked;
-                if (e.target.checked) updateHornTorusStreamlines(torusOutData, 0, 'out', 1.0);
+                if (e.target.checked) updateHornTorusSystem(torusOutData, 0, 1.0);
             });
         }
 
@@ -2401,8 +2497,8 @@
                 const elapsed = (performance.now() - torusInStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / torusInDuration);
                 const progress = 1 - Math.pow(1 - t, 2.5);
-                const flowOffset = (elapsedTime * 0.4) % 1.0;
-                updateHornTorusStreamlines(torusInData, flowOffset, 'in', progress);
+                const flowOffset = (elapsedTime * 0.45) % 1.0;
+                updateHornTorusSystem(torusInData, flowOffset, progress);
 
                 if (t >= 1.0) {
                     isTorusInAnimating = false;
@@ -2415,8 +2511,8 @@
                     }, 1200);
                 }
             } else if (torusInGroup.visible) {
-                const flowOffset = (elapsedTime * 0.4) % 1.0;
-                updateHornTorusStreamlines(torusInData, flowOffset, 'in', 1.0);
+                const flowOffset = (elapsedTime * 0.45) % 1.0;
+                updateHornTorusSystem(torusInData, flowOffset, 1.0);
             }
 
             // 5. Advance Torus Out energy flow (Crown -> Expanding beyond bubble -> Seat)
@@ -2424,8 +2520,8 @@
                 const elapsed = (performance.now() - torusOutStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / torusOutDuration);
                 const progress = 1 - Math.pow(1 - t, 2.5);
-                const flowOffset = (elapsedTime * 0.35) % 1.0;
-                updateHornTorusStreamlines(torusOutData, flowOffset, 'out', progress);
+                const flowOffset = (elapsedTime * 0.40) % 1.0;
+                updateHornTorusSystem(torusOutData, flowOffset, progress);
 
                 if (t >= 1.0) {
                     isTorusOutAnimating = false;
@@ -2438,8 +2534,8 @@
                     }, 1200);
                 }
             } else if (torusOutGroup.visible) {
-                const flowOffset = (elapsedTime * 0.35) % 1.0;
-                updateHornTorusStreamlines(torusOutData, flowOffset, 'out', 1.0);
+                const flowOffset = (elapsedTime * 0.40) % 1.0;
+                updateHornTorusSystem(torusOutData, flowOffset, 1.0);
             }
 
             // Sequential matrix controller: dispatch inline pending animations before next node
