@@ -566,6 +566,8 @@
 
         const outerBubbleGeo = new THREE.SphereGeometry(2.1, 64, 64);
         const outerBubble = new THREE.Mesh(outerBubbleGeo, clearBubbleGlass);
+        // Rotate so top pole (+Y in SphereGeometry) maps to Crown (+Z) and sweep wraps around vertical Z-axis
+        outerBubble.rotation.set(Math.PI / 2, 0, -Math.PI / 2);
         outerBubble.renderOrder = 3;
         egoBubbleGroup.add(outerBubble);
 
@@ -2054,6 +2056,8 @@
             isRunning = false;
             currentSeqIndex = -1;
             seqTimer = 0;
+
+            // 1. Reset all animation flags & callbacks
             isEgoAnimating = false;
             seqEgoPending = false;
             if (egoOnCompleteCallback) egoOnCompleteCallback = null;
@@ -2074,20 +2078,42 @@
             seqTorusOutPending = false;
             if (torusOutOnCompleteCallback) torusOutOnCompleteCallback = null;
 
-            const laserCb = document.getElementById('show-laser-beams');
-            if (laserCb && !laserCb.checked) laserBeamsGroup.visible = false;
+            // 2. Reset and hide ALL animations (except the Column of Light) at the start of every sequence
+            // Bubble of Ego:
+            egoBubbleGroup.visible = false;
+            outerBubble.visible = false;
+            if (outerBubble.geometry !== outerBubbleGeo) {
+                outerBubble.geometry.dispose();
+                outerBubble.geometry = outerBubbleGeo;
+            }
+            const egoCb = document.getElementById('show-ego-bubble');
+            if (egoCb) egoCb.checked = false;
+
+            // Laser Beams:
+            laserBeamsGroup.visible = false;
             updateLaserBeamsProgress(0.001);
+            const laserCb = document.getElementById('show-laser-beams');
+            if (laserCb) laserCb.checked = false;
 
-            const spiralCb = document.getElementById('show-spiral-beams');
-            if (spiralCb && !spiralCb.checked) spiralBeamsGroup.visible = false;
+            // Spiral Beams:
+            spiralBeamsGroup.visible = false;
             updateSpiralBeams(0.001);
+            const spiralCb = document.getElementById('show-spiral-beams');
+            if (spiralCb) spiralCb.checked = false;
 
+            // Torus In:
+            torusInGroup.visible = false;
+            updateHornTorusSystem(torusInData, 0, 0.001);
             const torusInCb = document.getElementById('show-torus-in');
-            if (torusInCb && !torusInCb.checked) torusInGroup.visible = false;
+            if (torusInCb) torusInCb.checked = false;
 
+            // Torus Out:
+            torusOutGroup.visible = false;
+            updateHornTorusSystem(torusOutData, 0, 0.001);
             const torusOutCb = document.getElementById('show-torus-out');
-            if (torusOutCb && !torusOutCb.checked) torusOutGroup.visible = false;
+            if (torusOutCb) torusOutCb.checked = false;
 
+            // 3. Reset Active Actor Node:
             if (active3DActor) {
                 active3DActor.group.visible = false;
                 active3DActor.outline.visible = false;
@@ -2095,16 +2121,9 @@
                 active3DActor.currentData = null;
             }
 
+            // 4. Column of Light is preserved and rebuilt to starting turn
             wallMesh.visible = false;
             rebuildWallGeometry();
-
-            const egoCb = document.getElementById('show-ego-bubble');
-            if (egoCb && !egoCb.checked) {
-                egoBubbleGroup.visible = false;
-                outerBubble.visible = false;
-            }
-            
-            
 
             hidePopup();
             startBtn.innerText = "Start Formation";
