@@ -564,10 +564,22 @@
         egoBubbleGroup.visible = false;
         scene.add(egoBubbleGroup);
 
-        const outerBubbleGeo = new THREE.SphereGeometry(2.1, 64, 64);
+        // Helper to construct outer bubble geometry with poles permanently mapped to vertical Z-axis
+        // In standard Three.js SphereGeometry, the polar axis is Y (top pole is +Y).
+        // By rotating the vertex buffer +90 deg around X and -90 deg around Z:
+        // 1. The top pole (+Y in Three.js) maps to Crown (+Z in Buddha coordinates).
+        // 2. The bottom pole (-Y in Three.js) maps to Lotus Seat (-Z in Buddha coordinates).
+        // 3. The sweep angle phi wraps around the VERTICAL Z-AXIS in the horizontal XY plane,
+        //    starting at Front (+Y, facing camera) and wrapping counterclockwise around the Buddha!
+        function createOuterBubbleGeometry(phiLength = Math.PI * 2, widthSegs = 64, heightSegs = 64) {
+            const geo = new THREE.SphereGeometry(2.1, widthSegs, heightSegs, 0, phiLength);
+            geo.rotateX(Math.PI / 2);
+            geo.rotateZ(-Math.PI / 2);
+            return geo;
+        }
+
+        const outerBubbleGeo = createOuterBubbleGeometry(Math.PI * 2, 64, 64);
         const outerBubble = new THREE.Mesh(outerBubbleGeo, clearBubbleGlass);
-        // Rotate so top pole (+Y in SphereGeometry) maps to Crown (+Z) and sweep wraps around vertical Z-axis
-        outerBubble.rotation.set(Math.PI / 2, 0, -Math.PI / 2);
         outerBubble.renderOrder = 3;
         egoBubbleGroup.add(outerBubble);
 
@@ -582,12 +594,12 @@
         function updateEgoBubbleWrapping(u) {
             const phiMax = Math.max(0.01, u * Math.PI * 2);
 
-            // Smoothly sweep clear crystal bubble glass around longitude (no blue lines!)
+            // Smoothly sweep clear crystal bubble glass around the vertical Z-axis (no blue lines)
             if (u > 0.01 && u < 0.995) {
                 if (outerBubble.geometry !== outerBubbleGeo) {
                     outerBubble.geometry.dispose();
                 }
-                outerBubble.geometry = new THREE.SphereGeometry(2.1, 48, 32, 0, phiMax);
+                outerBubble.geometry = createOuterBubbleGeometry(phiMax, 48, 32);
             } else if (u >= 0.995) {
                 if (outerBubble.geometry !== outerBubbleGeo) {
                     outerBubble.geometry.dispose();
