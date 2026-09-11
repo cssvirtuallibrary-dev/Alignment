@@ -167,6 +167,19 @@
             .popup-mantra-val { font-size: 10.5px; padding: 6px 10px; }
         }
 
+        #animate-ego-btn {
+            margin-top: 6px; width: 100%;
+            background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.45);
+            color: var(--accent-cyan); padding: 7px 10px; border-radius: 8px;
+            font-size: 10px; font-weight: 700; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            transition: all 0.2s ease;
+        }
+        #animate-ego-btn:hover {
+            background: rgba(0, 229, 255, 0.25);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+        }
+
         /* Loading Screen */
         #loading-overlay {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -227,6 +240,16 @@
             <div class="control-group">
                 <label>Auto-Rotation Speed (RPM)</label>
                 <input type="range" id="rotation-speed" min="0" max="10" step="0.1" value="0">
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-ego-bubble">
+                    <span>Bubble of Ego (Outer Bubble)</span>
+                </label>
+                <button type="button" id="animate-ego-btn">
+                    ▶ Animate Bubble of Ego
+                </button>
             </div>
 
             <div class="control-group">
@@ -444,6 +467,160 @@
         // =========================================================================
         // SECTION 4: MATERIALS & GEOMETRIES
         // =========================================================================
+        // =========================================================================
+        // SECTION 4b: OUTER BUBBLE OF EGO (RADIUS 2.1) & WRAPPING LATITUDES
+        // =========================================================================
+        const clearBubbleGlass = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            roughness: 0.05,
+            metalness: 0.1,
+            transmission: 0.98,
+            ior: 1.52,
+            thickness: 0.3,
+            transparent: true,
+            opacity: 1.0,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const egoBubbleGroup = new THREE.Group();
+        egoBubbleGroup.renderOrder = 3;
+        egoBubbleGroup.visible = false;
+        scene.add(egoBubbleGroup);
+
+        const outerBubbleGeo = new THREE.SphereGeometry(2.1, 64, 64);
+        const outerBubble = new THREE.Mesh(outerBubbleGeo, clearBubbleGlass);
+        outerBubble.renderOrder = 3;
+        egoBubbleGroup.add(outerBubble);
+
+        // Pre-allocated Latitude lines buffer (9 rings, 48 segments each)
+        const numLats = 9;
+        const latAngles = [-60, -45, -30, -15, 0, 15, 30, 45, 60].map(d => d * Math.PI / 180);
+        const maxSegsPerLat = 48;
+        const latPositions = new Float32Array(numLats * maxSegsPerLat * 2 * 3);
+        const latGeo = new THREE.BufferGeometry();
+        latGeo.setAttribute('position', new THREE.BufferAttribute(latPositions, 3));
+        latGeo.setDrawRange(0, 0);
+
+        const latMat = new THREE.LineBasicMaterial({
+            color: 0x00e5ff,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending
+        });
+        const latLinesMesh = new THREE.LineSegments(latGeo, latMat);
+        latLinesMesh.renderOrder = 4;
+        egoBubbleGroup.add(latLinesMesh);
+
+        // Pre-allocated Longitude meridian buffer (48 segments)
+        const meridianPositions = new Float32Array(maxSegsPerLat * 2 * 3);
+        const meridianGeo = new THREE.BufferGeometry();
+        meridianGeo.setAttribute('position', new THREE.BufferAttribute(meridianPositions, 3));
+        meridianGeo.setDrawRange(0, 0);
+
+        const meridianMat = new THREE.LineBasicMaterial({
+            color: 0xffd700,
+            transparent: true,
+            opacity: 0.95,
+            blending: THREE.AdditiveBlending
+        });
+        const meridianLine = new THREE.LineSegments(meridianGeo, meridianMat);
+        meridianLine.renderOrder = 4;
+        egoBubbleGroup.add(meridianLine);
+
+        let isEgoAnimating = false;
+        let egoAnimStartTime = 0;
+        const egoAnimDuration = 3.2; // 3.2 seconds smooth wrapping
+        let egoOnCompleteCallback = null;
+        let seqEgoPending = false;
+
+        function updateEgoBubbleWrapping(u) {
+            const R = 2.1;
+            const phiMax = u * Math.PI * 2;
+            let latPtr = 0;
+
+            // 1. Wrap Latitude arcs around longitude (from phi = 0 to phiMax)
+            if (u > 0.001) {
+                const segsCount = Math.min(maxSegsPerLat, Math.ceil(u * maxSegsPerLat));
+                for (let i = 0; i < numLats; i++) {
+                    const lat = latAngles[i];
+                    const rLat = R * Math.cos(lat);
+                    const zLat = R * Math.sin(lat);
+
+                    for (let s = 0; s < segsCount; s++) {
+                        const p0 = (s / maxSegsPerLat) * Math.PI * 2;
+                        const p1 = Math.min(phiMax, ((s + 1) / maxSegsPerLat) * Math.PI * 2);
+                        if (p0 < phiMax) {
+                            latPositions[latPtr++] = rLat * Math.cos(p0);
+                            latPositions[latPtr++] = rLat * Math.sin(p0);
+                            latPositions[latPtr++] = zLat;
+
+                            latPositions[latPtr++] = rLat * Math.cos(p1);
+                            latPositions[latPtr++] = rLat * Math.sin(p1);
+                            latPositions[latPtr++] = zLat;
+                        }
+                    }
+                }
+            }
+            latGeo.setDrawRange(0, latPtr / 3);
+            latGeo.attributes.position.needsUpdate = true;
+
+            // 2. Sweeping Longitude Meridian (golden needle drawing the latitudes)
+            let merPtr = 0;
+            if (u > 0.001 && u < 0.999) {
+                for (let s = 0; s < maxSegsPerLat; s++) {
+                    const a0 = -Math.PI / 2 + (s / maxSegsPerLat) * Math.PI;
+                    const a1 = -Math.PI / 2 + ((s + 1) / maxSegsPerLat) * Math.PI;
+
+                    meridianPositions[merPtr++] = R * Math.cos(a0) * Math.cos(phiMax);
+                    meridianPositions[merPtr++] = R * Math.cos(a0) * Math.sin(phiMax);
+                    meridianPositions[merPtr++] = R * Math.sin(a0);
+
+                    meridianPositions[merPtr++] = R * Math.cos(a1) * Math.cos(phiMax);
+                    meridianPositions[merPtr++] = R * Math.cos(a1) * Math.sin(phiMax);
+                    meridianPositions[merPtr++] = R * Math.sin(a1);
+                }
+            }
+            meridianGeo.setDrawRange(0, merPtr / 3);
+            meridianGeo.attributes.position.needsUpdate = true;
+
+            // 3. Sweep outer bubble glass sphere alongside the meridian
+            if (u > 0.02 && u < 0.995) {
+                if (outerBubble.geometry !== outerBubbleGeo) {
+                    outerBubble.geometry.dispose();
+                }
+                outerBubble.geometry = new THREE.SphereGeometry(2.1, 48, 32, 0, phiMax);
+            } else if (u >= 0.995) {
+                if (outerBubble.geometry !== outerBubbleGeo) {
+                    outerBubble.geometry.dispose();
+                    outerBubble.geometry = outerBubbleGeo;
+                }
+            }
+        }
+
+        function playEgoBubbleAnimation(onComplete = null) {
+            isEgoAnimating = true;
+            egoAnimStartTime = performance.now();
+            egoOnCompleteCallback = onComplete;
+            egoBubbleGroup.visible = true;
+            outerBubble.visible = true;
+            const cb = document.getElementById('show-ego-bubble');
+            if (cb) cb.checked = true;
+
+            // Show Details Card for Bubble of Ego
+            showPopup({
+                id: "EGO",
+                spatialPosition: "Outer Boundary (Radius 2.1)",
+                coords: [0, 0, 0],
+                coordsStr: "0.00, 0.00, 0.00",
+                siddhamUnicode: "𑖌𑖼",
+                siddhamImage: "",
+                dharmaObject: "Bubble of Ego (Bản Ngã)",
+                mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "EGO" }
+            });
+        }
+
         const crystalBuddhaMat = new THREE.MeshPhysicalMaterial({
             color: 0x80d8ff,
             emissive: 0x002b4d,
@@ -1080,15 +1257,32 @@
                 const id = getVal(idCol);
                 if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
+                const isEgoRow = id.toUpperCase().includes('EGO') || id.toUpperCase().includes('BUBBLE');
+
                 const sequences = {};
+                const egoTriggers = {};
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
                         const cell = r.c[fc.index];
                         const val = cell.v !== null ? cell.v : cell.f;
                         if (val !== undefined && val !== null) {
-                            const strVal = String(val).trim();
+                            let strVal = String(val).trim();
                             if (strVal.length > 0 && strVal !== '-' && strVal !== '0') {
+                                // Check for inline EGO trigger e.g. "21;EGO", "21+EGO", "[EGO]", "EGO"
+                                let hasInlineEgo = false;
+                                for (const tag of ['+EGO', ';EGO', '-EGO', ' EGO', '_EGO', ':EGO', '[EGO]', '(EGO)']) {
+                                    if (strVal.toUpperCase().includes(tag)) {
+                                        hasInlineEgo = true;
+                                        strVal = strVal.replace(new RegExp('\\' + tag, 'gi'), '').trim();
+                                    }
+                                }
+                                if (strVal.toUpperCase() === 'EGO' || strVal.toUpperCase() === 'BUBBLE') {
+                                    hasInlineEgo = true;
+                                }
                                 sequences[fc.label] = strVal;
+                                if (hasInlineEgo) {
+                                    egoTriggers[fc.label] = true;
+                                }
                             }
                         }
                     }
@@ -1099,13 +1293,15 @@
 
                 parsedRows.push({
                     id: id,
-                    spatialPosition: getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''),
-                    coordsStr: rawCoordsStr,
-                    coords: parseCoordinates(rawCoordsStr),
-                    siddhamImage: getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : ''),
-                    siddhamUnicode: getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''),
-                    dharmaObject: getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''),
-                    mantra: getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
+                    isEgo: isEgoRow,
+                    egoTriggers: egoTriggers,
+                    spatialPosition: isEgoRow ? 'Outer Boundary (Radius 2.1)' : (getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : '')),
+                    coordsStr: isEgoRow ? '0.0, 0.0, 0.0' : rawCoordsStr,
+                    coords: isEgoRow ? [0, 0, 0] : parseCoordinates(rawCoordsStr),
+                    siddhamImage: isEgoRow ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
+                    siddhamUnicode: isEgoRow ? '𑖌𑖼' : (getVal(siddhamUniCol) || (isGroupA ? '𑖩' : '')),
+                    dharmaObject: isEgoRow ? 'Bubble of Ego (Bản Ngã)' : (getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : '')),
+                    mantra: isEgoRow ? 'Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính' : (getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : '')),
                     sequences: sequences
                 });
             });
@@ -1273,7 +1469,8 @@
                 { id: "B31", spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He", sequences: fallbackSeqMap["B31"] },
                 { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: fallbackSeqMap["B32"] },
                 { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
-                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] }
+                { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] },
+                { id: "EGO", isEgo: true, spatialPosition: "Outer Boundary (Radius 2.1)", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Bubble of Ego (Bản Ngã)", mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.5", "A.Liên Hoa Bồ Đề Tâm": "15.5", "A.Ending": "2.5" } }
             ];
 
             // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
@@ -1325,6 +1522,11 @@
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
 
+            // Mark inline ego triggers
+            matchingRows.forEach(row => {
+                row.triggerEgoAfter = !!(row.egoTriggers && row.egoTriggers[selectedFilter]);
+            });
+
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
                 const nA = parseInt(a.id.replace(/\D/g, '')) || 0;
                 const nB = parseInt(b.id.replace(/\D/g, '')) || 0;
@@ -1356,6 +1558,9 @@
             isRunning = false;
             currentSeqIndex = -1;
             seqTimer = 0;
+            isEgoAnimating = false;
+            seqEgoPending = false;
+            if (egoOnCompleteCallback) egoOnCompleteCallback = null;
 
             if (active3DActor) {
                 active3DActor.group.visible = false;
@@ -1366,11 +1571,22 @@
 
             wallMesh.visible = false;
             rebuildWallGeometry();
+
+            const egoCb = document.getElementById('show-ego-bubble');
+            if (egoCb && !egoCb.checked) {
+                egoBubbleGroup.visible = false;
+                outerBubble.visible = false;
+            }
+            latGeo.setDrawRange(0, 0);
+            meridianGeo.setDrawRange(0, 0);
+
             hidePopup();
             startBtn.innerText = "Start Formation";
         }
 
         async function triggerNextStep() {
+            if (isEgoAnimating) return;
+
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
                 if (active3DActor) {
                     active3DActor.group.visible = false;
@@ -1380,6 +1596,23 @@
 
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
+
+                // Check if this step is the dedicated Bubble of Ego node
+                if (nodeData.id === 'EGO' || nodeData.isEgo) {
+                    playEgoBubbleAnimation(() => {
+                        seqTimer = 0;
+                        triggerNextStep();
+                    });
+                    const selectedFilter = filterSelect.value;
+                    const stepKey = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
+                    seqStatusCount.innerText = `Node ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
+                    return;
+                }
+
+                // Check if this node has an inline EGO trigger attached
+                if (nodeData.triggerEgoAfter) {
+                    seqEgoPending = true;
+                }
 
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
@@ -1438,8 +1671,11 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            const sUrl = formatImageUrl(data.siddhamImage, data.id);
-            if (sUrl) {
+            if (data.id === 'EGO' || data.isEgo) {
+                boxSiddhamImg.style.display = 'none';
+            } else {
+                const sUrl = formatImageUrl(data.siddhamImage, data.id);
+                if (sUrl) {
                 popupSiddhamImg.src = sUrl;
                 popupSiddhamImg.onerror = () => {
                     const fid = extractGoogleDriveFileId(data.siddhamImage);
@@ -1452,8 +1688,9 @@
                     }
                 };
                 boxSiddhamImg.style.display = 'block';
-            } else {
-                boxSiddhamImg.style.display = 'none';
+                } else {
+                    boxSiddhamImg.style.display = 'none';
+                }
             }
 
             popupCard.classList.add('active');
@@ -1526,6 +1763,27 @@
             generateActiveSequence();
         });
 
+        const showEgoBubbleCheckbox = document.getElementById('show-ego-bubble');
+        const animateEgoBtn = document.getElementById('animate-ego-btn');
+
+        if (showEgoBubbleCheckbox) {
+            showEgoBubbleCheckbox.addEventListener('change', (e) => {
+                egoBubbleGroup.visible = e.target.checked;
+                outerBubble.visible = e.target.checked;
+                if (e.target.checked && outerBubble.geometry !== outerBubbleGeo) {
+                    outerBubble.geometry.dispose();
+                    outerBubble.geometry = outerBubbleGeo;
+                }
+            });
+        }
+
+        if (animateEgoBtn) {
+            animateEgoBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playEgoBubbleAnimation();
+            });
+        }
+
         showAxesCheckbox.addEventListener('change', (e) => {
             axesGroup.visible = e.target.checked;
         });
@@ -1563,11 +1821,38 @@
             coreLight.intensity = (Math.sin(elapsedTime * 2) * 0.4 + 1.2) * glowVal;
             coreLight.position.z = Math.sin(elapsedTime * 0.6) * 0.4;
 
-            if (isRunning) {
+            // Advance Bubble of Ego wrapping animation
+            if (isEgoAnimating) {
+                const elapsed = (performance.now() - egoAnimStartTime) / 1000;
+                const t = Math.min(1.0, elapsed / egoAnimDuration);
+                const u = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+                updateEgoBubbleWrapping(u);
+
+                if (t >= 1.0) {
+                    isEgoAnimating = false;
+                    setTimeout(() => {
+                        if (egoOnCompleteCallback) {
+                            const cb = egoOnCompleteCallback;
+                            egoOnCompleteCallback = null;
+                            cb();
+                        }
+                    }, 1400);
+                }
+            }
+
+            if (isRunning && !isEgoAnimating) {
                 seqTimer += delta;
                 if (seqTimer >= nodeInterval) {
                     seqTimer = 0;
-                    triggerNextStep();
+                    if (seqEgoPending) {
+                        seqEgoPending = false;
+                        playEgoBubbleAnimation(() => {
+                            seqTimer = 0;
+                            triggerNextStep();
+                        });
+                    } else {
+                        triggerNextStep();
+                    }
                 }
                 if (includeSpiralCheckbox.checked) {
                     wallMaterial.opacity = (0.35 + Math.sin(elapsedTime * 3.0) * 0.1) * glowVal;
