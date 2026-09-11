@@ -167,7 +167,7 @@
             .popup-mantra-val { font-size: 10.5px; padding: 6px 10px; }
         }
 
-        #animate-ego-btn {
+        #animate-ego-btn, #animate-laser-btn {
             margin-top: 6px; width: 100%;
             background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.45);
             color: var(--accent-cyan); padding: 7px 10px; border-radius: 8px;
@@ -175,9 +175,18 @@
             text-transform: uppercase; letter-spacing: 0.8px;
             transition: all 0.2s ease;
         }
-        #animate-ego-btn:hover {
+        #animate-ego-btn:hover, #animate-laser-btn:hover {
             background: rgba(0, 229, 255, 0.25);
             box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+        }
+        #animate-laser-btn {
+            background: rgba(255, 215, 0, 0.12);
+            border-color: rgba(255, 215, 0, 0.45);
+            color: var(--accent-gold);
+        }
+        #animate-laser-btn:hover {
+            background: rgba(255, 215, 0, 0.25);
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
         }
 
         /* Loading Screen */
@@ -249,6 +258,16 @@
                 </label>
                 <button type="button" id="animate-ego-btn">
                     ▶ Animate Bubble of Ego
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-laser-beams">
+                    <span>Laser Beam of Lights (6 Axes)</span>
+                </label>
+                <button type="button" id="animate-laser-btn">
+                    ▶ Animate Laser Beams of Light
                 </button>
             </div>
 
@@ -512,21 +531,7 @@
         latLinesMesh.renderOrder = 4;
         egoBubbleGroup.add(latLinesMesh);
 
-        // Pre-allocated Longitude meridian buffer (48 segments)
-        const meridianPositions = new Float32Array(maxSegsPerLat * 2 * 3);
-        const meridianGeo = new THREE.BufferGeometry();
-        meridianGeo.setAttribute('position', new THREE.BufferAttribute(meridianPositions, 3));
-        meridianGeo.setDrawRange(0, 0);
-
-        const meridianMat = new THREE.LineBasicMaterial({
-            color: 0xffd700,
-            transparent: true,
-            opacity: 0.95,
-            blending: THREE.AdditiveBlending
-        });
-        const meridianLine = new THREE.LineSegments(meridianGeo, meridianMat);
-        meridianLine.renderOrder = 4;
-        egoBubbleGroup.add(meridianLine);
+// (Longitude meridian line removed as requested - pure latitude rings only)
 
         let isEgoAnimating = false;
         let egoAnimStartTime = 0;
@@ -565,24 +570,7 @@
             latGeo.setDrawRange(0, latPtr / 3);
             latGeo.attributes.position.needsUpdate = true;
 
-            // 2. Sweeping Longitude Meridian (golden needle drawing the latitudes)
-            let merPtr = 0;
-            if (u > 0.001 && u < 0.999) {
-                for (let s = 0; s < maxSegsPerLat; s++) {
-                    const a0 = -Math.PI / 2 + (s / maxSegsPerLat) * Math.PI;
-                    const a1 = -Math.PI / 2 + ((s + 1) / maxSegsPerLat) * Math.PI;
-
-                    meridianPositions[merPtr++] = R * Math.cos(a0) * Math.cos(phiMax);
-                    meridianPositions[merPtr++] = R * Math.cos(a0) * Math.sin(phiMax);
-                    meridianPositions[merPtr++] = R * Math.sin(a0);
-
-                    meridianPositions[merPtr++] = R * Math.cos(a1) * Math.cos(phiMax);
-                    meridianPositions[merPtr++] = R * Math.cos(a1) * Math.sin(phiMax);
-                    meridianPositions[merPtr++] = R * Math.sin(a1);
-                }
-            }
-            meridianGeo.setDrawRange(0, merPtr / 3);
-            meridianGeo.attributes.position.needsUpdate = true;
+// (No longitude line update - pure latitude wrapping)
 
             // 3. Sweep outer bubble glass sphere alongside the meridian
             if (u > 0.02 && u < 0.995) {
@@ -836,6 +824,93 @@
         }
 
         buildUnitGridMarkers();
+
+
+        // =========================================================================
+        // SECTION 6b: ANIMATED LASER BEAMS OF LIGHT (6 AXIAL DIRECTIONS FROM 0,0,0)
+        // =========================================================================
+        const laserBeamsGroup = new THREE.Group();
+        laserBeamsGroup.renderOrder = 7;
+        laserBeamsGroup.visible = false;
+        scene.add(laserBeamsGroup);
+
+        const animatedLaserBeams = [];
+        const fullLaserLength = 2.4;
+        const laserConeHeight = 0.16;
+        const laserCylRadius = 0.015;
+        const laserConeRadius = laserCylRadius * 2.4;
+
+        axesDirections.forEach(axis => {
+            const beamHolder = new THREE.Group();
+            
+            const mat = new THREE.MeshBasicMaterial({
+                color: axis.col,
+                transparent: true,
+                opacity: 0.95,
+                blending: THREE.AdditiveBlending,
+                side: THREE.DoubleSide
+            });
+
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(laserCylRadius, laserCylRadius, 1, 16), mat);
+            shaft.position.y = 0.5;
+            beamHolder.add(shaft);
+
+            const head = new THREE.Mesh(new THREE.ConeGeometry(laserConeRadius, laserConeHeight, 16), mat);
+            head.position.y = 1 + (laserConeHeight / 2);
+            beamHolder.add(head);
+
+            beamHolder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.dir);
+            laserBeamsGroup.add(beamHolder);
+
+            animatedLaserBeams.push({
+                holder: beamHolder,
+                shaft: shaft,
+                head: head,
+                mat: mat,
+                dir: axis.dir
+            });
+        });
+
+        let isLaserAnimating = false;
+        let laserAnimStartTime = 0;
+        const laserAnimDuration = 2.4; // 2.4s outward travel
+        let laserOnCompleteCallback = null;
+        let seqLaserPending = false;
+
+        function updateLaserBeamsProgress(progress) {
+            // progress from 0.0 (origin 0,0,0) to 1.0 (full length 2.4 units)
+            const currentLen = Math.max(0.001, progress * (fullLaserLength - laserConeHeight));
+            animatedLaserBeams.forEach(b => {
+                b.shaft.scale.set(1, currentLen, 1);
+                b.shaft.position.y = currentLen / 2;
+                b.head.position.y = currentLen + (laserConeHeight / 2);
+                b.head.visible = progress > 0.02;
+                b.mat.opacity = 0.95 * Math.min(1.0, progress * 4.0);
+            });
+        }
+
+        function playLaserBeamsAnimation(onComplete = null) {
+            isLaserAnimating = true;
+            laserAnimStartTime = performance.now();
+            laserOnCompleteCallback = onComplete;
+            laserBeamsGroup.visible = true;
+            updateLaserBeamsProgress(0.001);
+
+            const cb = document.getElementById('show-laser-beams');
+            if (cb) cb.checked = true;
+
+            showPopup({
+                id: "LASER",
+                spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes",
+                coords: [0, 0, 0],
+                coordsStr: "0.00, 0.00, 0.00",
+                siddhamUnicode: "𑖮𑖳𑖽",
+                siddhamImage: "",
+                dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)",
+                mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "LASER" }
+            });
+        }
 
         // =========================================================================
         // SECTION 7: RECALIBRATED SPIRAL FUNNEL CONE (0.25 UNIT HEIGHT PER 4 SPHERES)
@@ -1258,9 +1333,12 @@
                 if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
                 const isEgoRow = id.toUpperCase().includes('EGO') || id.toUpperCase().includes('BUBBLE');
+                const isLaserRow = id.toUpperCase().includes('LASER') || id.toUpperCase().includes('BEAM') || id.toUpperCase().includes('LUC_HUONG');
 
                 const sequences = {};
                 const egoTriggers = {};
+                const laserTriggers = {};
+
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
                         const cell = r.c[fc.index];
@@ -1279,10 +1357,22 @@
                                 if (strVal.toUpperCase() === 'EGO' || strVal.toUpperCase() === 'BUBBLE') {
                                     hasInlineEgo = true;
                                 }
-                                sequences[fc.label] = strVal;
-                                if (hasInlineEgo) {
-                                    egoTriggers[fc.label] = true;
+
+                                // Check for inline LASER trigger e.g. "6;LASER", "6+LASER", "[LASER]", "LASER", "BEAMS"
+                                let hasInlineLaser = false;
+                                for (const tag of ['+LASER', ';LASER', '-LASER', ' LASER', '_LASER', ':LASER', '[LASER]', '(LASER)', '+BEAM', ';BEAM']) {
+                                    if (strVal.toUpperCase().includes(tag)) {
+                                        hasInlineLaser = true;
+                                        strVal = strVal.replace(new RegExp('\\' + tag, 'gi'), '').trim();
+                                    }
                                 }
+                                if (strVal.toUpperCase() === 'LASER' || strVal.toUpperCase() === 'BEAM') {
+                                    hasInlineLaser = true;
+                                }
+
+                                sequences[fc.label] = strVal;
+                                if (hasInlineEgo) egoTriggers[fc.label] = true;
+                                if (hasInlineLaser) laserTriggers[fc.label] = true;
                             }
                         }
                     }
@@ -1294,14 +1384,16 @@
                 parsedRows.push({
                     id: id,
                     isEgo: isEgoRow,
+                    isLaser: isLaserRow,
                     egoTriggers: egoTriggers,
-                    spatialPosition: isEgoRow ? 'Outer Boundary (Radius 2.1)' : (getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : '')),
-                    coordsStr: isEgoRow ? '0.0, 0.0, 0.0' : rawCoordsStr,
-                    coords: isEgoRow ? [0, 0, 0] : parseCoordinates(rawCoordsStr),
-                    siddhamImage: isEgoRow ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
-                    siddhamUnicode: isEgoRow ? '𑖌𑖼' : (getVal(siddhamUniCol) || (isGroupA ? '𑖩' : '')),
-                    dharmaObject: isEgoRow ? 'Bubble of Ego (Bản Ngã)' : (getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : '')),
-                    mantra: isEgoRow ? 'Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính' : (getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : '')),
+                    laserTriggers: laserTriggers,
+                    spatialPosition: isEgoRow ? 'Outer Boundary (Radius 2.1)' : (isLaserRow ? 'Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes' : (getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''))),
+                    coordsStr: (isEgoRow || isLaserRow) ? '0.0, 0.0, 0.0' : rawCoordsStr,
+                    coords: (isEgoRow || isLaserRow) ? [0, 0, 0] : parseCoordinates(rawCoordsStr),
+                    siddhamImage: (isEgoRow || isLaserRow) ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
+                    siddhamUnicode: isEgoRow ? '𑖌𑖼' : (isLaserRow ? '𑖮𑖳𑖽' : (getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''))),
+                    dharmaObject: isEgoRow ? 'Bubble of Ego (Bản Ngã)' : (isLaserRow ? 'Laser Beams of Light (Lục Hướng Quang Minh)' : (getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''))),
+                    mantra: isEgoRow ? 'Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính' : (isLaserRow ? 'Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương' : (getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''))),
                     sequences: sequences
                 });
             });
@@ -1470,7 +1562,8 @@
                 { id: "B32", spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja", sequences: fallbackSeqMap["B32"] },
                 { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] },
-                { id: "EGO", isEgo: true, spatialPosition: "Outer Boundary (Radius 2.1)", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Bubble of Ego (Bản Ngã)", mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.5", "A.Liên Hoa Bồ Đề Tâm": "15.5", "A.Ending": "2.5" } }
+                { id: "EGO", isEgo: true, spatialPosition: "Outer Boundary (Radius 2.1)", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Bubble of Ego (Bản Ngã)", mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.5", "A.Liên Hoa Bồ Đề Tâm": "15.5", "A.Ending": "2.5" } },
+                { id: "LASER", isLaser: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖮𑖳𑖽", siddhamImage: "", dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)", mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.5", "A.Thường Trụ Bất Biến": "6.5" } }
             ];
 
             // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
@@ -1522,9 +1615,10 @@
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
 
-            // Mark inline ego triggers
+            // Mark inline ego & laser triggers
             matchingRows.forEach(row => {
                 row.triggerEgoAfter = !!(row.egoTriggers && row.egoTriggers[selectedFilter]);
+                row.triggerLaserAfter = !!(row.laserTriggers && row.laserTriggers[selectedFilter]);
             });
 
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
@@ -1562,6 +1656,16 @@
             seqEgoPending = false;
             if (egoOnCompleteCallback) egoOnCompleteCallback = null;
 
+            isLaserAnimating = false;
+            seqLaserPending = false;
+            if (laserOnCompleteCallback) laserOnCompleteCallback = null;
+
+            const laserCb = document.getElementById('show-laser-beams');
+            if (laserCb && !laserCb.checked) {
+                laserBeamsGroup.visible = false;
+            }
+            updateLaserBeamsProgress(0.001);
+
             if (active3DActor) {
                 active3DActor.group.visible = false;
                 active3DActor.outline.visible = false;
@@ -1578,14 +1682,14 @@
                 outerBubble.visible = false;
             }
             latGeo.setDrawRange(0, 0);
-            meridianGeo.setDrawRange(0, 0);
+            
 
             hidePopup();
             startBtn.innerText = "Start Formation";
         }
 
         async function triggerNextStep() {
-            if (isEgoAnimating) return;
+            if (isEgoAnimating || isLaserAnimating) return;
 
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
                 if (active3DActor) {
@@ -1603,15 +1707,24 @@
                         seqTimer = 0;
                         triggerNextStep();
                     });
-                    const selectedFilter = filterSelect.value;
-                    const stepKey = nodeData.sequences && nodeData.sequences[selectedFilter] ? nodeData.sequences[selectedFilter] : (currentSeqIndex + 1);
-                    seqStatusCount.innerText = `Node ${stepKey} (${currentSeqIndex + 1}/${currentSequenceNodes.length})`;
                     return;
                 }
 
-                // Check if this node has an inline EGO trigger attached
+                // Check if this step is the dedicated Laser Beams of Light node
+                if (nodeData.id === 'LASER' || nodeData.isLaser) {
+                    playLaserBeamsAnimation(() => {
+                        seqTimer = 0;
+                        triggerNextStep();
+                    });
+                    return;
+                }
+
+                // Check for inline triggers
                 if (nodeData.triggerEgoAfter) {
                     seqEgoPending = true;
+                }
+                if (nodeData.triggerLaserAfter) {
+                    seqLaserPending = true;
                 }
 
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
@@ -1671,7 +1784,7 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            if (data.id === 'EGO' || data.isEgo) {
+            if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser) {
                 boxSiddhamImg.style.display = 'none';
             } else {
                 const sUrl = formatImageUrl(data.siddhamImage, data.id);
@@ -1784,6 +1897,23 @@
             });
         }
 
+        const showLaserBeamsCheckbox = document.getElementById('show-laser-beams');
+        const animateLaserBtn = document.getElementById('animate-laser-btn');
+
+        if (showLaserBeamsCheckbox) {
+            showLaserBeamsCheckbox.addEventListener('change', (e) => {
+                laserBeamsGroup.visible = e.target.checked;
+                if (e.target.checked) updateLaserBeamsProgress(1.0);
+            });
+        }
+
+        if (animateLaserBtn) {
+            animateLaserBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playLaserBeamsAnimation();
+            });
+        }
+
         showAxesCheckbox.addEventListener('change', (e) => {
             axesGroup.visible = e.target.checked;
         });
@@ -1840,11 +1970,45 @@
                 }
             }
 
-            if (isRunning && !isEgoAnimating) {
+            // Advance Laser Beams of Light animation (origin 0,0,0 traveling outwards along 6 axes)
+            if (isLaserAnimating) {
+                const elapsed = (performance.now() - laserAnimStartTime) / 1000;
+                const t = Math.min(1.0, elapsed / laserAnimDuration);
+                // Smooth ease-out cubic
+                const progress = 1 - Math.pow(1 - t, 3);
+                updateLaserBeamsProgress(progress);
+
+                if (t >= 1.0) {
+                    isLaserAnimating = false;
+                    setTimeout(() => {
+                        if (laserOnCompleteCallback) {
+                            const cb = laserOnCompleteCallback;
+                            laserOnCompleteCallback = null;
+                            cb();
+                        }
+                    }, 1200);
+                }
+            }
+
+            if (isRunning && !isEgoAnimating && !isLaserAnimating) {
                 seqTimer += delta;
                 if (seqTimer >= nodeInterval) {
                     seqTimer = 0;
-                    if (seqEgoPending) {
+                    if (seqLaserPending) {
+                        seqLaserPending = false;
+                        playLaserBeamsAnimation(() => {
+                            seqTimer = 0;
+                            if (seqEgoPending) {
+                                seqEgoPending = false;
+                                playEgoBubbleAnimation(() => {
+                                    seqTimer = 0;
+                                    triggerNextStep();
+                                });
+                            } else {
+                                triggerNextStep();
+                            }
+                        });
+                    } else if (seqEgoPending) {
                         seqEgoPending = false;
                         playEgoBubbleAnimation(() => {
                             seqTimer = 0;
