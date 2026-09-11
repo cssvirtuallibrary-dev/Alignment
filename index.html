@@ -644,33 +644,27 @@
             side: THREE.FrontSide
         });
 
-        // High-clarity crystal Siddham spheres & character planes:
-        // Group A radius 0.21, Group B radius 0.17
-        const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
-        const sphereGeoB = new THREE.SphereGeometry(0.17, 32, 32);
+        // Enlarged transparent sphere & high-visibility Siddham glyph plane:
+        // Group A radius 0.26, Group B radius 0.20 (+33% boost for prominent clarity)
+        const sphereGeoA = new THREE.SphereGeometry(0.26, 32, 32);
+        const sphereGeoB = new THREE.SphereGeometry(0.20, 32, 32);
 
-        // Dark contrast backing discs (prevents busy background overlays from washing out the glyph)
-        const contrastDiscGeoA = new THREE.CircleGeometry(0.17, 32);
-        const contrastDiscGeoB = new THREE.CircleGeometry(0.13, 32);
-
-        // Character plane sized to fill the sphere cleanly
+        // Siddham image planes scaled to fill the sphere with luminous clarity
         const planeGeoA = new THREE.PlaneGeometry(0.32, 0.32);
-        const planeGeoB = new THREE.PlaneGeometry(0.26, 0.26);
+        const planeGeoB = new THREE.PlaneGeometry(0.25, 0.25);
 
-        // Active locator ring geometry
-        const outlineGeoA = new THREE.RingGeometry(0.20, 0.23, 32);
-        const outlineGeoB = new THREE.RingGeometry(0.16, 0.19, 32);
-
-        // Ultra-clear optical crystal glass (98% transmission, pure water-clear optics, zero cloudiness)
+        // Luminous crystal pearl sphere material with emissive glow and depth sorting protection
         const sphereTransparentMat = new THREE.MeshPhysicalMaterial({
             color: 0xffffff,
+            emissive: 0xffea88,
+            emissiveIntensity: 0.35,
             roughness: 0.04,
-            metalness: 0.05,
-            transmission: 0.98,
-            ior: 1.52,
-            thickness: 0.25,
+            metalness: 0.10,
+            transmission: 0.85,
+            ior: 1.54,
+            thickness: 0.45,
             transparent: true,
-            opacity: 1.0,
+            opacity: 0.95,
             side: THREE.DoubleSide,
             depthWrite: false
         });
@@ -1516,29 +1510,12 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, 512, 512);
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-
-            // First pass: warm golden outer glow
-            ctx.shadowColor = '#ffd700';
-            ctx.shadowBlur = 20;
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 220px sans-serif';
-            ctx.fillText(char || "𑖀", 256, 210);
-
-            // Second pass: pure crisp white-gold core without shadow blur for maximum sharpness!
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = '#fffdf0';
-            ctx.fillText(char || "𑖀", 256, 210);
-
+            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 24;
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 220px sans-serif';
+            ctx.fillText(char || "𑖀", 256, 220);
             if (label) {
-                ctx.shadowColor = '#ffaa00';
-                ctx.shadowBlur = 8;
-                ctx.fillStyle = '#ffd700';
-                ctx.font = 'bold 44px sans-serif';
-                ctx.fillText(label.toUpperCase(), 256, 390);
-
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(label.toUpperCase(), 256, 390);
+                ctx.shadowBlur = 8; ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px sans-serif';
+                ctx.fillText(label.toUpperCase(), 256, 400);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.colorSpace = THREE.SRGBColorSpace;
@@ -1567,16 +1544,36 @@
         // SECTION 9: REINTRODUCED TRANSPARENT SPHERE (+50% ENLARGED)
         // & PURE VERTICAL Z-AXIS ROTATION HIERARCHY
         // =========================================================================
+        // Radiant aura halo sprite to ensure the Siddham glyph remains bright and distinct even when all torus and laser overlays are active
+        function createAuraSpriteTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            grad.addColorStop(0.25, 'rgba(255, 225, 120, 0.75)');
+            grad.addColorStop(0.55, 'rgba(0, 229, 255, 0.40)');
+            grad.addColorStop(0.85, 'rgba(0, 170, 255, 0.15)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 128, 128);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        const auraTexture = createAuraSpriteTexture();
+
         function buildSingleActiveActorNode() {
             const containerGroup = new THREE.Group();
             containerGroup.renderOrder = 10; // High priority so Siddham node renders on top of all secondary animation overlays
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. Transparent Crystal Glass Sphere Mesh (ultra-clear see-through optics)
+            // 1. Transparent Sphere Mesh (+50% enlarged, high transmission)
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
-            sphereMesh.renderOrder = 12; // Encapsulates the disc & plane with pure crystal glass
+            sphereMesh.renderOrder = 9;
             containerGroup.add(sphereMesh);
 
             // 2. Pure Vertical Spin Pivot (Spins around its local Z-axis only)
@@ -1584,21 +1581,21 @@
             spinPivot.renderOrder = 10;
             containerGroup.add(spinPivot);
 
-            // 3. Dark Contrast Backing Disc (prevents background animations from washing out the glyph)
-            const contrastDiscMat = new THREE.MeshBasicMaterial({
-                color: 0x050814,
+            // 3. Inner Radiant Halo Aura Sprite (Behind the glyph plane, keeps glyph crystal clear against all animations)
+            const auraMat = new THREE.SpriteMaterial({
+                map: auraTexture,
+                color: 0xffffff,
                 transparent: true,
-                opacity: 0.65,
-                side: THREE.DoubleSide,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
-            const contrastDisc = new THREE.Mesh(contrastDiscGeoB, contrastDiscMat);
-            contrastDisc.rotation.x = Math.PI / 2;
-            contrastDisc.position.z = -0.005; // Placed slightly behind the glyph plane
-            contrastDisc.renderOrder = 10;
-            spinPivot.add(contrastDisc);
+            const auraSprite = new THREE.Sprite(auraMat);
+            auraSprite.scale.set(0.48, 0.48, 1);
+            auraSprite.renderOrder = 10;
+            spinPivot.add(auraSprite);
 
-            // 4. Upright Vertical Plane inside Pivot (High clarity Additive glyph):
+            // 4. Upright Vertical Plane inside Pivot:
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -1609,24 +1606,25 @@
             });
             const planeMesh = new THREE.Mesh(planeGeoB, planeMat);
             planeMesh.rotation.x = Math.PI / 2;
-            planeMesh.renderOrder = 11; // Always rendered on top of the contrast disc
+            planeMesh.renderOrder = 11; // Always rendered over aura and sphere
             spinPivot.add(planeMesh);
 
             // 5. Highlight Ring
+            const outlineGeo = new THREE.RingGeometry(0.20, 0.23, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
-                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending
+                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false
             });
-            const outlineMesh = new THREE.Mesh(outlineGeoB, outlineMat);
+            const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
             outlineMesh.rotation.x = Math.PI / 2;
             outlineMesh.visible = false;
-            outlineMesh.renderOrder = 13;
+            outlineMesh.renderOrder = 12;
             spinPivot.add(outlineMesh);
 
             return {
                 group: containerGroup,
                 sphere: sphereMesh,
                 spinPivot: spinPivot,
-                contrastDisc: contrastDisc,
+                aura: auraSprite,
                 plane: planeMesh,
                 planeMat: planeMat,
                 outline: outlineMesh,
@@ -1639,113 +1637,19 @@
             return String(aStr).localeCompare(String(bStr), undefined, { numeric: true, sensitivity: 'base' });
         }
 
+        // =========================================================================
         // SECTION 10: FAST MULTI-TIER DATA INGESTION ENGINE ("A.xx" HEADERS ONLY)
         // =========================================================================
-        const CANONICAL_B_NODES = {
-            "B01": { spatialPosition: "Forehead", coords: [0.0, 0.8, -0.1], coordsStr: "0.0, 0.8, -0.1", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja" },
-            "B02": { spatialPosition: "Sacral Chakra", coords: [0.0, -0.2, 0.0], coordsStr: "0.0, -0.2, 0.0", siddhamUnicode: "𑖢", siddhamImage: "03_PA_Gold.png", dharmaObject: "Jewel Bowl", mantra: "Hu Lu, Hu Lu Syi Li,\nOm Jr Li Jr Li,\nWa Jr La,\nHum Pan Ja" },
-            "B03": { spatialPosition: "Front Center", coords: [0.0, 0.0, -0.1], coordsStr: "0.0, 0.0, -0.1", siddhamUnicode: "𑖨", siddhamImage: "02_RA_Gold.png", dharmaObject: "Lariat Rope", mantra: "Mo La, No La\nOm, Jr Li Lai La,\nMo Nai La,\nHum Pan Ja" },
-            "B04": { spatialPosition: "Behind Center", coords: [0.0, 0.0, 0.1], coordsStr: "0.0, 0.0, 0.1", siddhamUnicode: "𑖜", siddhamImage: "36_NNA_Gold.png", dharmaObject: "Jewel Beads", mantra: "Fo La She Li\nNamo La Da Nang\nDa La Ye Ye\nOm, E No Pe Di\nWei Re Yi Syi Di Syi, To Li Ti\nSo Po He" },
-            "B05": { spatialPosition: "Above Right Knee", coords: [0.5, 0.0, -0.5], coordsStr: "0.5, 0.0, -0.5", siddhamUnicode: "𑖬", siddhamImage: "10_SSA_Gold.png", dharmaObject: "Jewel Bow", mantra: "Fa Sha Fa Shen\nOm, E Dzo Wei Li\nSo Po He." },
-            "B06": { spatialPosition: "Above Left Knee", coords: [-0.5, 0.0, -0.5], coordsStr: "-0.5, 0.0, -0.5", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Jewel Arrow", mantra: "Pe Ye Mo No\nOm, Jye No La,\nSo Po He." },
-            "B07": { spatialPosition: "Bottom Outer", coords: [0.0, 0.0, -2.0], coordsStr: "0.0, 0.0, -2.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He" },
-            "B08": { spatialPosition: "Bottom Inner", coords: [0.0, 0.0, -1.0], coordsStr: "0.0, 0.0, -1.0", siddhamUnicode: "𑖧", siddhamImage: "13_YA_Gold.png", dharmaObject: "Treasure Chest", mantra: "Syi To Yu Yi, Shr Pan La Ye\nOm, Wa Dz La,\nBo Shr Jye Li,\nJye Nang Syin La Hum" },
-            "B09": { spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja" },
-            "B10": { spatialPosition: "Top Inner", coords: [0.0, 0.0, 1.0], coordsStr: "0.0, 0.0, 1.0", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He" },
-            "B11": { spatialPosition: "Top Outer", coords: [0.0, 0.0, 2.0], coordsStr: "0.0, 0.0, 2.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He." },
-            "B12": { spatialPosition: "Back Outer", coords: [0.0, -2.0, 0.0], coordsStr: "0.0, -2.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He" },
-            "B13": { spatialPosition: "Back Inner", coords: [0.0, -1.0, 0.0], coordsStr: "0.0, -1.0, 0.0", siddhamUnicode: "𑖎𑖿𑖬", siddhamImage: "25_KSSA_Gold.png", dharmaObject: "Red Lotus", mantra: "Bo To Mo Jye Syi To Ye\nOm, Shang Jye Li,\nSo Po He" },
-            "B14": { spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja" },
-            "B15": { spatialPosition: "Front Inner", coords: [0.0, 1.0, 0.0], coordsStr: "0.0, 1.0, 0.0", siddhamUnicode: "𑖐", siddhamImage: "18_GA_Gold.png", dharmaObject: "White Lotus", mantra: "Jye meng\nOm, Wa Dz La,\nWei La Ye,\nSo Po He" },
-            "B16": { spatialPosition: "Front Outer", coords: [0.0, 2.0, 0.0], coordsStr: "0.0, 2.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He." },
-            "B17": { spatialPosition: "Right Outer", coords: [2.0, 0.0, 0.0], coordsStr: "2.0, 0.0, 0.0", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He" },
-            "B18": { spatialPosition: "Right Inner", coords: [1.0, 0.0, 0.0], coordsStr: "1.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖪", siddhamImage: "21_SVA_Gold.png", dharmaObject: "Purple Lotus", mantra: "Fo La She Ye\nOm, Sa La Sa La,\nWa Dz La, Jya La,\nHum Pan Ja" },
-            "B19": { spatialPosition: "Center", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖓", siddhamImage: "04_CA_Gold.png", dharmaObject: "Jewel Sword", mantra: "Di Li Shai Ni No\nOm, Di Shr Di Re,\nDu Wei Ning Du Ti,\nSo To Ye,\nHum Pan Ja" },
-            "B20": { spatialPosition: "Left Inner", coords: [-1.0, 0.0, 0.0], coordsStr: "-1.0, 0.0, 0.0", siddhamUnicode: "𑖞", siddhamImage: "19_THA_Gold.png", dharmaObject: "Blue Lotus", mantra: "Li To Yun\nOm, Jr Li Jr Li,\nWa Dz La,\nBu La Pan To,\nHum Pan Ja" },
-            "B21": { spatialPosition: "Left Outer", coords: [-2.0, 0.0, 0.0], coordsStr: "-2.0, 0.0, 0.0", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He." },
-            "B22": { spatialPosition: "Heart Chakra", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖪", siddhamImage: "11_VA_Gold.png", dharmaObject: "Integral Lotus", mantra: "Om, Syin Dian Do\nMan Do La,\nBa To Ye\nSo Po He" },
-            "B23": { spatialPosition: "Throat Chakra+", coords: [0.0, 0.1, 0.5], coordsStr: "0.0, 0.1, 0.5", siddhamUnicode: "𑖝𑖿𑖭", siddhamImage: "33_TSA_Gold.png", dharmaObject: "Jewel Axe", mantra: "Syi Lu Seng, E Mu Chywe Ye\nOm, Wei La Ye,\nWei La Ye\nSo Po He" },
-            "B24": { spatialPosition: "Throat Chakra", coords: [0.0, 0.0, 0.5], coordsStr: "0.0, 0.0, 0.5", siddhamUnicode: "𑖬𑖿𑖘", siddhamImage: "14_SSTTA_Gold.png", dharmaObject: "Pure Vase", mantra: "No La Jin Jr\nOm, Jye Li San Man Yen,\nSo Po He" },
-            "B25": { spatialPosition: "High Above Head", coords: [0.0, 0.0, 1.5], coordsStr: "0.0, 0.0, 1.5", siddhamUnicode: "𑖧𑖿𑖭", siddhamImage: "39_YSA_Gold.png", dharmaObject: "Transformation Buddha Atop Crown", mantra: "Pu To Ye\nOm, Wa Dz Li Ni,\nWa Dz Lan Yi,\nSo Po He" },
-            "B26": { spatialPosition: "Joined Palm", coords: [0.0, 0.3, 0.2], coordsStr: "0.0, 0.3, 0.2", siddhamUnicode: "𑖑", siddhamImage: "34_GHA_Gold.png", dharmaObject: "Joined Palm", mantra: "Syi Li, Syi Li\nOm, Bo Na Man\nRe Ling He Li.\nOm, Wei Sala Wei Sala\nHum Pan Ja" },
-            "B27": { spatialPosition: "Lower Left Palm", coords: [-0.2, 0.3, -0.1], coordsStr: "-0.2, 0.3, -0.1", siddhamUnicode: "𑖟", siddhamImage: "07_DA_Gold.png", dharmaObject: "Fearless Palm", mantra: "No La Jin Jr Pan Jye La Ye\nOm, Dz La Nan Ye\nHum Pan Ja" },
-            "B28": { spatialPosition: "Lower Right Palm", coords: [0.2, 0.3, -0.1], coordsStr: "0.2, 0.3, -0.1", siddhamUnicode: "𑖭", siddhamImage: "16_SA_Gold.png", dharmaObject: "Sweet Dews", mantra: "Su Lu Su Lu\nOm, Su Lu Su Lu,\nBo La Su Lu, Bo La Su Lu,\nSu Lu Su Lu Ye,\nSo Po He" },
-            "B29": { spatialPosition: "Upper Open Left Palm", coords: [-0.5, 0.5, 0.3], coordsStr: "-0.5, 0.5, 0.3", siddhamUnicode: "𑖤", siddhamImage: "08_BA_Gold.png", dharmaObject: "Sun Essence Mani", mantra: "Shr Fo La Ye\nOm, Du Bi Jya Ye Du Bi,\nBo La Wa Li Ning\nSo Po He." },
-            "B30": { spatialPosition: "Upper Open Right Palm", coords: [0.5, 0.5, 0.3], coordsStr: "0.5, 0.5, 0.3", siddhamUnicode: "𑖚", siddhamImage: "09_DDA_Gold.png", dharmaObject: "Moon Essence Mani", mantra: "Du Lu Du Lu\nOm, Su Syi Di Jya Li\nSo Po He" },
-            "B31": { spatialPosition: "Meditation Mudra", coords: [0.0, 0.3, -0.1], coordsStr: "0.0, 0.3, -0.1", siddhamUnicode: "𑖛", siddhamImage: "42_DDHA_Gold.png", dharmaObject: "Thousand Hands & Eyes", mantra: "Mo Pe Li Sheng Jye La Ye\nOm, Da Ni Ye To,\nWa Lu Jr Di,\nShr Wa La Ye,\nSa Pe Du Shai,\nJa Ming He Mi Ye,\nSo Po He" },
-            "B32": { spatialPosition: "Left Knee", coords: [-0.5, 0.4, -0.3], coordsStr: "-0.5, 0.4, -0.3", siddhamUnicode: "𑖏", siddhamImage: "24_KHA_Gold.png", dharmaObject: "Jewel Staff", mantra: "Mi Di Li Ye\nOm, No Li Ti No Li Ti\nNo Li Ja Bo Di\nNo Li Di No\nYe Bo Ning\nHum Pan Ja" },
-            "B33": { spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja" },
-            "B34": { spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He" }
-        };
-
-        function parseCoordinates(coordStr, nodeId = '') {
-            if (Array.isArray(coordStr) && coordStr.length >= 3) {
-                return coordStr.map(Number);
-            }
-            
-            if (coordStr) {
-                let cleaned = String(coordStr)
-                    .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
-                    .replace(/[()[\]{}'"]/g, '')
-                    .trim();
-
-                // 1. Semicolon delimited e.g. "0; 0.8; -0.1" or "0,0; 0,8; -0,1"
-                if (cleaned.includes(';')) {
-                    const parts = cleaned.split(';');
-                    const nums = [];
-                    for (const p of parts) {
-                        const m = p.replace(',', '.').match(/-?\d+(?:\.\d+)?/);
-                        if (m) nums.push(parseFloat(m[0]));
-                    }
-                    if (nums.length >= 3) return nums.slice(0, 3);
-                }
-
-                // 2. Standard dot decimal points e.g. "0.0, 0.8, -0.1" or "0.0 0.8 -0.1"
-                if (cleaned.includes('.')) {
-                    const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-                    if (matches && matches.length >= 3) {
-                        return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
-                    }
-                }
-
-                // 3. Comma as decimal e.g. "0,0, 0,8, -0,1"
-                const decFixed = cleaned.replace(/(\d),(\d)/g, '$1.$2');
-                const decMatches = decFixed.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-                if (decMatches && decMatches.length >= 3) {
-                    return [parseFloat(decMatches[0]), parseFloat(decMatches[1]), parseFloat(decMatches[2])];
-                }
-
-                // 4. Integers e.g. "0, 0, -2"
-                const intMatches = cleaned.match(/-?\d+/g);
-                if (intMatches && intMatches.length >= 3) {
-                    return [parseFloat(intMatches[0]), parseFloat(intMatches[1]), parseFloat(intMatches[2])];
-                }
-            }
-
-            // Fallback to canonical node coordinates if empty or (0, 0, 0)
-            if (nodeId && CANONICAL_B_NODES[nodeId]) {
-                return [...CANONICAL_B_NODES[nodeId].coords];
-            }
-
-            return [0, 0, 0];
-        }
-
         function initMatrixWithParsedData() {
             if (!active3DActor) {
                 active3DActor = buildSingleActiveActorNode();
-            }
-
-            // Always ensure A.6-2-6-2 is present in filterColumns
-            const has6262 = filterColumns.some(fc => fc.label.includes('6-2-6-2') || fc.label.includes('6_2_6_2'));
-            if (!has6262) {
-                filterColumns.push({ label: "A.6-2-6-2", index: -1, isFallback: true });
             }
 
             filterSelect.innerHTML = '';
             filterColumns.forEach((fc, idx) => {
                 const opt = document.createElement('option');
                 opt.value = fc.label;
-                opt.textContent = fc.label;
+                opt.textContent = fc.label; // Full header starting with "A."
                 if (idx === 0) opt.selected = true;
                 filterSelect.appendChild(opt);
             });
@@ -1787,166 +1691,48 @@
         }
 
         function parseGVizTable(table) {
-            let colsRaw = table.cols || [];
-            let dataRows = table.rows || [];
-            if (dataRows.length === 0) return;
+            let cols = table.cols.map((c, i) => ({ index: i, label: (c.label || c.id || '').trim() }));
+            let dataRows = table.rows;
 
-            // Step 1: Detect where the first actual data row is (contains B01 or A1)
-            let firstDataRowIdx = 0;
-            let idColByData = -1;
-            let coordColByData = -1;
-            let imgColByData = -1;
-            let uniColByData = -1;
+            const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
+                if (!cell || cell.v === null) return false;
+                const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
+                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('lý');
+            });
 
-            for (let rIdx = 0; rIdx < Math.min(10, dataRows.length); rIdx++) {
-                const cells = dataRows[rIdx].c || [];
-                for (let cIdx = 0; cIdx < cells.length; cIdx++) {
-                    const cell = cells[cIdx];
-                    if (cell && (cell.v !== null || cell.f !== undefined)) {
-                        const val = String(cell.f !== undefined ? cell.f : cell.v).trim().toUpperCase();
-                        if (val === 'B01' || val === 'B1' || val === 'A01' || val === 'A1') {
-                            firstDataRowIdx = rIdx;
-                            idColByData = cIdx;
-                            break;
-                        }
-                    }
-                }
-                if (idColByData !== -1) break;
+            if (firstRowHasHeaders) {
+                const headerRow = dataRows[0];
+                cols = cols.map((col, idx) => {
+                    const cell = headerRow.c ? headerRow.c[idx] : null;
+                    const val = cell && cell.v !== null ? String(cell.f !== undefined ? cell.f : cell.v).trim() : col.label;
+                    return { index: idx, label: val || col.label };
+                });
+                dataRows = dataRows.slice(1);
             }
 
-            // Step 2: Accumulate column labels across any header rows preceding firstDataRowIdx
-            const numCols = Math.max(colsRaw.length, (dataRows[firstDataRowIdx]?.c?.length) || 0);
-            const cols = [];
-            for (let cIdx = 0; cIdx < numCols; cIdx++) {
-                const labelParts = [];
-                if (cIdx < colsRaw.length && colsRaw[cIdx] && colsRaw[cIdx].label) {
-                    labelParts.push(String(colsRaw[cIdx].label).trim());
-                }
-                for (let hIdx = 0; hIdx < firstDataRowIdx; hIdx++) {
-                    const cell = dataRows[hIdx]?.c?.[cIdx];
-                    if (cell && (cell.v !== null || cell.f !== undefined)) {
-                        const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
-                        if (v && !labelParts.includes(v)) labelParts.push(v);
-                    }
-                }
-                cols.push({ index: cIdx, label: labelParts.join(' ').trim() });
-            }
+            const colFind = (keyword) => cols.find(c => c.label.toLowerCase().includes(keyword.toLowerCase()));
 
-            const actualDataRows = dataRows.slice(firstDataRowIdx);
-            const sampleRow = actualDataRows[0] || null;
-
-            const getSampleVal = (cIdx) => {
-                if (!sampleRow || !sampleRow.c || !sampleRow.c[cIdx]) return '';
-                const cell = sampleRow.c[cIdx];
-                return (cell.f !== undefined ? cell.f : (cell.v !== undefined ? cell.v : '')).toString().trim();
-            };
-
-            // Pre-scan sample row content to detect column types dynamically
-            for (let cIdx = 0; cIdx < numCols; cIdx++) {
-                const val = getSampleVal(cIdx);
-                if (!val) continue;
-
-                // Check coordinates (3 numbers separated by commas/semicolons/spaces)
-                if (coordColByData === -1) {
-                    const cleaned = val.replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-');
-                    const nums = cleaned.match(/-?\d+(?:\.\d+)?/g);
-                    if (nums && nums.length >= 3 && (cleaned.includes(',') || cleaned.includes(';') || cleaned.includes(' '))) {
-                        coordColByData = cIdx;
-                    }
-                }
-
-                // Check image URL
-                if (imgColByData === -1) {
-                    const lVal = val.toLowerCase();
-                    if (lVal.includes('.png') || lVal.includes('.jpg') || lVal.includes('.jpeg') || lVal.includes('drive.google') || lVal.includes('lh3.google')) {
-                        imgColByData = cIdx;
-                    }
-                }
-
-                // Check Siddham Unicode character (> 0x11000)
-                if (uniColByData === -1) {
-                    for (let ci = 0; ci < val.length; ci++) {
-                        if (val.charCodeAt(ci) > 0x2000 || val.codePointAt(ci) > 0x11000) {
-                            uniColByData = cIdx;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Step 3: Match each column using robust headers + content fallback
-            // ID Column
-            let idCol = cols.find(c => {
+            const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
+            const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
+            
+            const coordCol = cols.find(c => {
                 const l = c.label.toLowerCase();
-                return l.startsWith('wbs') || l === 'id' || l.startsWith('mã') || l.includes('wbs id');
-            });
-            if (!idCol && idColByData !== -1) idCol = cols[idColByData];
-            if (!idCol) idCol = cols[0];
+                return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
+            }) || colFind('axis') || colFind('coord');
 
-            // Coordinates Column
-            let coordCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return l.includes('a2 lý') || l.includes('a2 ly') || l.includes('lý') || l.includes('ly') || l.includes('tọa độ') || l.includes('toa do') || l.includes('coord') || l.includes('axis') || l.includes('xyz');
-            });
-            if (!coordCol && coordColByData !== -1) coordCol = cols[coordColByData];
+            const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image');
+            const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('siddham');
+            const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
+            const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
 
-            // Spatial Position Column
-            let posCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return (l.includes('spatial') || l.includes('vị trí') || l.includes('vi tri') || l.includes('a4 hành') || l.includes('a4 hanh')) && !l.includes('hành b') && !l.includes('hanh b') && !l.includes('mantra');
-            });
-
-            // Image Link Column
-            let siddhamImgCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return l.includes('c4 ctt') || l.includes('ctt link') || l.includes('link ảnh') || l.includes('link anh') || l.includes('image') || l.includes('url');
-            });
-            if (!siddhamImgCol && imgColByData !== -1) siddhamImgCol = cols[imgColByData];
-
-            // Siddham Unicode Column
-            let siddhamUniCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return l.includes('c4 siddham') || l.includes('siddham unicode') || l.includes('unicode') || l.includes('chữ phạn') || l.includes('chu phan') || l.includes('siddham');
-            });
-            if (!siddhamUniCol && uniColByData !== -1) siddhamUniCol = cols[uniColByData];
-
-            // Dharma Object Column
-            let dharmaCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return l.includes('c5 dharma') || l.includes('dharma object') || l.includes('pháp bảo') || l.includes('phap bao') || l.includes('pháp khí') || l.includes('vật phẩm') || l.includes('dharma');
-            });
-
-            // Mantra Column
-            let mantraCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return (l.includes('a4 hành b') || l.includes('hành b') || l.includes('hanh b') || l.includes('mantra') || l.includes('thần chú') || l.includes('than chu') || l.includes('chân ngôn') || l.includes('chan ngon') || l === 'chú' || l === 'chu') && !l.includes('ghi chú') && !l.includes('ghi chu') && !l.includes('note');
-            });
-
-            // Sequence Columns: matches headers starting with "A." or containing "6-2-6-2"
-            const matchedFilterCols = [];
-            cols.forEach(c => {
-                const lbl = c.label.trim();
-                const l = lbl.toLowerCase();
-                if ((lbl.startsWith('A.') && lbl.length > 2) || l.includes('6-2-6-2') || l.includes('6_2_6_2')) {
-                    const normLabel = (l.includes('6-2-6-2') || l.includes('6_2_6_2')) ? 'A.6-2-6-2' : lbl;
-                    matchedFilterCols.push({ index: c.index, label: normLabel });
-                }
-            });
-
-            // Always guarantee A.6-2-6-2 exists in filter list!
-            const has6262Col = matchedFilterCols.some(fc => fc.label.includes('6-2-6-2'));
-            if (!has6262Col) {
-                matchedFilterCols.push({ index: -1, label: 'A.6-2-6-2', isFallback: true });
-            }
-
+            // Strictly filter headers starting with "A."
+            const matchedFilterCols = cols.filter(c => c.label.startsWith('A.') && c.label.length > 2);
             if (matchedFilterCols.length > 0) {
                 filterColumns = matchedFilterCols;
             }
 
-            const fallbackMap = getFallbackSequenceMap();
             const parsedRows = [];
-
-            actualDataRows.forEach(r => {
+            dataRows.forEach(r => {
                 if (!r.c) return;
                 const getVal = (col) => {
                     if (!col || col.index < 0 || !r.c[col.index]) return '';
@@ -1999,22 +1785,17 @@
                                 sequences[fc.label] = strVal;
                             }
                         }
-                    } else if (fc.isFallback && fallbackMap[id] && fallbackMap[id][fc.label]) {
-                        sequences[fc.label] = fallbackMap[id][fc.label];
                     }
                 });
 
-                // Canonical fallback data for this node
-                const canon = CANONICAL_B_NODES[id] || null;
                 const isGroupA = id.startsWith('A');
                 const rawCoordsStr = getVal(coordCol);
 
                 const isCustomAnim = isEgoRow || isLaserRow || isSpiralRow || isTorusInRow || isTorusOutRow;
-                let customPos = getVal(posCol) || (canon ? canon.spatialPosition : '');
-                let customObj = getVal(dharmaCol) || (canon ? canon.dharmaObject : '');
-                let customMantra = getVal(mantraCol) || (canon ? canon.mantra : '');
-                let customUni = getVal(siddhamUniCol) || (canon ? canon.siddhamUnicode : (isGroupA ? '𑖩' : ''));
-                let customImg = getVal(siddhamImgCol) || (canon ? canon.siddhamImage : (isGroupA ? '06_LA_Gold.PNG' : ''));
+                let customPos = getVal(posCol);
+                let customObj = getVal(dharmaCol);
+                let customMantra = getVal(mantraCol);
+                let customUni = getVal(siddhamUniCol) || (isGroupA ? '𑖩' : '');
 
                 if (isEgoRow) {
                     customPos = 'Outer Boundary (Radius 2.1)';
@@ -2027,36 +1808,20 @@
                     customMantra = 'Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương';
                     customUni = '𑖮𑖳𑖽';
                 } else if (isSpiralRow) {
-                    customPos = 'Origin (0.00, 0.00, 0.00) -> 6 Expanding Helixes';
+                    customPos = 'Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes';
                     customObj = 'Spiral Beams of Light (Lục Hướng Xoắn Ốc)';
-                    customMantra = 'Six Expanding Conical Helices / Khởi Từ Tâm Điểm (0,0,0), Phóng Lục Đạo Xoắn Ốc Mở Rộng Xuyên Suốt Không Gian';
+                    customMantra = 'Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian';
                     customUni = '𑖟𑖿𑖨𑖳𑖽';
                 } else if (isTorusInRow) {
-                    customPos = 'Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5) [Inside Bubble]';
+                    customPos = 'Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)';
                     customObj = 'Horn Torus In (Nội Triệt Năng Lượng)';
-                    customMantra = 'Circular Horn Torus In / Hội Tụ Đỉnh Đầu (0,0,1), Quán Triệt Thân Kim Cương, Vận Hành Tròn Trị Bên Trong Bản Ngã';
+                    customMantra = 'Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen';
                     customUni = '𑖮𑖿𑖨𑖱𑖾';
                 } else if (isTorusOutRow) {
-                    customPos = 'Crown (0,0,1.0) -> Higher & Beyond Bubble (R=3.96, Z=2.30) -> Seat';
+                    customPos = 'Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)';
                     customObj = 'Horn Torus Out (Quang Minh Biến Chiếu)';
-                    customMantra = 'Circular Horn Torus Out / Xuất Đỉnh Đại Biến Chiếu (0,0,1), Vươn Cao & Vượt Thoát Bản Ngã (R>2.1, Z>2.1), Phổ Chiếu Mười Phương';
+                    customMantra = 'Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương';
                     customUni = '𑖌𑖼';
-                }
-
-                // Robust coordinate extraction:
-                let nodeCoords = [0, 0, 0];
-                if (isCustomAnim) {
-                    nodeCoords = [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)];
-                } else if (rawCoordsStr && rawCoordsStr.trim().length > 0) {
-                    nodeCoords = parseCoordinates(rawCoordsStr, id);
-                } else if (canon) {
-                    nodeCoords = [...canon.coords];
-                }
-
-                // Safety guard: if parsed coordinates came out to [0, 0, 0] for any node other than B09, B14, B19:
-                // automatically restore canonical coordinates!
-                if ((nodeCoords[0] === 0 && nodeCoords[1] === 0 && nodeCoords[2] === 0) && id !== 'B09' && id !== 'B14' && id !== 'B19' && !isCustomAnim && canon) {
-                    nodeCoords = [...canon.coords];
                 }
 
                 parsedRows.push({
@@ -2072,9 +1837,9 @@
                     torusInTriggers: torusInTriggers,
                     torusOutTriggers: torusOutTriggers,
                     spatialPosition: customPos || (isGroupA ? `Column of Light Node ${id}` : ''),
-                    coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : (rawCoordsStr || nodeCoords.join(', ')),
-                    coords: nodeCoords,
-                    siddhamImage: isCustomAnim ? '' : customImg,
+                    coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : rawCoordsStr,
+                    coords: isCustomAnim ? [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)] : parseCoordinates(rawCoordsStr),
+                    siddhamImage: isCustomAnim ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
                     siddhamUnicode: customUni,
                     dharmaObject: customObj || (isGroupA ? 'Vajra Scepter' : ''),
                     mantra: customMantra || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
@@ -2090,7 +1855,7 @@
                 syncDot.style.background = "#00ff88";
 
                 try {
-                    localStorage.setItem('cached_bodhicitta_data_v5', JSON.stringify({
+                    localStorage.setItem('cached_bodhicitta_data', JSON.stringify({
                         rows: rawSheetRows,
                         cols: filterColumns
                     }));
@@ -2108,15 +1873,12 @@
             // STEP 1: Immediately initialize complete embedded baseline (0ms)
             useEmbeddedFallbackData();
 
-            // STEP 2: Restore from LocalStorage cache if valid
+            // STEP 2: Restore from LocalStorage cache if available
             try {
-                const cached = localStorage.getItem('cached_bodhicitta_data_v5');
+                const cached = localStorage.getItem('cached_bodhicitta_data');
                 if (cached) {
                     const parsed = JSON.parse(cached);
-                    // Validate cache: ensure B01 has non-zero coordinates
-                    const b01 = parsed.rows ? parsed.rows.find(r => r.id === 'B01') : null;
-                    const isValidCache = b01 && b01.coords && (b01.coords[0] !== 0 || b01.coords[1] !== 0 || b01.coords[2] !== 0);
-                    if (isValidCache && parsed.rows && parsed.rows.length > 0) {
+                    if (parsed.rows && parsed.rows.length > 0) {
                         rawSheetRows = parsed.rows;
                         filterColumns = parsed.cols;
                         initMatrixWithParsedData();
@@ -2162,12 +1924,15 @@
         }
 
         function mergeEmbeddedSequencesIfNeeded() {
-            const fallbackMap = getFallbackSequenceMap();
-            rawSheetRows.forEach(row => {
-                if (fallbackMap[row.id]) {
-                    row.sequences = { ...fallbackMap[row.id], ...row.sequences };
-                }
-            });
+            const sample = rawSheetRows.find(r => r.id === 'B01');
+            if (!sample || Object.keys(sample.sequences).length === 0) {
+                const fallbackMap = getFallbackSequenceMap();
+                rawSheetRows.forEach(row => {
+                    if (fallbackMap[row.id]) {
+                        row.sequences = { ...fallbackMap[row.id], ...row.sequences };
+                    }
+                });
+            }
         }
 
         function getFallbackSequenceMap() {
@@ -2178,22 +1943,22 @@
                 "B04": { "A.Tổng Thể Bồ Đề Tâm": "4", "A.Thường Trụ Bất Biến": "4" },
                 "B05": { "A.Tổng Thể Bồ Đề Tâm": "5", "A.Thường Trụ Bất Biến": "5" },
                 "B06": { "A.Tổng Thể Bồ Đề Tâm": "6", "A.Thường Trụ Bất Biến": "6" },
-                "B07": { "A.Tổng Thể Bồ Đề Tâm": "7", "A.Liên Hoa Bồ Đề Tâm": "1", "A.A3/3/3": "1", "A.A4/3/3": "1", "A.A5/3/3": "1", "A.A5/5/5": "1", "A.6-2-6-2": "1" },
-                "B08": { "A.Tổng Thể Bồ Đề Tâm": "8", "A.Liên Hoa Bồ Đề Tâm": "2", "A.A5/3/3": "2", "A.A5/5/5": "2", "A.6-2-6-2": "9" },
-                "B09": { "A.Tổng Thể Bồ Đề Tâm": "9", "A.Liên Hoa Bồ Đề Tâm": "3", "A.A3/3/3": "2", "A.A4/3/3": "2", "A.A5/3/3": "3", "A.A5/5/5": "3", "A.6-2-6-2": "7" },
-                "B10": { "A.Tổng Thể Bồ Đề Tâm": "10", "A.Liên Hoa Bồ Đề Tâm": "4", "A.A4/3/3": "3", "A.A5/3/3": "4", "A.A5/5/5": "4", "A.6-2-6-2": "10" },
-                "B11": { "A.Tổng Thể Bồ Đề Tâm": "11", "A.Liên Hoa Bồ Đề Tâm": "5", "A.A3/3/3": "3", "A.A4/3/3": "4", "A.A5/3/3": "5", "A.A5/5/5": "5", "A.6-2-6-2": "2" },
-                "B12": { "A.Tổng Thể Bồ Đề Tâm": "12", "A.Liên Hoa Bồ Đề Tâm": "6", "A.A3/3/3": "4", "A.A4/3/3": "5", "A.A5/3/3": "6", "A.A5/5/5": "6", "A.6-2-6-2": "3" },
-                "B13": { "A.Tổng Thể Bồ Đề Tâm": "13", "A.Liên Hoa Bồ Đề Tâm": "7", "A.A5/5/5": "7", "A.6-2-6-2": "11" },
-                "B14": { "A.Tổng Thể Bồ Đề Tâm": "14", "A.Liên Hoa Bồ Đề Tâm": "8", "A.A3/3/3": "5", "A.A4/3/3": "6", "A.A5/3/3": "7", "A.A5/5/5": "8", "A.6-2-6-2": "8" },
-                "B15": { "A.Tổng Thể Bồ Đề Tâm": "15", "A.Liên Hoa Bồ Đề Tâm": "9", "A.A5/5/5": "9", "A.6-2-6-2": "12" },
-                "B16": { "A.Tổng Thể Bồ Đề Tâm": "16", "A.Liên Hoa Bồ Đề Tâm": "10", "A.A3/3/3": "6", "A.A4/3/3": "7", "A.A5/3/3": "8", "A.A5/5/5": "10", "A.6-2-6-2": "4" },
-                "B17": { "A.Tổng Thể Bồ Đề Tâm": "17", "A.Liên Hoa Bồ Đề Tâm": "11", "A.A3/3/3": "7", "A.A4/3/3": "8", "A.A5/3/3": "9", "A.A5/5/5": "11", "A.6-2-6-2": "5" },
-                "B18": { "A.Tổng Thể Bồ Đề Tâm": "18", "A.Liên Hoa Bồ Đề Tâm": "12", "A.A5/5/5": "12", "A.6-2-6-2": "13" },
-                "B19": { "A.Tổng Thể Bồ Đề Tâm": "19", "A.Liên Hoa Bồ Đề Tâm": "13", "A.A3/3/3": "8", "A.A4/3/3": "9", "A.A5/3/3": "10", "A.A5/5/5": "13", "A.6-2-6-2": "15" },
-                "B20": { "A.Tổng Thể Bồ Đề Tâm": "20", "A.Liên Hoa Bồ Đề Tâm": "14", "A.A5/5/5": "14", "A.6-2-6-2": "14" },
-                "B21": { "A.Tổng Thể Bồ Đề Tâm": "21", "A.Liên Hoa Bồ Đề Tâm": "15", "A.A3/3/3": "9", "A.A4/3/3": "10", "A.A5/3/3": "11", "A.A5/5/5": "15", "A.6-2-6-2": "6" },
-                "B22": { "A.Tổng Thể Bồ Đề Tâm": "22", "A.Liên Hoa Bồ Đề Tâm": "16", "A.6-2-6-2": "16" },
+                "B07": { "A.Tổng Thể Bồ Đề Tâm": "7", "A.Liên Hoa Bồ Đề Tâm": "1", "A.A3/3/3": "1", "A.A4/3/3": "1", "A.A5/3/3": "1", "A.A5/5/5": "1" },
+                "B08": { "A.Tổng Thể Bồ Đề Tâm": "8", "A.Liên Hoa Bồ Đề Tâm": "2", "A.A5/3/3": "2", "A.A5/5/5": "2" },
+                "B09": { "A.Tổng Thể Bồ Đề Tâm": "9", "A.Liên Hoa Bồ Đề Tâm": "3", "A.A3/3/3": "2", "A.A4/3/3": "2", "A.A5/3/3": "3", "A.A5/5/5": "3" },
+                "B10": { "A.Tổng Thể Bồ Đề Tâm": "10", "A.Liên Hoa Bồ Đề Tâm": "4", "A.A4/3/3": "3", "A.A5/3/3": "4", "A.A5/5/5": "4" },
+                "B11": { "A.Tổng Thể Bồ Đề Tâm": "11", "A.Liên Hoa Bồ Đề Tâm": "5", "A.A3/3/3": "3", "A.A4/3/3": "4", "A.A5/3/3": "5", "A.A5/5/5": "5" },
+                "B12": { "A.Tổng Thể Bồ Đề Tâm": "12", "A.Liên Hoa Bồ Đề Tâm": "6", "A.A3/3/3": "4", "A.A4/3/3": "5", "A.A5/3/3": "6", "A.A5/5/5": "6" },
+                "B13": { "A.Tổng Thể Bồ Đề Tâm": "13", "A.Liên Hoa Bồ Đề Tâm": "7", "A.A5/5/5": "7" },
+                "B14": { "A.Tổng Thể Bồ Đề Tâm": "14", "A.Liên Hoa Bồ Đề Tâm": "8", "A.A3/3/3": "5", "A.A4/3/3": "6", "A.A5/3/3": "7", "A.A5/5/5": "8" },
+                "B15": { "A.Tổng Thể Bồ Đề Tâm": "15", "A.Liên Hoa Bồ Đề Tâm": "9", "A.A5/5/5": "9" },
+                "B16": { "A.Tổng Thể Bồ Đề Tâm": "16", "A.Liên Hoa Bồ Đề Tâm": "10", "A.A3/3/3": "6", "A.A4/3/3": "7", "A.A5/3/3": "8", "A.A5/5/5": "10" },
+                "B17": { "A.Tổng Thể Bồ Đề Tâm": "17", "A.Liên Hoa Bồ Đề Tâm": "11", "A.A3/3/3": "7", "A.A4/3/3": "8", "A.A5/3/3": "9", "A.A5/5/5": "11" },
+                "B18": { "A.Tổng Thể Bồ Đề Tâm": "18", "A.Liên Hoa Bồ Đề Tâm": "12", "A.A5/5/5": "12" },
+                "B19": { "A.Tổng Thể Bồ Đề Tâm": "19", "A.Liên Hoa Bồ Đề Tâm": "13", "A.A3/3/3": "8", "A.A4/3/3": "9", "A.A5/3/3": "10", "A.A5/5/5": "13" },
+                "B20": { "A.Tổng Thể Bồ Đề Tâm": "20", "A.Liên Hoa Bồ Đề Tâm": "14", "A.A5/5/5": "14" },
+                "B21": { "A.Tổng Thể Bồ Đề Tâm": "21", "A.Liên Hoa Bồ Đề Tâm": "15", "A.A3/3/3": "9", "A.A4/3/3": "10", "A.A5/3/3": "11", "A.A5/5/5": "15" },
+                "B22": { "A.Tổng Thể Bồ Đề Tâm": "22", "A.Liên Hoa Bồ Đề Tâm": "16" },
                 "B23": { "A.Tổng Thể Bồ Đề Tâm": "23", "A.Liên Hoa Bồ Đề Tâm": "17" },
                 "B24": { "A.Tổng Thể Bồ Đề Tâm": "24", "A.Liên Hoa Bồ Đề Tâm": "18" },
                 "B25": { "A.Tổng Thể Bồ Đề Tâm": "25", "A.Liên Hoa Bồ Đề Tâm": "19" },
@@ -2248,9 +2013,9 @@
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] },
                 { id: "EGO", isEgo: true, spatialPosition: "Outer Boundary (Radius 2.1)", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Bubble of Ego (Bản Ngã)", mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.5", "A.Liên Hoa Bồ Đề Tâm": "15.5", "A.Ending": "2.5" } },
                 { id: "LASER", isLaser: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖮𑖳𑖽", siddhamImage: "", dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)", mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.5", "A.Thường Trụ Bất Biến": "6.5" } },
-                { id: "SPIRAL", isSpiral: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Expanding Helixes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽", siddhamImage: "", dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)", mantra: "Six Expanding Conical Helices / Khởi Từ Tâm Điểm (0,0,0), Phóng Lục Đạo Xoắn Ốc Mở Rộng Xuyên Suốt Không Gian", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.8" } },
-                { id: "TORUS_IN", isTorusIn: true, spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5) [Inside Bubble]", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾", siddhamImage: "", dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)", mantra: "Circular Horn Torus In / Hội Tụ Đỉnh Đầu (0,0,1), Quán Triệt Thân Kim Cương, Vận Hành Tròn Trị Bên Trong Bản Ngã", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.7" } },
-                { id: "TORUS_OUT", isTorusOut: true, spatialPosition: "Crown (0,0,1.0) -> Higher & Beyond Bubble (R=3.96, Z=2.30) -> Seat", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)", mantra: "Circular Horn Torus Out / Xuất Đỉnh Đại Biến Chiếu (0,0,1), Vươn Cao & Vượt Thoát Bản Ngã (R>2.1, Z>2.1), Phổ Chiếu Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "34.5" } }
+                { id: "SPIRAL", isSpiral: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽", siddhamImage: "", dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)", mantra: "Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.8" } },
+                { id: "TORUS_IN", isTorusIn: true, spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾", siddhamImage: "", dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)", mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.7" } },
+                { id: "TORUS_OUT", isTorusOut: true, spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)", mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "34.5" } }
             ];
 
             // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
@@ -2275,18 +2040,18 @@
                 { label: "A.Cột Trụ Quang Minh", index: 26 },
                 { label: "A.Thường Trụ Bất Biến", index: 27 },
                 { label: "A.Liên Hoa Bồ Đề Tâm", index: 28 },
-                { label: "A.6-2-6-2", index: 29 },
-                { label: "A.Lục Tý", index: 30 },
-                { label: "A.Ending", index: 31 },
-                { label: "A.A3/3/3", index: 32 },
-                { label: "A.A4/3/3", index: 33 },
-                { label: "A.A5/3/3", index: 34 },
-                { label: "A.A5/5/5", index: 35 }
+                { label: "A.Lục Tý", index: 29 },
+                { label: "A.Ending", index: 30 },
+                { label: "A.A3/3/3", index: 31 },
+                { label: "A.A4/3/3", index: 32 },
+                { label: "A.A5/3/3", index: 33 },
+                { label: "A.A5/5/5", index: 34 }
             ];
 
             initMatrixWithParsedData();
         }
 
+        // =========================================================================
         // SECTION 11: INTERLEAVED SPIRAL SEQUENCE ENGINE
         // Rule: 4 spiral spheres of LA, then selected matrix, then next 4 LA, etc.
         // =========================================================================
@@ -2470,16 +2235,7 @@
                 if (nodeData.triggerTorusInAfter) seqTorusInPending = true;
                 if (nodeData.triggerTorusOutAfter) seqTorusOutPending = true;
 
-                let rawCoords = nodeData.coords;
-                if (nodeData.coordsStr && typeof nodeData.coordsStr === 'string' && nodeData.coordsStr.trim().length > 0) {
-                    rawCoords = parseCoordinates(nodeData.coordsStr, nodeData.id);
-                }
-                // Safety check: ensure no non-center node is placed at (0,0,0)
-                if ((rawCoords[0] === 0 && rawCoords[1] === 0 && rawCoords[2] === 0) && nodeData.id !== 'B09' && nodeData.id !== 'B14' && nodeData.id !== 'B19' && !nodeData.isEgo && !nodeData.isLaser && !nodeData.isSpiral) {
-                    if (CANONICAL_B_NODES[nodeData.id]) {
-                        rawCoords = [...CANONICAL_B_NODES[nodeData.id].coords];
-                    }
-                }
+                const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
 
                 if (active3DActor) {
@@ -2489,11 +2245,11 @@
 
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
-                    if (active3DActor.contrastDisc) {
-                        active3DActor.contrastDisc.geometry = isGroupA ? contrastDiscGeoA : contrastDiscGeoB;
-                    }
-                    if (active3DActor.outline) {
-                        active3DActor.outline.geometry = isGroupA ? outlineGeoA : outlineGeoB;
+
+                    // Scale radiant aura to match sphere size
+                    if (active3DActor.aura) {
+                        const auraSize = isGroupA ? 0.60 : 0.48;
+                        active3DActor.aura.scale.set(auraSize, auraSize, 1);
                     }
 
                     active3DActor.currentData = nodeData;
@@ -2505,9 +2261,11 @@
                         active3DActor.planeMat.needsUpdate = true;
                     }
 
-                    active3DActor.glow = 2.0;
+                    active3DActor.glow = 2.5; // High initial illumination burst
                     active3DActor.group.visible = true;
-                }if (includeSpiralCheckbox.checked) {
+                }
+
+                if (includeSpiralCheckbox.checked) {
                     rebuildWallGeometry();
                 }
 
@@ -2913,11 +2671,9 @@
                 if (billboardModeSelect.value === 'billboard') {
                     active3DActor.spinPivot.rotation.set(0, 0, 0);
                     active3DActor.plane.quaternion.copy(camera.quaternion);
-                    if (active3DActor.contrastDisc) active3DActor.contrastDisc.quaternion.copy(camera.quaternion);
                     active3DActor.outline.quaternion.copy(camera.quaternion);
                 } else {
                     active3DActor.plane.rotation.set(Math.PI / 2, 0, 0);
-                    if (active3DActor.contrastDisc) active3DActor.contrastDisc.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.outline.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.spinPivot.rotation.set(0, 0, elapsedTime * 1.6);
                 }
