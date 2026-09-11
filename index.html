@@ -644,23 +644,27 @@
             side: THREE.FrontSide
         });
 
-        // +50% enlarged transparent sphere: Group A radius 0.21, Group B radius 0.15
-        const sphereGeoA = new THREE.SphereGeometry(0.21, 32, 32);
-        const sphereGeoB = new THREE.SphereGeometry(0.15, 32, 32);
+        // Enlarged transparent sphere & high-visibility Siddham glyph plane:
+        // Group A radius 0.26, Group B radius 0.20 (+33% boost for prominent clarity)
+        const sphereGeoA = new THREE.SphereGeometry(0.26, 32, 32);
+        const sphereGeoB = new THREE.SphereGeometry(0.20, 32, 32);
 
-        // Siddham image planes scaled to fit comfortably inside the sphere
-        const planeGeoA = new THREE.PlaneGeometry(0.25, 0.25);
-        const planeGeoB = new THREE.PlaneGeometry(0.18, 0.18);
+        // Siddham image planes scaled to fill the sphere with luminous clarity
+        const planeGeoA = new THREE.PlaneGeometry(0.32, 0.32);
+        const planeGeoB = new THREE.PlaneGeometry(0.25, 0.25);
 
+        // Luminous crystal pearl sphere material with emissive glow and depth sorting protection
         const sphereTransparentMat = new THREE.MeshPhysicalMaterial({
-            color: 0xfff8e7,
-            roughness: 0.06,
-            metalness: 0.15,
-            transmission: 0.94,
-            ior: 1.52,
-            thickness: 0.35,
+            color: 0xffffff,
+            emissive: 0xffea88,
+            emissiveIntensity: 0.35,
+            roughness: 0.04,
+            metalness: 0.10,
+            transmission: 0.85,
+            ior: 1.54,
+            thickness: 0.45,
             transparent: true,
-            opacity: 0.85,
+            opacity: 0.95,
             side: THREE.DoubleSide,
             depthWrite: false
         });
@@ -1540,24 +1544,58 @@
         // SECTION 9: REINTRODUCED TRANSPARENT SPHERE (+50% ENLARGED)
         // & PURE VERTICAL Z-AXIS ROTATION HIERARCHY
         // =========================================================================
+        // Radiant aura halo sprite to ensure the Siddham glyph remains bright and distinct even when all torus and laser overlays are active
+        function createAuraSpriteTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
+            grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+            grad.addColorStop(0.25, 'rgba(255, 225, 120, 0.75)');
+            grad.addColorStop(0.55, 'rgba(0, 229, 255, 0.40)');
+            grad.addColorStop(0.85, 'rgba(0, 170, 255, 0.15)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 128, 128);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        const auraTexture = createAuraSpriteTexture();
+
         function buildSingleActiveActorNode() {
             const containerGroup = new THREE.Group();
-            containerGroup.renderOrder = 5;
+            containerGroup.renderOrder = 10; // High priority so Siddham node renders on top of all secondary animation overlays
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. Transparent Sphere Mesh (+50% enlarged: Group A 0.21, Group B 0.15)
+            // 1. Transparent Sphere Mesh (+50% enlarged, high transmission)
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
-            sphereMesh.renderOrder = 4;
+            sphereMesh.renderOrder = 9;
             containerGroup.add(sphereMesh);
 
             // 2. Pure Vertical Spin Pivot (Spins around its local Z-axis only)
             const spinPivot = new THREE.Group();
-            spinPivot.renderOrder = 5;
+            spinPivot.renderOrder = 10;
             containerGroup.add(spinPivot);
 
-            // 3. Upright Vertical Plane inside Pivot:
+            // 3. Inner Radiant Halo Aura Sprite (Behind the glyph plane, keeps glyph crystal clear against all animations)
+            const auraMat = new THREE.SpriteMaterial({
+                map: auraTexture,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            const auraSprite = new THREE.Sprite(auraMat);
+            auraSprite.scale.set(0.48, 0.48, 1);
+            auraSprite.renderOrder = 10;
+            spinPivot.add(auraSprite);
+
+            // 4. Upright Vertical Plane inside Pivot:
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -1568,24 +1606,25 @@
             });
             const planeMesh = new THREE.Mesh(planeGeoB, planeMat);
             planeMesh.rotation.x = Math.PI / 2;
-            planeMesh.renderOrder = 6;
+            planeMesh.renderOrder = 11; // Always rendered over aura and sphere
             spinPivot.add(planeMesh);
 
-            // 4. Highlight Ring
-            const outlineGeo = new THREE.RingGeometry(0.16, 0.18, 32);
+            // 5. Highlight Ring
+            const outlineGeo = new THREE.RingGeometry(0.20, 0.23, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
-                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.85, depthWrite: false
+                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false
             });
             const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
             outlineMesh.rotation.x = Math.PI / 2;
             outlineMesh.visible = false;
-            outlineMesh.renderOrder = 6;
+            outlineMesh.renderOrder = 12;
             spinPivot.add(outlineMesh);
 
             return {
                 group: containerGroup,
                 sphere: sphereMesh,
                 spinPivot: spinPivot,
+                aura: auraSprite,
                 plane: planeMesh,
                 planeMat: planeMat,
                 outline: outlineMesh,
@@ -2064,12 +2103,9 @@
             uiTitle.innerText = selectedFilter || "Sequence Matrix";
         }
 
-        function resetAnimation() {
-            isRunning = false;
-            currentSeqIndex = -1;
-            seqTimer = 0;
-
-            // 1. Reset all animation flags & callbacks
+        // Resets all secondary animations (Bubble of Ego, Laser Beams, Spiral Beams, Torus In, Torus Out)
+        // leaving the Column of Light sequence intact!
+        function resetSecondaryAnimations() {
             isEgoAnimating = false;
             seqEgoPending = false;
             if (egoOnCompleteCallback) egoOnCompleteCallback = null;
@@ -2090,8 +2126,7 @@
             seqTorusOutPending = false;
             if (torusOutOnCompleteCallback) torusOutOnCompleteCallback = null;
 
-            // 2. Reset and hide ALL animations (except the Column of Light) at the start of every sequence
-            // Bubble of Ego:
+            // 1. Bubble of Ego:
             egoBubbleGroup.visible = false;
             outerBubble.visible = false;
             if (outerBubble.geometry !== outerBubbleGeo) {
@@ -2101,31 +2136,40 @@
             const egoCb = document.getElementById('show-ego-bubble');
             if (egoCb) egoCb.checked = false;
 
-            // Laser Beams:
+            // 2. Laser Beams:
             laserBeamsGroup.visible = false;
             updateLaserBeamsProgress(0.001);
             const laserCb = document.getElementById('show-laser-beams');
             if (laserCb) laserCb.checked = false;
 
-            // Spiral Beams:
+            // 3. Spiral Beams:
             spiralBeamsGroup.visible = false;
             updateSpiralBeams(0.001);
             const spiralCb = document.getElementById('show-spiral-beams');
             if (spiralCb) spiralCb.checked = false;
 
-            // Torus In:
+            // 4. Torus In:
             torusInGroup.visible = false;
             updateHornTorusSystem(torusInData, 0, 0.001);
             const torusInCb = document.getElementById('show-torus-in');
             if (torusInCb) torusInCb.checked = false;
 
-            // Torus Out:
+            // 5. Torus Out:
             torusOutGroup.visible = false;
             updateHornTorusSystem(torusOutData, 0, 0.001);
             const torusOutCb = document.getElementById('show-torus-out');
             if (torusOutCb) torusOutCb.checked = false;
+        }
 
-            // 3. Reset Active Actor Node:
+        function resetAnimation() {
+            isRunning = false;
+            currentSeqIndex = -1;
+            seqTimer = 0;
+
+            // Reset secondary animations
+            resetSecondaryAnimations();
+
+            // Reset Active Actor Node:
             if (active3DActor) {
                 active3DActor.group.visible = false;
                 active3DActor.outline.visible = false;
@@ -2133,7 +2177,7 @@
                 active3DActor.currentData = null;
             }
 
-            // 4. Column of Light is preserved and rebuilt to starting turn
+            // Column of Light is preserved and rebuilt to starting turn
             wallMesh.visible = false;
             rebuildWallGeometry();
 
@@ -2151,8 +2195,16 @@
                     active3DActor.glow = 0.0;
                 }
 
+                const prevNode = currentSeqIndex >= 0 ? currentSequenceNodes[currentSeqIndex] : null;
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
+
+                // If advancing to the next 4 LA nodes (Column of Light spiral), reset all other secondary animations!
+                const isCurrentLA = nodeData && nodeData.id && nodeData.id.startsWith('A');
+                const isPrevLA = prevNode && prevNode.id && prevNode.id.startsWith('A');
+                if (isCurrentLA && !isPrevLA) {
+                    resetSecondaryAnimations();
+                }
 
                 // Check if this step is any of the 5 dedicated animation nodes
                 if (nodeData.id === 'EGO' || nodeData.isEgo) {
@@ -2194,6 +2246,12 @@
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
 
+                    // Scale radiant aura to match sphere size
+                    if (active3DActor.aura) {
+                        const auraSize = isGroupA ? 0.60 : 0.48;
+                        active3DActor.aura.scale.set(auraSize, auraSize, 1);
+                    }
+
                     active3DActor.currentData = nodeData;
 
                     // Load Siddham texture (cached after first fetch)
@@ -2203,7 +2261,7 @@
                         active3DActor.planeMat.needsUpdate = true;
                     }
 
-                    active3DActor.glow = 2.0;
+                    active3DActor.glow = 2.5; // High initial illumination burst
                     active3DActor.group.visible = true;
                 }
 
@@ -2605,6 +2663,9 @@
 
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
+                if (active3DActor.aura) {
+                    active3DActor.aura.material.opacity = (0.75 + Math.sin(elapsedTime * 3.0) * 0.15) * active3DActor.glow;
+                }
 
                 // Billboard (Face Camera) is the default mode
                 if (billboardModeSelect.value === 'billboard') {
