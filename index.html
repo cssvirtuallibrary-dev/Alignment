@@ -167,15 +167,15 @@
             .popup-mantra-val { font-size: 10.5px; padding: 6px 10px; }
         }
 
-        #animate-ego-btn, #animate-laser-btn {
-            margin-top: 6px; width: 100%;
+        #animate-ego-btn, #animate-laser-btn, #animate-spiral-beams-btn, #animate-torus-in-btn, #animate-torus-out-btn {
+            margin-top: 5px; width: 100%;
             background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.45);
-            color: var(--accent-cyan); padding: 7px 10px; border-radius: 8px;
-            font-size: 10px; font-weight: 700; cursor: pointer;
+            color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px;
+            font-size: 9.5px; font-weight: 700; cursor: pointer;
             text-transform: uppercase; letter-spacing: 0.8px;
             transition: all 0.2s ease;
         }
-        #animate-ego-btn:hover, #animate-laser-btn:hover {
+        #animate-ego-btn:hover, #animate-laser-btn:hover, #animate-spiral-beams-btn:hover, #animate-torus-in-btn:hover, #animate-torus-out-btn:hover {
             background: rgba(0, 229, 255, 0.25);
             box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
         }
@@ -187,6 +187,33 @@
         #animate-laser-btn:hover {
             background: rgba(255, 215, 0, 0.25);
             box-shadow: 0 0 14px rgba(255, 215, 0, 0.45);
+        }
+        #animate-spiral-beams-btn {
+            background: rgba(187, 102, 255, 0.12);
+            border-color: rgba(187, 102, 255, 0.45);
+            color: #bb66ff;
+        }
+        #animate-spiral-beams-btn:hover {
+            background: rgba(187, 102, 255, 0.25);
+            box-shadow: 0 0 14px rgba(187, 102, 255, 0.45);
+        }
+        #animate-torus-in-btn {
+            background: rgba(0, 255, 170, 0.12);
+            border-color: rgba(0, 255, 170, 0.45);
+            color: #00ffaa;
+        }
+        #animate-torus-in-btn:hover {
+            background: rgba(0, 255, 170, 0.25);
+            box-shadow: 0 0 14px rgba(0, 255, 170, 0.45);
+        }
+        #animate-torus-out-btn {
+            background: rgba(255, 136, 0, 0.12);
+            border-color: rgba(255, 136, 0, 0.45);
+            color: #ff9900;
+        }
+        #animate-torus-out-btn:hover {
+            background: rgba(255, 136, 0, 0.25);
+            box-shadow: 0 0 14px rgba(255, 136, 0, 0.45);
         }
 
         /* Loading Screen */
@@ -268,6 +295,36 @@
                 </label>
                 <button type="button" id="animate-laser-btn">
                     ▶ Animate Laser Beams of Light
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-spiral-beams">
+                    <span>Spiral Beams (6 Cardinal Helixes)</span>
+                </label>
+                <button type="button" id="animate-spiral-beams-btn">
+                    ▶ Animate Spiral Beams
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-torus-in">
+                    <span>Torus In (Crown -> Core -> Seat)</span>
+                </label>
+                <button type="button" id="animate-torus-in-btn">
+                    ▶ Animate Torus In
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-torus-out">
+                    <span>Torus Out (Crown -> Beyond Bubble)</span>
+                </label>
+                <button type="button" id="animate-torus-out-btn">
+                    ▶ Animate Torus Out
                 </button>
             </div>
 
@@ -512,26 +569,7 @@
         outerBubble.renderOrder = 3;
         egoBubbleGroup.add(outerBubble);
 
-        // Pre-allocated Latitude lines buffer (9 rings, 48 segments each)
-        const numLats = 9;
-        const latAngles = [-60, -45, -30, -15, 0, 15, 30, 45, 60].map(d => d * Math.PI / 180);
-        const maxSegsPerLat = 48;
-        const latPositions = new Float32Array(numLats * maxSegsPerLat * 2 * 3);
-        const latGeo = new THREE.BufferGeometry();
-        latGeo.setAttribute('position', new THREE.BufferAttribute(latPositions, 3));
-        latGeo.setDrawRange(0, 0);
-
-        const latMat = new THREE.LineBasicMaterial({
-            color: 0x00e5ff,
-            transparent: true,
-            opacity: 0.85,
-            blending: THREE.AdditiveBlending
-        });
-        const latLinesMesh = new THREE.LineSegments(latGeo, latMat);
-        latLinesMesh.renderOrder = 4;
-        egoBubbleGroup.add(latLinesMesh);
-
-// (Longitude meridian line removed as requested - pure latitude rings only)
+        // (Latitude & longitude wireframe lines removed as requested - pure clear Bubble of Ego glass only)
 
         let isEgoAnimating = false;
         let egoAnimStartTime = 0;
@@ -540,40 +578,10 @@
         let seqEgoPending = false;
 
         function updateEgoBubbleWrapping(u) {
-            const R = 2.1;
-            const phiMax = u * Math.PI * 2;
-            let latPtr = 0;
+            const phiMax = Math.max(0.01, u * Math.PI * 2);
 
-            // 1. Wrap Latitude arcs around longitude (from phi = 0 to phiMax)
-            if (u > 0.001) {
-                const segsCount = Math.min(maxSegsPerLat, Math.ceil(u * maxSegsPerLat));
-                for (let i = 0; i < numLats; i++) {
-                    const lat = latAngles[i];
-                    const rLat = R * Math.cos(lat);
-                    const zLat = R * Math.sin(lat);
-
-                    for (let s = 0; s < segsCount; s++) {
-                        const p0 = (s / maxSegsPerLat) * Math.PI * 2;
-                        const p1 = Math.min(phiMax, ((s + 1) / maxSegsPerLat) * Math.PI * 2);
-                        if (p0 < phiMax) {
-                            latPositions[latPtr++] = rLat * Math.cos(p0);
-                            latPositions[latPtr++] = rLat * Math.sin(p0);
-                            latPositions[latPtr++] = zLat;
-
-                            latPositions[latPtr++] = rLat * Math.cos(p1);
-                            latPositions[latPtr++] = rLat * Math.sin(p1);
-                            latPositions[latPtr++] = zLat;
-                        }
-                    }
-                }
-            }
-            latGeo.setDrawRange(0, latPtr / 3);
-            latGeo.attributes.position.needsUpdate = true;
-
-// (No longitude line update - pure latitude wrapping)
-
-            // 3. Sweep outer bubble glass sphere alongside the meridian
-            if (u > 0.02 && u < 0.995) {
+            // Smoothly sweep clear crystal bubble glass around longitude (no blue lines!)
+            if (u > 0.01 && u < 0.995) {
                 if (outerBubble.geometry !== outerBubbleGeo) {
                     outerBubble.geometry.dispose();
                 }
@@ -909,6 +917,265 @@
                 dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)",
                 mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương",
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "LASER" }
+            });
+        }
+
+        // =========================================================================
+        // SECTION 6c: TORUS IN & TORUS OUT HORN TORUS ENERGY SYSTEMS
+        // 1. Torus In: Converges at Crown (0, 0, 1.0), enters body core down to Seat (0, 0, -0.5), stays inside Bubble (R <= 1.7)
+        // 2. Torus Out: Exits Crown (0, 0, 1.0), expands BEYOND Bubble of Ego (R >= 3.1), wraps back to Seat (0, 0, -0.5)
+        // =========================================================================
+        const torusInGroup = new THREE.Group();
+        torusInGroup.renderOrder = 6;
+        torusInGroup.visible = false;
+        scene.add(torusInGroup);
+
+        const torusOutGroup = new THREE.Group();
+        torusOutGroup.renderOrder = 6;
+        torusOutGroup.visible = false;
+        scene.add(torusOutGroup);
+
+        const numStreamlines = 16;
+        const segsPerStreamline = 64;
+
+        function buildHornTorusStreamlines(colorHex, rMax) {
+            const lines = [];
+            const mat = new THREE.LineBasicMaterial({
+                color: colorHex,
+                transparent: true,
+                opacity: 0.85,
+                blending: THREE.AdditiveBlending
+            });
+
+            for (let i = 0; i < numStreamlines; i++) {
+                const azimuth = (i / numStreamlines) * Math.PI * 2;
+                const positions = new Float32Array(segsPerStreamline * 3);
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const line = new THREE.Line(geo, mat);
+                lines.push({ line, geo, positions, azimuth, rMax });
+            }
+            return { lines, mat };
+        }
+
+        const torusInData = buildHornTorusStreamlines(0x00ffaa, 1.7);
+        torusInData.lines.forEach(item => torusInGroup.add(item.line));
+
+        const torusOutData = buildHornTorusStreamlines(0xff9900, 3.1);
+        torusOutData.lines.forEach(item => torusOutGroup.add(item.line));
+
+        function evaluateHornTorusPoint(tau, azimuth, rMax, direction) {
+            const Z_c = 0.25;
+            const H = 0.75;
+            let z, r;
+
+            if (direction === 'in') {
+                if (tau < 0.35) {
+                    const s = tau / 0.35;
+                    z = 1.0 - s * 1.5;
+                    r = 0.05 * Math.sin(s * Math.PI) + 0.03;
+                } else {
+                    const s = (tau - 0.35) / 0.65;
+                    const angle = -Math.PI / 2 + s * Math.PI;
+                    z = Z_c + H * Math.sin(angle);
+                    r = 0.03 + rMax * Math.cos(angle);
+                }
+            } else {
+                if (tau < 0.65) {
+                    const s = tau / 0.65;
+                    const angle = Math.PI / 2 - s * Math.PI;
+                    z = Z_c + H * Math.sin(angle);
+                    r = 0.03 + rMax * Math.cos(angle);
+                } else {
+                    const s = (tau - 0.65) / 0.35;
+                    z = -0.5 + s * 1.5;
+                    r = 0.05 * Math.sin(s * Math.PI) + 0.03;
+                }
+            }
+
+            return {
+                x: r * Math.cos(azimuth),
+                y: r * Math.sin(azimuth),
+                z: z
+            };
+        }
+
+        function updateHornTorusStreamlines(streamlineData, flowOffset, direction, progress) {
+            const maxPts = Math.max(2, Math.round(progress * segsPerStreamline));
+            streamlineData.lines.forEach(item => {
+                let ptr = 0;
+                for (let j = 0; j < segsPerStreamline; j++) {
+                    const baseTau = (j / (segsPerStreamline - 1));
+                    const tau = (baseTau + flowOffset) % 1.0;
+                    const pt = evaluateHornTorusPoint(tau, item.azimuth, item.rMax, direction);
+                    item.positions[ptr++] = pt.x;
+                    item.positions[ptr++] = pt.y;
+                    item.positions[ptr++] = pt.z;
+                }
+                item.geo.setDrawRange(0, maxPts);
+                item.geo.attributes.position.needsUpdate = true;
+            });
+        }
+
+        let isTorusInAnimating = false;
+        let torusInStartTime = 0;
+        const torusInDuration = 3.6;
+        let torusInOnCompleteCallback = null;
+        let seqTorusInPending = false;
+
+        let isTorusOutAnimating = false;
+        let torusOutStartTime = 0;
+        const torusOutDuration = 3.8;
+        let torusOutOnCompleteCallback = null;
+        let seqTorusOutPending = false;
+
+        function playTorusInAnimation(onComplete = null) {
+            isTorusInAnimating = true;
+            torusInStartTime = performance.now();
+            torusInOnCompleteCallback = onComplete;
+            torusInGroup.visible = true;
+            const cb = document.getElementById('show-torus-in');
+            if (cb) cb.checked = true;
+
+            showPopup({
+                id: "TORUS_IN",
+                spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)",
+                coords: [0, 0, 0.25],
+                coordsStr: "0.00, 0.00, 0.25",
+                siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾",
+                siddhamImage: "",
+                dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)",
+                mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_IN" }
+            });
+        }
+
+        function playTorusOutAnimation(onComplete = null) {
+            isTorusOutAnimating = true;
+            torusOutStartTime = performance.now();
+            torusOutOnCompleteCallback = onComplete;
+            torusOutGroup.visible = true;
+            const cb = document.getElementById('show-torus-out');
+            if (cb) cb.checked = true;
+
+            showPopup({
+                id: "TORUS_OUT",
+                spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)",
+                coords: [0, 0, 0.25],
+                coordsStr: "0.00, 0.00, 0.25",
+                siddhamUnicode: "𑖌𑖼",
+                siddhamImage: "",
+                dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)",
+                mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "TORUS_OUT" }
+            });
+        }
+
+        // =========================================================================
+        // SECTION 6d: SPIRAL BEAMS OF LIGHT (6 CARDINAL HELICAL BEAMS FROM 0,0,0)
+        // =========================================================================
+        const spiralBeamsGroup = new THREE.Group();
+        spiralBeamsGroup.renderOrder = 7;
+        spiralBeamsGroup.visible = false;
+        scene.add(spiralBeamsGroup);
+
+        const spiralBeamItems = [];
+        const spiralLength = 2.4;
+        const spiralRadius = 0.08;
+        const spiralTurns = 4.5;
+        const spiralPtsPerBeam = 96;
+
+        axesDirections.forEach(axis => {
+            const d = axis.dir.clone().normalize();
+            const ref = Math.abs(d.z) < 0.9 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0);
+            const v1 = new THREE.Vector3().crossVectors(d, ref).normalize();
+            const v2 = new THREE.Vector3().crossVectors(d, v1).normalize();
+
+            const positions = new Float32Array(spiralPtsPerBeam * 3);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geo.setDrawRange(0, 0);
+
+            const mat = new THREE.LineBasicMaterial({
+                color: axis.col,
+                transparent: true,
+                opacity: 0.95,
+                linewidth: 2,
+                blending: THREE.AdditiveBlending
+            });
+
+            const line = new THREE.Line(geo, mat);
+            spiralBeamsGroup.add(line);
+
+            const tipMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.045, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })
+            );
+            spiralBeamsGroup.add(tipMesh);
+
+            spiralBeamItems.push({ line, geo, positions, tipMesh, mat, d, v1, v2, col: axis.col });
+        });
+
+        let isSpiralAnimating = false;
+        let spiralAnimStartTime = 0;
+        const spiralAnimDuration = 2.6; // 2.6s outward travel
+        let spiralOnCompleteCallback = null;
+        let seqSpiralPending = false;
+
+        function updateSpiralBeams(progress, spinOffset = 0) {
+            const currentL = progress * spiralLength;
+            const activePts = Math.max(2, Math.round(progress * spiralPtsPerBeam));
+
+            spiralBeamItems.forEach(item => {
+                let ptr = 0;
+                let lastX = 0, lastY = 0, lastZ = 0;
+
+                for (let j = 0; j < spiralPtsPerBeam; j++) {
+                    const s = (j / (spiralPtsPerBeam - 1)) * currentL;
+                    const theta = (s / spiralLength) * Math.PI * 2 * spiralTurns + spinOffset;
+                    const r = spiralRadius * Math.min(1.0, (s / 0.25));
+
+                    const x = s * item.d.x + r * (Math.cos(theta) * item.v1.x + Math.sin(theta) * item.v2.x);
+                    const y = s * item.d.y + r * (Math.cos(theta) * item.v1.y + Math.sin(theta) * item.v2.y);
+                    const z = s * item.d.z + r * (Math.cos(theta) * item.v1.z + Math.sin(theta) * item.v2.z);
+
+                    item.positions[ptr++] = x;
+                    item.positions[ptr++] = y;
+                    item.positions[ptr++] = z;
+
+                    if (j === activePts - 1) {
+                        lastX = x; lastY = y; lastZ = z;
+                    }
+                }
+                item.geo.setDrawRange(0, activePts);
+                item.geo.attributes.position.needsUpdate = true;
+
+                item.tipMesh.position.set(lastX, lastY, lastZ);
+                item.tipMesh.visible = progress > 0.02;
+                item.mat.opacity = 0.95 * Math.min(1.0, progress * 3.5);
+            });
+        }
+
+        function playSpiralBeamsAnimation(onComplete = null) {
+            isSpiralAnimating = true;
+            spiralAnimStartTime = performance.now();
+            spiralOnCompleteCallback = onComplete;
+            spiralBeamsGroup.visible = true;
+            updateSpiralBeams(0.001);
+
+            const cb = document.getElementById('show-spiral-beams');
+            if (cb) cb.checked = true;
+
+            showPopup({
+                id: "SPIRAL",
+                spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes",
+                coords: [0, 0, 0],
+                coordsStr: "0.00, 0.00, 0.00",
+                siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽",
+                siddhamImage: "",
+                dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)",
+                mantra: "Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "SPIRAL" }
             });
         }
 
@@ -1332,12 +1599,19 @@
                 const id = getVal(idCol);
                 if (!id || id === '-' || id.toLowerCase() === 'id' || id.toLowerCase() === 'wbs') return;
 
-                const isEgoRow = id.toUpperCase().includes('EGO') || id.toUpperCase().includes('BUBBLE');
-                const isLaserRow = id.toUpperCase().includes('LASER') || id.toUpperCase().includes('BEAM') || id.toUpperCase().includes('LUC_HUONG');
+                const uId = id.toUpperCase();
+                const isEgoRow = uId.includes('EGO') || uId.includes('BUBBLE');
+                const isLaserRow = uId.includes('LASER') || uId.includes('LUC_HUONG');
+                const isSpiralRow = uId.includes('SPIRAL') || uId.includes('HELIX') || uId.includes('XOAN_OC');
+                const isTorusInRow = uId.includes('TORUS_IN') || uId.includes('TORUSIN') || uId.includes('NOI_TRIET');
+                const isTorusOutRow = uId.includes('TORUS_OUT') || uId.includes('TORUSOUT') || uId.includes('BIEN_CHIEU');
 
                 const sequences = {};
                 const egoTriggers = {};
                 const laserTriggers = {};
+                const spiralTriggers = {};
+                const torusInTriggers = {};
+                const torusOutTriggers = {};
 
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
@@ -1346,33 +1620,25 @@
                         if (val !== undefined && val !== null) {
                             let strVal = String(val).trim();
                             if (strVal.length > 0 && strVal !== '-' && strVal !== '0') {
-                                // Check for inline EGO trigger e.g. "21;EGO", "21+EGO", "[EGO]", "EGO"
-                                let hasInlineEgo = false;
-                                for (const tag of ['+EGO', ';EGO', '-EGO', ' EGO', '_EGO', ':EGO', '[EGO]', '(EGO)']) {
-                                    if (strVal.toUpperCase().includes(tag)) {
-                                        hasInlineEgo = true;
-                                        strVal = strVal.replace(new RegExp('\\' + tag, 'gi'), '').trim();
+                                const checkTag = (tagList, rowKeyword) => {
+                                    let found = false;
+                                    for (const tag of tagList) {
+                                        if (strVal.toUpperCase().includes(tag)) {
+                                            found = true;
+                                            strVal = strVal.replace(new RegExp('\\' + tag, 'gi'), '').trim();
+                                        }
                                     }
-                                }
-                                if (strVal.toUpperCase() === 'EGO' || strVal.toUpperCase() === 'BUBBLE') {
-                                    hasInlineEgo = true;
-                                }
+                                    if (strVal.toUpperCase() === rowKeyword) found = true;
+                                    return found;
+                                };
 
-                                // Check for inline LASER trigger e.g. "6;LASER", "6+LASER", "[LASER]", "LASER", "BEAMS"
-                                let hasInlineLaser = false;
-                                for (const tag of ['+LASER', ';LASER', '-LASER', ' LASER', '_LASER', ':LASER', '[LASER]', '(LASER)', '+BEAM', ';BEAM']) {
-                                    if (strVal.toUpperCase().includes(tag)) {
-                                        hasInlineLaser = true;
-                                        strVal = strVal.replace(new RegExp('\\' + tag, 'gi'), '').trim();
-                                    }
-                                }
-                                if (strVal.toUpperCase() === 'LASER' || strVal.toUpperCase() === 'BEAM') {
-                                    hasInlineLaser = true;
-                                }
+                                if (checkTag(['+EGO', ';EGO', '-EGO', ' EGO', '_EGO', ':EGO', '[EGO]', '(EGO)'], 'EGO') || strVal.toUpperCase() === 'BUBBLE') egoTriggers[fc.label] = true;
+                                if (checkTag(['+LASER', ';LASER', '-LASER', ' LASER', '_LASER', ':LASER', '[LASER]', '(LASER)'], 'LASER')) laserTriggers[fc.label] = true;
+                                if (checkTag(['+SPIRAL', ';SPIRAL', '-SPIRAL', ' SPIRAL', '_SPIRAL', ':SPIRAL', '[SPIRAL]', '(SPIRAL)', '+HELIX'], 'SPIRAL')) spiralTriggers[fc.label] = true;
+                                if (checkTag(['+TORUS_IN', ';TORUS_IN', '-TORUS_IN', ' TORUS_IN', '_TORUS_IN', ':TORUS_IN', '[TORUS_IN]', '+TORUSIN'], 'TORUS_IN')) torusInTriggers[fc.label] = true;
+                                if (checkTag(['+TORUS_OUT', ';TORUS_OUT', '-TORUS_OUT', ' TORUS_OUT', '_TORUS_OUT', ':TORUS_OUT', '[TORUS_OUT]', '+TORUSOUT'], 'TORUS_OUT')) torusOutTriggers[fc.label] = true;
 
                                 sequences[fc.label] = strVal;
-                                if (hasInlineEgo) egoTriggers[fc.label] = true;
-                                if (hasInlineLaser) laserTriggers[fc.label] = true;
                             }
                         }
                     }
@@ -1381,19 +1647,58 @@
                 const isGroupA = id.startsWith('A');
                 const rawCoordsStr = getVal(coordCol);
 
+                const isCustomAnim = isEgoRow || isLaserRow || isSpiralRow || isTorusInRow || isTorusOutRow;
+                let customPos = getVal(posCol);
+                let customObj = getVal(dharmaCol);
+                let customMantra = getVal(mantraCol);
+                let customUni = getVal(siddhamUniCol) || (isGroupA ? '𑖩' : '');
+
+                if (isEgoRow) {
+                    customPos = 'Outer Boundary (Radius 2.1)';
+                    customObj = 'Bubble of Ego (Bản Ngã)';
+                    customMantra = 'Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính';
+                    customUni = '𑖌𑖼';
+                } else if (isLaserRow) {
+                    customPos = 'Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes';
+                    customObj = 'Laser Beams of Light (Lục Hướng Quang Minh)';
+                    customMantra = 'Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương';
+                    customUni = '𑖮𑖳𑖽';
+                } else if (isSpiralRow) {
+                    customPos = 'Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes';
+                    customObj = 'Spiral Beams of Light (Lục Hướng Xoắn Ốc)';
+                    customMantra = 'Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian';
+                    customUni = '𑖟𑖿𑖨𑖳𑖽';
+                } else if (isTorusInRow) {
+                    customPos = 'Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)';
+                    customObj = 'Horn Torus In (Nội Triệt Năng Lượng)';
+                    customMantra = 'Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen';
+                    customUni = '𑖮𑖿𑖨𑖱𑖾';
+                } else if (isTorusOutRow) {
+                    customPos = 'Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)';
+                    customObj = 'Horn Torus Out (Quang Minh Biến Chiếu)';
+                    customMantra = 'Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương';
+                    customUni = '𑖌𑖼';
+                }
+
                 parsedRows.push({
                     id: id,
                     isEgo: isEgoRow,
                     isLaser: isLaserRow,
+                    isSpiral: isSpiralRow,
+                    isTorusIn: isTorusInRow,
+                    isTorusOut: isTorusOutRow,
                     egoTriggers: egoTriggers,
                     laserTriggers: laserTriggers,
-                    spatialPosition: isEgoRow ? 'Outer Boundary (Radius 2.1)' : (isLaserRow ? 'Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes' : (getVal(posCol) || (isGroupA ? `Column of Light Node ${id}` : ''))),
-                    coordsStr: (isEgoRow || isLaserRow) ? '0.0, 0.0, 0.0' : rawCoordsStr,
-                    coords: (isEgoRow || isLaserRow) ? [0, 0, 0] : parseCoordinates(rawCoordsStr),
-                    siddhamImage: (isEgoRow || isLaserRow) ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
-                    siddhamUnicode: isEgoRow ? '𑖌𑖼' : (isLaserRow ? '𑖮𑖳𑖽' : (getVal(siddhamUniCol) || (isGroupA ? '𑖩' : ''))),
-                    dharmaObject: isEgoRow ? 'Bubble of Ego (Bản Ngã)' : (isLaserRow ? 'Laser Beams of Light (Lục Hướng Quang Minh)' : (getVal(dharmaCol) || (isGroupA ? 'Vajra Scepter' : ''))),
-                    mantra: isEgoRow ? 'Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính' : (isLaserRow ? 'Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương' : (getVal(mantraCol) || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''))),
+                    spiralTriggers: spiralTriggers,
+                    torusInTriggers: torusInTriggers,
+                    torusOutTriggers: torusOutTriggers,
+                    spatialPosition: customPos || (isGroupA ? `Column of Light Node ${id}` : ''),
+                    coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : rawCoordsStr,
+                    coords: isCustomAnim ? [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)] : parseCoordinates(rawCoordsStr),
+                    siddhamImage: isCustomAnim ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
+                    siddhamUnicode: customUni,
+                    dharmaObject: customObj || (isGroupA ? 'Vajra Scepter' : ''),
+                    mantra: customMantra || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
                     sequences: sequences
                 });
             });
@@ -1563,7 +1868,10 @@
                 { id: "B33", spatialPosition: "Right Knee", coords: [0.5, 0.4, -0.3], coordsStr: "0.5, 0.4, -0.3", siddhamUnicode: "𑖀", siddhamImage: "01_A_Gold.png", dharmaObject: "Cintamani Jewel", mantra: "Mo La, Mo La\nOm, Wa Dz La,\nWa Do La,\nHum Pan Ja", sequences: fallbackSeqMap["B33"] },
                 { id: "B34", spatialPosition: "Center of Mandala", coords: [0.0, 0.0, -0.5], coordsStr: "0.0, 0.0, -0.5", siddhamUnicode: "𑖣", siddhamImage: "37_PHA_Gold.png", dharmaObject: "Non-retreating Dharma Wheel", mantra: "Pu Ti Ye (5x)\nOm, She No Mi Dzo\nSo Po He", sequences: fallbackSeqMap["B34"] },
                 { id: "EGO", isEgo: true, spatialPosition: "Outer Boundary (Radius 2.1)", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Bubble of Ego (Bản Ngã)", mantra: "Transcending the Bubble of Ego into Great Bodhicitta\nPhá Chấp Vỏ Bọc Bản Ngã, Thấu Triệt Phật Tính", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.5", "A.Liên Hoa Bồ Đề Tâm": "15.5", "A.Ending": "2.5" } },
-                { id: "LASER", isLaser: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖮𑖳𑖽", siddhamImage: "", dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)", mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.5", "A.Thường Trụ Bất Biến": "6.5" } }
+                { id: "LASER", isLaser: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖮𑖳𑖽", siddhamImage: "", dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)", mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.5", "A.Thường Trụ Bất Biến": "6.5" } },
+                { id: "SPIRAL", isSpiral: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽", siddhamImage: "", dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)", mantra: "Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.8" } },
+                { id: "TORUS_IN", isTorusIn: true, spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾", siddhamImage: "", dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)", mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.7" } },
+                { id: "TORUS_OUT", isTorusOut: true, spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)", mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "34.5" } }
             ];
 
             // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
@@ -1615,10 +1923,13 @@
                 return naturalCompare(a.sequences[selectedFilter], b.sequences[selectedFilter]);
             });
 
-            // Mark inline ego & laser triggers
+            // Mark all inline triggers (ego, laser, spiral, torus in, torus out)
             matchingRows.forEach(row => {
                 row.triggerEgoAfter = !!(row.egoTriggers && row.egoTriggers[selectedFilter]);
                 row.triggerLaserAfter = !!(row.laserTriggers && row.laserTriggers[selectedFilter]);
+                row.triggerSpiralAfter = !!(row.spiralTriggers && row.spiralTriggers[selectedFilter]);
+                row.triggerTorusInAfter = !!(row.torusInTriggers && row.torusInTriggers[selectedFilter]);
+                row.triggerTorusOutAfter = !!(row.torusOutTriggers && row.torusOutTriggers[selectedFilter]);
             });
 
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
@@ -1660,11 +1971,31 @@
             seqLaserPending = false;
             if (laserOnCompleteCallback) laserOnCompleteCallback = null;
 
+            isSpiralAnimating = false;
+            seqSpiralPending = false;
+            if (spiralOnCompleteCallback) spiralOnCompleteCallback = null;
+
+            isTorusInAnimating = false;
+            seqTorusInPending = false;
+            if (torusInOnCompleteCallback) torusInOnCompleteCallback = null;
+
+            isTorusOutAnimating = false;
+            seqTorusOutPending = false;
+            if (torusOutOnCompleteCallback) torusOutOnCompleteCallback = null;
+
             const laserCb = document.getElementById('show-laser-beams');
-            if (laserCb && !laserCb.checked) {
-                laserBeamsGroup.visible = false;
-            }
+            if (laserCb && !laserCb.checked) laserBeamsGroup.visible = false;
             updateLaserBeamsProgress(0.001);
+
+            const spiralCb = document.getElementById('show-spiral-beams');
+            if (spiralCb && !spiralCb.checked) spiralBeamsGroup.visible = false;
+            updateSpiralBeams(0.001);
+
+            const torusInCb = document.getElementById('show-torus-in');
+            if (torusInCb && !torusInCb.checked) torusInGroup.visible = false;
+
+            const torusOutCb = document.getElementById('show-torus-out');
+            if (torusOutCb && !torusOutCb.checked) torusOutGroup.visible = false;
 
             if (active3DActor) {
                 active3DActor.group.visible = false;
@@ -1681,7 +2012,7 @@
                 egoBubbleGroup.visible = false;
                 outerBubble.visible = false;
             }
-            latGeo.setDrawRange(0, 0);
+            
             
 
             hidePopup();
@@ -1689,7 +2020,7 @@
         }
 
         async function triggerNextStep() {
-            if (isEgoAnimating || isLaserAnimating) return;
+            if (isEgoAnimating || isLaserAnimating || isSpiralAnimating || isTorusInAnimating || isTorusOutAnimating) return;
 
             if (currentSeqIndex < currentSequenceNodes.length - 1) {
                 if (active3DActor) {
@@ -1701,31 +2032,34 @@
                 currentSeqIndex++;
                 const nodeData = currentSequenceNodes[currentSeqIndex];
 
-                // Check if this step is the dedicated Bubble of Ego node
+                // Check if this step is any of the 5 dedicated animation nodes
                 if (nodeData.id === 'EGO' || nodeData.isEgo) {
-                    playEgoBubbleAnimation(() => {
-                        seqTimer = 0;
-                        triggerNextStep();
-                    });
+                    playEgoBubbleAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     return;
                 }
-
-                // Check if this step is the dedicated Laser Beams of Light node
                 if (nodeData.id === 'LASER' || nodeData.isLaser) {
-                    playLaserBeamsAnimation(() => {
-                        seqTimer = 0;
-                        triggerNextStep();
-                    });
+                    playLaserBeamsAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
+                if (nodeData.id === 'SPIRAL' || nodeData.isSpiral) {
+                    playSpiralBeamsAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
+                if (nodeData.id === 'TORUS_IN' || nodeData.isTorusIn) {
+                    playTorusInAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
+                if (nodeData.id === 'TORUS_OUT' || nodeData.isTorusOut) {
+                    playTorusOutAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     return;
                 }
 
                 // Check for inline triggers
-                if (nodeData.triggerEgoAfter) {
-                    seqEgoPending = true;
-                }
-                if (nodeData.triggerLaserAfter) {
-                    seqLaserPending = true;
-                }
+                if (nodeData.triggerEgoAfter) seqEgoPending = true;
+                if (nodeData.triggerLaserAfter) seqLaserPending = true;
+                if (nodeData.triggerSpiralAfter) seqSpiralPending = true;
+                if (nodeData.triggerTorusInAfter) seqTorusInPending = true;
+                if (nodeData.triggerTorusOutAfter) seqTorusOutPending = true;
 
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
@@ -1784,7 +2118,7 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
-            if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser) {
+            if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut) {
                 boxSiddhamImg.style.display = 'none';
             } else {
                 const sUrl = formatImageUrl(data.siddhamImage, data.id);
@@ -1914,6 +2248,57 @@
             });
         }
 
+        const showSpiralBeamsCheckbox = document.getElementById('show-spiral-beams');
+        const animateSpiralBtn = document.getElementById('animate-spiral-beams-btn');
+
+        if (showSpiralBeamsCheckbox) {
+            showSpiralBeamsCheckbox.addEventListener('change', (e) => {
+                spiralBeamsGroup.visible = e.target.checked;
+                if (e.target.checked) updateSpiralBeams(1.0);
+            });
+        }
+
+        if (animateSpiralBtn) {
+            animateSpiralBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playSpiralBeamsAnimation();
+            });
+        }
+
+        const showTorusInCheckbox = document.getElementById('show-torus-in');
+        const animateTorusInBtn = document.getElementById('animate-torus-in-btn');
+
+        if (showTorusInCheckbox) {
+            showTorusInCheckbox.addEventListener('change', (e) => {
+                torusInGroup.visible = e.target.checked;
+                if (e.target.checked) updateHornTorusStreamlines(torusInData, 0, 'in', 1.0);
+            });
+        }
+
+        if (animateTorusInBtn) {
+            animateTorusInBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playTorusInAnimation();
+            });
+        }
+
+        const showTorusOutCheckbox = document.getElementById('show-torus-out');
+        const animateTorusOutBtn = document.getElementById('animate-torus-out-btn');
+
+        if (showTorusOutCheckbox) {
+            showTorusOutCheckbox.addEventListener('change', (e) => {
+                torusOutGroup.visible = e.target.checked;
+                if (e.target.checked) updateHornTorusStreamlines(torusOutData, 0, 'out', 1.0);
+            });
+        }
+
+        if (animateTorusOutBtn) {
+            animateTorusOutBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playTorusOutAnimation();
+            });
+        }
+
         showAxesCheckbox.addEventListener('change', (e) => {
             axesGroup.visible = e.target.checked;
         });
@@ -1951,7 +2336,7 @@
             coreLight.intensity = (Math.sin(elapsedTime * 2) * 0.4 + 1.2) * glowVal;
             coreLight.position.z = Math.sin(elapsedTime * 0.6) * 0.4;
 
-            // Advance Bubble of Ego wrapping animation
+            // 1. Advance Bubble of Ego animation (clear crystal bubble, no blue lines)
             if (isEgoAnimating) {
                 const elapsed = (performance.now() - egoAnimStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / egoAnimDuration);
@@ -1966,15 +2351,14 @@
                             egoOnCompleteCallback = null;
                             cb();
                         }
-                    }, 1400);
+                    }, 1200);
                 }
             }
 
-            // Advance Laser Beams of Light animation (origin 0,0,0 traveling outwards along 6 axes)
+            // 2. Advance Laser Beams of Light animation
             if (isLaserAnimating) {
                 const elapsed = (performance.now() - laserAnimStartTime) / 1000;
                 const t = Math.min(1.0, elapsed / laserAnimDuration);
-                // Smooth ease-out cubic
                 const progress = 1 - Math.pow(1 - t, 3);
                 updateLaserBeamsProgress(progress);
 
@@ -1990,30 +2374,96 @@
                 }
             }
 
-            if (isRunning && !isEgoAnimating && !isLaserAnimating) {
+            // 3. Advance Spiral Beams animation (origin 0,0,0 outward along 6 cardinal helixes)
+            if (isSpiralAnimating) {
+                const elapsed = (performance.now() - spiralAnimStartTime) / 1000;
+                const t = Math.min(1.0, elapsed / spiralAnimDuration);
+                const progress = 1 - Math.pow(1 - t, 3);
+                updateSpiralBeams(progress, elapsedTime * 4.0);
+
+                if (t >= 1.0) {
+                    isSpiralAnimating = false;
+                    setTimeout(() => {
+                        if (spiralOnCompleteCallback) {
+                            const cb = spiralOnCompleteCallback;
+                            spiralOnCompleteCallback = null;
+                            cb();
+                        }
+                    }, 1200);
+                }
+            } else if (spiralBeamsGroup.visible) {
+                // Continuous dynamic helical ripple while visible
+                updateSpiralBeams(1.0, elapsedTime * 4.0);
+            }
+
+            // 4. Advance Torus In energy flow (Crown -> Core -> Seat, within bubble)
+            if (isTorusInAnimating) {
+                const elapsed = (performance.now() - torusInStartTime) / 1000;
+                const t = Math.min(1.0, elapsed / torusInDuration);
+                const progress = 1 - Math.pow(1 - t, 2.5);
+                const flowOffset = (elapsedTime * 0.4) % 1.0;
+                updateHornTorusStreamlines(torusInData, flowOffset, 'in', progress);
+
+                if (t >= 1.0) {
+                    isTorusInAnimating = false;
+                    setTimeout(() => {
+                        if (torusInOnCompleteCallback) {
+                            const cb = torusInOnCompleteCallback;
+                            torusInOnCompleteCallback = null;
+                            cb();
+                        }
+                    }, 1200);
+                }
+            } else if (torusInGroup.visible) {
+                const flowOffset = (elapsedTime * 0.4) % 1.0;
+                updateHornTorusStreamlines(torusInData, flowOffset, 'in', 1.0);
+            }
+
+            // 5. Advance Torus Out energy flow (Crown -> Expanding beyond bubble -> Seat)
+            if (isTorusOutAnimating) {
+                const elapsed = (performance.now() - torusOutStartTime) / 1000;
+                const t = Math.min(1.0, elapsed / torusOutDuration);
+                const progress = 1 - Math.pow(1 - t, 2.5);
+                const flowOffset = (elapsedTime * 0.35) % 1.0;
+                updateHornTorusStreamlines(torusOutData, flowOffset, 'out', progress);
+
+                if (t >= 1.0) {
+                    isTorusOutAnimating = false;
+                    setTimeout(() => {
+                        if (torusOutOnCompleteCallback) {
+                            const cb = torusOutOnCompleteCallback;
+                            torusOutOnCompleteCallback = null;
+                            cb();
+                        }
+                    }, 1200);
+                }
+            } else if (torusOutGroup.visible) {
+                const flowOffset = (elapsedTime * 0.35) % 1.0;
+                updateHornTorusStreamlines(torusOutData, flowOffset, 'out', 1.0);
+            }
+
+            // Sequential matrix controller: dispatch inline pending animations before next node
+            const anyCustomAnimRunning = isEgoAnimating || isLaserAnimating || isSpiralAnimating || isTorusInAnimating || isTorusOutAnimating;
+
+            if (isRunning && !anyCustomAnimRunning) {
                 seqTimer += delta;
                 if (seqTimer >= nodeInterval) {
                     seqTimer = 0;
                     if (seqLaserPending) {
                         seqLaserPending = false;
-                        playLaserBeamsAnimation(() => {
-                            seqTimer = 0;
-                            if (seqEgoPending) {
-                                seqEgoPending = false;
-                                playEgoBubbleAnimation(() => {
-                                    seqTimer = 0;
-                                    triggerNextStep();
-                                });
-                            } else {
-                                triggerNextStep();
-                            }
-                        });
+                        playLaserBeamsAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqSpiralPending) {
+                        seqSpiralPending = false;
+                        playSpiralBeamsAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqTorusInPending) {
+                        seqTorusInPending = false;
+                        playTorusInAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqTorusOutPending) {
+                        seqTorusOutPending = false;
+                        playTorusOutAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     } else if (seqEgoPending) {
                         seqEgoPending = false;
-                        playEgoBubbleAnimation(() => {
-                            seqTimer = 0;
-                            triggerNextStep();
-                        });
+                        playEgoBubbleAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     } else {
                         triggerNextStep();
                     }
