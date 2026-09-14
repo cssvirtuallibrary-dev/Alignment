@@ -164,11 +164,11 @@
             font-weight: 700; outline: none; cursor: pointer;
         }
 
-        /* Landscape / Desktop / Tablet Layout:
-           - UI Filter Panel on the LHS (Left Hand Side)
-           - Detail View Popup on the RHS (Right Hand Side)
-           - Camera framed so Buddha statue is centered with room for both popups */
-        @media (min-width: 768px) and (orientation: landscape), (min-aspect-ratio: 1/1) and (min-width: 640px) {
+        /* 1. Desktop & Tablet Landscape (min-width: 768px, height >= 500px):
+           - LHS UI Filter Panel: open / expanded by default
+           - RHS Detail View Card: open / expanded alongside the Buddha
+           - Centered Buddha framed so entire system fits comfortably between drawers */
+        @media (min-width: 768px) and (min-height: 500px) and (orientation: landscape), (min-width: 900px) and (min-aspect-ratio: 1/1) {
             #ui-container {
                 top: calc(env(safe-area-inset-top, 16px) + 54px);
                 left: 20px; width: 310px; z-index: 25;
@@ -181,10 +181,41 @@
             #popup-card.active { transform: translateX(0); }
         }
 
-        /* Portrait Mobile Phone:
+        /* 2. Mobile Landscape Mode (max-height < 500px, or width < 900px in landscape):
+           - No LHS or RHS drawers displayed by default; pure 3D view of the entire system
+           - Filter panel collapses to small header
+           - Popup card appears as compact floating overlay only on user selection */
+        @media (max-height: 499px) and (orientation: landscape), (max-width: 899px) and (orientation: landscape) and (max-height: 600px) {
+            #top-bar { top: env(safe-area-inset-top, 6px); left: 10px; right: 10px; }
+            .nav-control-group { gap: 6px; }
+            #start-btn { padding: 7px 12px; font-size: 9.5px; }
+            #playback-controls { padding: 2px 6px; gap: 3px; }
+            #playback-controls button { padding: 4px 7px; font-size: 9.5px; }
+            #anim-speed-select { padding: 3px 5px; font-size: 9px; }
+            #sync-status { padding: 4px 8px; font-size: 9.5px; }
+
+            #ui-container {
+                top: calc(env(safe-area-inset-top, 6px) + 42px); left: 10px;
+                width: 260px; max-height: calc(100vh - 54px); padding: 8px 12px; z-index: 25;
+            }
+            #ui-container.collapsed { width: auto; max-width: 220px; padding: 6px 10px; }
+            #ui-content { max-height: calc(100vh - 100px); overflow-y: auto; }
+
+            #popup-card {
+                top: calc(env(safe-area-inset-top, 6px) + 42px); right: 10px;
+                width: 280px; max-height: calc(100vh - 54px);
+                transform: translateX(20px); padding: 10px 14px; z-index: 35;
+            }
+            #popup-card.active { transform: translateX(0); }
+            .popup-img-box img { height: 45px; }
+            .popup-row { margin-bottom: 3px; font-size: 9.5px; }
+            .popup-mantra-val { font-size: 9.5px; padding: 4px 8px; }
+        }
+
+        /* 3. Mobile Portrait View (max-aspect-ratio: 1/1, phone held vertically):
            - Filter selection collapses cleanly after selection or on start
-           - No detail popup by default during automated sequence
-           - When Siddham sphere is selected, pauses sequence and opens bottom drawer popup
+           - No drawers displayed by default; pure 3D view of the entire system
+           - When Siddham sphere is tapped, pauses sequence and opens bottom drawer popup
            - When popup is closed, resumes sequence */
         @media (max-width: 767px) and (orientation: portrait), (max-aspect-ratio: 1/1) {
             #top-bar { top: env(safe-area-inset-top, 10px); left: 10px; right: 10px; }
@@ -552,22 +583,32 @@
 
         function updateResponsiveCamera() {
             const aspect = window.innerWidth / window.innerHeight;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
             camera.aspect = aspect;
 
+            // Target is centered on Buddha's heart center
+            controls.target.set(0, 0, 0.25);
+
             if (aspect < 1.0) {
-                // Portrait Mobile: zoomed out further to comfortably encompass full view of all animations & overlays
-                // (Torus Out R=3.96, laser beams, ego bubble, Column of Light spiral Z=-0.5 to +2.0)
+                // 1. Mobile Portrait View (aspect < 1.0):
+                // Zoomed out to comfortably encompass full view of the entire system (Torus Out R=3.96,
+                // laser/spiral beams, Bubble of Ego, Column of Light spiral Z=-0.50 to +2.00)
                 // without requiring user pinch-to-zoom!
                 camera.position.set(6.8, 9.6, 4.6);
-                controls.target.set(0, 0, 0.25);
-            } else if (aspect < 1.4) {
-                // Tablet Landscape / Square aspect: balanced distance
-                camera.position.set(3.2, 4.4, 2.0);
-                controls.target.set(0, 0, 0.25);
+            } else if (height < 500 || (width < 900 && aspect > 1.3)) {
+                // 2. Mobile Landscape View (phone held horizontally):
+                // Height is constrained (~380-450px). Zoomed out to fit total height (4.4 units)
+                // and width (8.0 units) with room for top controls without user pinch-to-zoom!
+                camera.position.set(4.8, 6.8, 3.2);
+            } else if (aspect < 1.45 || width < 1100) {
+                // 3. Tablet Landscape / Square View:
+                // Zoomed out to frame the entire system in center with open LHS & RHS drawers
+                camera.position.set(5.8, 8.2, 3.9);
             } else {
-                // Desktop / Widescreen: Buddha positioned comfortably in the center with room for LHS & RHS panels
-                camera.position.set(2.8, 3.8, 1.6);
-                controls.target.set(0, 0, 0.25);
+                // 4. Desktop / Widescreen Landscape View:
+                // Zoomed to display the entire system in the clear viewport between the open LHS and RHS drawers
+                camera.position.set(5.2, 7.4, 3.5);
             }
             camera.updateProjectionMatrix();
             controls.update();
@@ -1574,12 +1615,29 @@
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, 512, 512);
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 24;
-            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 220px sans-serif';
-            ctx.fillText(char || "𑖀", 256, 220);
+
+            // Pass 1: warm golden outer glow
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 240px sans-serif';
+            ctx.fillText(char || "𑖀", 256, 210);
+
+            // Pass 2: crisp solid white-gold stroke with zero blur for sharp, legible edges
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#fffdf0';
+            ctx.fillText(char || "𑖀", 256, 210);
+
             if (label) {
-                ctx.shadowBlur = 8; ctx.fillStyle = '#ffd700'; ctx.font = 'bold 44px sans-serif';
-                ctx.fillText(label.toUpperCase(), 256, 400);
+                ctx.shadowColor = '#ffaa00';
+                ctx.shadowBlur = 6;
+                ctx.fillStyle = '#ffd700';
+                ctx.font = 'bold 44px sans-serif';
+                ctx.fillText(label.toUpperCase(), 256, 390);
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(label.toUpperCase(), 256, 390);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.colorSpace = THREE.SRGBColorSpace;
@@ -1783,6 +1841,15 @@
                         }
                     }
                 });
+            }
+
+            const isMobileInit = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
+            if (isMobileInit) {
+                uiContainer.classList.add('collapsed');
+                uiToggleBtn.innerText = '▼';
+            } else {
+                uiContainer.classList.remove('collapsed');
+                uiToggleBtn.innerText = '▲';
             }
 
             resetAnimation();
@@ -2377,10 +2444,10 @@
                 }
 
                 // Show live updated details card:
-                // On Desktop/Tablet landscape: displays on the RHS alongside the Buddha
-                // On Mobile Portrait: do not open popup by default during automated flow
-                const isMobilePortrait = (window.innerWidth / window.innerHeight) < 1.0;
-                if (!isMobilePortrait || !isRunning) {
+                // On Desktop/Tablet landscape: displays in RHS drawer alongside the Buddha (expanded/open)
+                // On Mobile (portrait or mobile landscape): no popup drawer during automated sequence
+                const isMobile = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
+                if (!isMobile || !isRunning) {
                     showPopup(nodeData);
                 }
             } else {
@@ -2397,10 +2464,10 @@
         function showPopup(data) {
             if (!data) return;
 
-            // In mobile portrait view: do NOT display node detail popup for overlay animations
+            // On mobile devices (portrait or mobile landscape): do NOT display popup for overlay animations
             const isOverlay = data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut;
-            const isMobilePortrait = (window.innerWidth / window.innerHeight) < 1.0;
-            if (isMobilePortrait && isOverlay) return;
+            const isMobile = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
+            if (isMobile && isOverlay) return;
 
             const isGroupA = data.id && data.id.startsWith('A');
             const selectedFilter = filterSelect.value;
@@ -2575,17 +2642,34 @@
                 wallMesh.visible = includeSpiralCheckbox.checked;
                 startBtn.innerText = "Reset / Restart";
 
-                // Collapse filter panel so it only shows the selected sequence matrix
-                uiContainer.classList.add('collapsed');
-                uiToggleBtn.innerText = '▼';
-                uiTitle.innerText = filterSelect.value || "Sequence Matrix";
+                // On mobile devices (portrait or mobile landscape), collapse filter panel to header.
+                // On Desktop and Tablet landscape, leave both LHS and RHS drawers expanded/open!
+                const isMobileDevice = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
+                if (isMobileDevice) {
+                    uiContainer.classList.add('collapsed');
+                    uiToggleBtn.innerText = '▼';
+                    uiTitle.innerText = filterSelect.value || "Sequence Matrix";
+                } else {
+                    uiContainer.classList.remove('collapsed');
+                    uiToggleBtn.innerText = '▲';
+                    uiTitle.innerText = "Sequence Matrix";
+                }
 
                 triggerNextStep();
             }
         });
 
         filterSelect.addEventListener('change', () => {
-            uiTitle.innerText = filterSelect.value;
+            const isMobileDevice = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
+            if (isMobileDevice) {
+                uiContainer.classList.add('collapsed');
+                uiToggleBtn.innerText = '▼';
+                uiTitle.innerText = filterSelect.value;
+            } else {
+                uiContainer.classList.remove('collapsed');
+                uiToggleBtn.innerText = '▲';
+                uiTitle.innerText = "Sequence Matrix";
+            }
             resetAnimation();
             generateActiveSequence();
         });
