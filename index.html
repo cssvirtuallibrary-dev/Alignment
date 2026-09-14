@@ -136,30 +136,76 @@
             padding: 8px 12px; border-radius: 0 8px 8px 0; white-space: pre-line;
         }
 
-        /* Landscape / Desktop / Tablet */
+        .nav-control-group {
+            display: flex; align-items: center; gap: 8px; pointer-events: auto; flex-wrap: wrap;
+        }
+
+        #playback-controls {
+            display: flex; align-items: center; gap: 4px;
+            background: rgba(6, 12, 24, 0.85); border: 1px solid rgba(255, 215, 0, 0.35);
+            border-radius: 12px; padding: 4px 8px; backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        #playback-controls button {
+            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--accent-gold); border-radius: 6px; padding: 6px 10px; font-size: 11px;
+            cursor: pointer; transition: all 0.2s ease; line-height: 1;
+        }
+        #playback-controls button:hover {
+            background: rgba(255, 215, 0, 0.25); border-color: var(--accent-gold);
+            color: #fff; transform: translateY(-1px);
+        }
+        #playback-controls button:active { transform: translateY(1px); }
+
+        #anim-speed-select {
+            width: auto; background: #0c1524; border: 1px solid rgba(255, 215, 0, 0.3);
+            color: var(--accent-gold); border-radius: 6px; padding: 5px 8px; font-size: 10px;
+            font-weight: 700; outline: none; cursor: pointer;
+        }
+
+        /* Landscape / Desktop / Tablet Layout:
+           - UI Filter Panel on the LHS (Left Hand Side)
+           - Detail View Popup on the RHS (Right Hand Side)
+           - Camera framed so Buddha statue is centered with room for both popups */
         @media (min-width: 768px) and (orientation: landscape), (min-aspect-ratio: 1/1) and (min-width: 640px) {
+            #ui-container {
+                top: calc(env(safe-area-inset-top, 16px) + 54px);
+                left: 20px; width: 310px; z-index: 25;
+            }
             #popup-card {
                 top: calc(env(safe-area-inset-top, 16px) + 54px);
-                right: 16px; width: 330px;
-                transform: translateX(40px);
+                right: 20px; width: 340px;
+                transform: translateX(30px); z-index: 28;
             }
             #popup-card.active { transform: translateX(0); }
         }
 
-        /* Portrait Mobile Phone */
+        /* Portrait Mobile Phone:
+           - Filter selection collapses cleanly after selection or on start
+           - No detail popup by default during automated sequence
+           - When Siddham sphere is selected, pauses sequence and opens bottom drawer popup
+           - When popup is closed, resumes sequence */
         @media (max-width: 767px) and (orientation: portrait), (max-aspect-ratio: 1/1) {
-            #top-bar { top: env(safe-area-inset-top, 12px); left: 12px; right: 12px; }
+            #top-bar { top: env(safe-area-inset-top, 10px); left: 10px; right: 10px; }
+            .nav-control-group { gap: 6px; }
+            #start-btn { padding: 9px 14px; font-size: 10px; letter-spacing: 0.8px; }
+            #playback-controls { padding: 3px 6px; gap: 3px; }
+            #playback-controls button { padding: 5px 8px; font-size: 10px; }
+            #anim-speed-select { padding: 4px 6px; font-size: 9px; }
+            #sync-status { padding: 5px 10px; font-size: 10px; }
+
             #ui-container {
-                top: calc(env(safe-area-inset-top, 12px) + 50px); left: 12px;
-                width: calc(100vw - 24px); max-width: none;
+                top: calc(env(safe-area-inset-top, 10px) + 50px); left: 10px;
+                width: calc(100vw - 20px); max-width: none;
             }
-            #ui-container.collapsed { max-width: calc(100vw - 24px); width: calc(100vw - 24px); }
+            #ui-container.collapsed { max-width: calc(100vw - 20px); width: calc(100vw - 20px); padding: 8px 12px; }
 
             #popup-card {
-                bottom: env(safe-area-inset-bottom, 12px); left: 12px; right: 12px;
-                width: auto; max-width: none; max-height: 38vh;
+                bottom: env(safe-area-inset-bottom, 10px); left: 10px; right: 10px;
+                width: auto; max-width: none; max-height: 44vh;
                 transform: translateY(30px);
-                padding: 12px 16px;
+                padding: 14px 16px; z-index: 35;
             }
             #popup-card.active { transform: translateY(0); }
             .popup-img-box img { height: 55px; }
@@ -243,7 +289,20 @@
     </div>
 
     <div id="top-bar">
-        <button id="start-btn">Start Formation</button>
+        <div class="nav-control-group">
+            <button id="start-btn">Start Formation</button>
+            <div id="playback-controls">
+                <button id="btn-step-prev" title="Step Reverse (Back 1 Node)">&#9664;&#9612;</button>
+                <button id="btn-play-pause" title="Pause / Stop Animation">&#10074;&#10074;</button>
+                <button id="btn-step-next" title="Step Forward (Next Node)">&#9612;&#9654;</button>
+                <select id="anim-speed-select" title="Animation Speed">
+                    <option value="0.5">0.5x Slow</option>
+                    <option value="1.0" selected>1.0x Normal</option>
+                    <option value="1.5">1.5x Fast</option>
+                    <option value="2.0">2.0x Rapid</option>
+                </select>
+            </div>
+        </div>
         <div id="sync-status">
             <span id="sync-dot"></span>
             <span id="sync-label">Matrix Ready</span>
@@ -369,7 +428,7 @@
         <button id="popup-close">&times;</button>
         <div id="popup-title">Siddham Node Details</div>
         <div class="popup-row"><span class="popup-label">WBS ID:</span><span class="popup-val" id="popup-id">-</span></div>
-        <div class="popup-row"><span class="popup-label">Spatial Position:</span><span class="popup-val" id="popup-position">-</span></div>
+        <div class="popup-row"><span class="popup-label">Visualization Guidance:</span><span class="popup-val" id="popup-guidance">-</span></div>
         <div class="popup-row"><span class="popup-label">A2 Lý Coordinate:</span><span class="popup-val" id="popup-coords">-</span></div>
         <div class="popup-row"><span class="popup-label">Sequence Step:</span><span class="popup-val" id="popup-seq-step">-</span></div>
         <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-siddham">-</span></div>
@@ -429,7 +488,8 @@
         // Details Popup Card Elements
         const popupCard = document.getElementById('popup-card');
         const popupId = document.getElementById('popup-id');
-        const popupPosition = document.getElementById('popup-position');
+        const popupGuidance = document.getElementById('popup-guidance') || document.getElementById('popup-position');
+        const popupPosition = popupGuidance;
         const popupCoords = document.getElementById('popup-coords');
         const popupSeqStep = document.getElementById('popup-seq-step');
         const popupSiddham = document.getElementById('popup-siddham');
@@ -495,13 +555,17 @@
             camera.aspect = aspect;
 
             if (aspect < 1.0) {
-                // Portrait Mobile: pull camera back and center target slightly up in Z
-                camera.position.set(4.2, 5.6, 2.8);
+                // Portrait Mobile: optimal vertical framing of Buddha statue (Z = -0.5 to +2.0)
+                camera.position.set(3.2, 4.5, 2.2);
+                controls.target.set(0, 0, 0.35);
+            } else if (aspect < 1.4) {
+                // Tablet Landscape / Square aspect: balanced distance
+                camera.position.set(2.8, 3.8, 1.7);
                 controls.target.set(0, 0, 0.25);
             } else {
-                // Landscape / Tablet / Desktop: closer framing
-                camera.position.set(3.0, 4.2, 1.9);
-                controls.target.set(0, 0, 0.0);
+                // Desktop / Widescreen: Buddha positioned comfortably in the center with room for LHS & RHS panels
+                camera.position.set(2.6, 3.5, 1.5);
+                controls.target.set(0, 0, 0.25);
             }
             camera.updateProjectionMatrix();
             controls.update();
@@ -1747,7 +1811,7 @@
             const colFind = (keyword) => cols.find(c => c.label.toLowerCase().includes(keyword.toLowerCase()));
 
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
-            const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
+            const posCol = colFind('a3') || colFind('khai dẫn') || colFind('khai dan') || colFind('quán tưởng') || colFind('quan tuong') || colFind('a4 hành') || colFind('spatial position') || colFind('hành');
             
             const coordCol = cols.find(c => {
                 const l = c.label.toLowerCase().trim();
@@ -2310,8 +2374,13 @@
                     rebuildWallGeometry();
                 }
 
-                // Show live updated details card
-                showPopup(nodeData);
+                // Show live updated details card:
+                // On Desktop/Tablet landscape: displays on the RHS alongside the Buddha
+                // On Mobile Portrait: do not open popup by default during automated flow
+                const isMobilePortrait = (window.innerWidth / window.innerHeight) < 1.0;
+                if (!isMobilePortrait || !isRunning) {
+                    showPopup(nodeData);
+                }
             } else {
                 if (!includeSpiralCheckbox.checked) {
                     currentSeqIndex = -1;
@@ -2328,7 +2397,7 @@
             const isGroupA = data.id && data.id.startsWith('A');
             const selectedFilter = filterSelect.value;
             popupId.innerText = data.id || "-";
-            popupPosition.innerText = data.spatialPosition || "Central Axis";
+            popupGuidance.innerText = data.spatialPosition || "Central Axis";
             
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
             
@@ -2372,6 +2441,12 @@
         document.getElementById('popup-close').addEventListener('click', (e) => {
             e.stopPropagation();
             hidePopup();
+            // If sequence was paused by tapping on a sphere, resume automatically on closing popup!
+            if (pausedBySphereSelection && isRunning) {
+                isPaused = false;
+                pausedBySphereSelection = false;
+                updatePlayPauseBtnUI();
+            }
         });
 
         const raycaster = new THREE.Raycaster();
@@ -2389,6 +2464,12 @@
             if (active3DActor && active3DActor.group.visible) {
                 const intersects = raycaster.intersectObjects([active3DActor.sphere, active3DActor.plane]);
                 if (intersects.length > 0) {
+                    // Selected Siddham sphere: pause animation and show detail popup!
+                    if (isRunning && !isPaused) {
+                        isPaused = true;
+                        pausedBySphereSelection = true;
+                        updatePlayPauseBtnUI();
+                    }
                     showPopup(active3DActor.currentData);
                     active3DActor.outline.visible = true;
                     return;
@@ -2397,16 +2478,92 @@
         }
         window.addEventListener('pointerdown', handlePointerDown);
 
+        // Animation Playback Controls State
+        let isPaused = false;
+        let pausedBySphereSelection = false;
+        let animSpeedMultiplier = 1.0;
+
+        const btnStepPrev = document.getElementById('btn-step-prev');
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const btnStepNext = document.getElementById('btn-step-next');
+        const animSpeedSelect = document.getElementById('anim-speed-select');
+
+        function updatePlayPauseBtnUI() {
+            if (!btnPlayPause) return;
+            if (isPaused) {
+                btnPlayPause.innerHTML = '&#9654;'; // Play icon
+                btnPlayPause.title = "Resume Animation";
+            } else {
+                btnPlayPause.innerHTML = '&#10074;&#10074;'; // Pause icon
+                btnPlayPause.title = "Pause / Stop Animation";
+            }
+        }
+
+        if (animSpeedSelect) {
+            animSpeedSelect.addEventListener('change', (e) => {
+                animSpeedMultiplier = parseFloat(e.target.value) || 1.0;
+            });
+        }
+
+        if (btnPlayPause) {
+            btnPlayPause.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!isRunning) {
+                    startBtn.click();
+                    return;
+                }
+                isPaused = !isPaused;
+                pausedBySphereSelection = false;
+                updatePlayPauseBtnUI();
+            });
+        }
+
+        if (btnStepPrev) {
+            btnStepPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                stepReverse();
+            });
+        }
+
+        if (btnStepNext) {
+            btnStepNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                triggerNextStep();
+            });
+        }
+
+        function stepReverse() {
+            if (!currentSequenceNodes || currentSequenceNodes.length === 0) return;
+            isPaused = true;
+            updatePlayPauseBtnUI();
+
+            if (currentSeqIndex > 0) {
+                currentSeqIndex -= 2; // Subtract 2 because triggerNextStep increments by 1
+                seqTimer = 0;
+                triggerNextStep();
+            } else if (currentSeqIndex === 0) {
+                currentSeqIndex = -1;
+                seqTimer = 0;
+                triggerNextStep();
+            }
+        }
+
         // =========================================================================
         // SECTION 13: UI EVENT LISTENERS
         // =========================================================================
         startBtn.addEventListener('click', () => {
             if (isRunning) {
                 resetAnimation();
+                isPaused = false;
+                pausedBySphereSelection = false;
+                updatePlayPauseBtnUI();
             } else {
                 resetAnimation();
                 generateActiveSequence();
                 isRunning = true;
+                isPaused = false;
+                pausedBySphereSelection = false;
+                updatePlayPauseBtnUI();
                 wallMesh.visible = includeSpiralCheckbox.checked;
                 startBtn.innerText = "Reset / Restart";
 
@@ -2666,8 +2823,8 @@
             // Sequential matrix controller: dispatch inline pending animations before next node
             const anyCustomAnimRunning = isEgoAnimating || isLaserAnimating || isSpiralAnimating || isTorusInAnimating || isTorusOutAnimating;
 
-            if (isRunning && !anyCustomAnimRunning) {
-                seqTimer += delta;
+            if (isRunning && !anyCustomAnimRunning && !isPaused) {
+                seqTimer += delta * animSpeedMultiplier;
                 if (seqTimer >= nodeInterval) {
                     seqTimer = 0;
                     if (seqLaserPending) {
