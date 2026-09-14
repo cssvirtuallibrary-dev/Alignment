@@ -555,16 +555,18 @@
             camera.aspect = aspect;
 
             if (aspect < 1.0) {
-                // Portrait Mobile: optimal vertical framing of Buddha statue (Z = -0.5 to +2.0)
-                camera.position.set(3.2, 4.5, 2.2);
-                controls.target.set(0, 0, 0.35);
+                // Portrait Mobile: zoomed out further to comfortably encompass full view of all animations & overlays
+                // (Torus Out R=3.96, laser beams, ego bubble, Column of Light spiral Z=-0.5 to +2.0)
+                // without requiring user pinch-to-zoom!
+                camera.position.set(6.8, 9.6, 4.6);
+                controls.target.set(0, 0, 0.25);
             } else if (aspect < 1.4) {
                 // Tablet Landscape / Square aspect: balanced distance
-                camera.position.set(2.8, 3.8, 1.7);
+                camera.position.set(3.2, 4.4, 2.0);
                 controls.target.set(0, 0, 0.25);
             } else {
                 // Desktop / Widescreen: Buddha positioned comfortably in the center with room for LHS & RHS panels
-                camera.position.set(2.6, 3.5, 1.5);
+                camera.position.set(2.8, 3.8, 1.6);
                 controls.target.set(0, 0, 0.25);
             }
             camera.updateProjectionMatrix();
@@ -2394,10 +2396,16 @@
 
         function showPopup(data) {
             if (!data) return;
+
+            // In mobile portrait view: do NOT display node detail popup for overlay animations
+            const isOverlay = data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut;
+            const isMobilePortrait = (window.innerWidth / window.innerHeight) < 1.0;
+            if (isMobilePortrait && isOverlay) return;
+
             const isGroupA = data.id && data.id.startsWith('A');
             const selectedFilter = filterSelect.value;
             popupId.innerText = data.id || "-";
-            popupGuidance.innerText = data.spatialPosition || "Central Axis";
+            popupGuidance.innerText = data.visualizationGuidance || data.spatialPosition || "Central Axis";
             
             popupCoords.innerText = `X: ${data.coords[0].toFixed(2)}, Y: ${data.coords[1].toFixed(2)}, Z: ${data.coords[2].toFixed(2)}`;
             
