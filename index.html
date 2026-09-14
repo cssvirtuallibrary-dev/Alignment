@@ -644,27 +644,25 @@
             side: THREE.FrontSide
         });
 
-        // Enlarged transparent sphere & high-visibility Siddham glyph plane:
-        // Group A radius 0.26, Group B radius 0.20 (+33% boost for prominent clarity)
-        const sphereGeoA = new THREE.SphereGeometry(0.26, 32, 32);
-        const sphereGeoB = new THREE.SphereGeometry(0.20, 32, 32);
+        // High-clarity crystal Siddham spheres & glyph planes:
+        // Group A radius 0.22, Group B radius 0.18
+        const sphereGeoA = new THREE.SphereGeometry(0.22, 32, 32);
+        const sphereGeoB = new THREE.SphereGeometry(0.18, 32, 32);
 
-        // Siddham image planes scaled to fill the sphere with luminous clarity
-        const planeGeoA = new THREE.PlaneGeometry(0.32, 0.32);
-        const planeGeoB = new THREE.PlaneGeometry(0.25, 0.25);
+        // Character plane sized to fill the sphere with prominent visibility
+        const planeGeoA = new THREE.PlaneGeometry(0.36, 0.36);
+        const planeGeoB = new THREE.PlaneGeometry(0.30, 0.30);
 
-        // Luminous crystal pearl sphere material with emissive glow and depth sorting protection
+        // Ultra-clear optical crystal glass (98% transmission, crystal clear, zero cloudiness)
         const sphereTransparentMat = new THREE.MeshPhysicalMaterial({
             color: 0xffffff,
-            emissive: 0xffea88,
-            emissiveIntensity: 0.35,
             roughness: 0.04,
-            metalness: 0.10,
-            transmission: 0.85,
-            ior: 1.54,
-            thickness: 0.45,
+            metalness: 0.05,
+            transmission: 0.98,
+            ior: 1.52,
+            thickness: 0.25,
             transparent: true,
-            opacity: 0.95,
+            opacity: 1.0,
             side: THREE.DoubleSide,
             depthWrite: false
         });
@@ -1522,21 +1520,92 @@
             return tex;
         }
 
-        function parseCoordinates(coordStr) {
-            if (!coordStr) return [0, 0, 0];
-            if (Array.isArray(coordStr)) return coordStr.map(Number);
-            
-            let cleaned = String(coordStr)
-                .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
-                .replace(/[()[\]{}'"]/g, '')
-                .trim();
+        const FALLBACK_NODE_COORDINATES = {
+            "B01": [0.0, 0.8, -0.1],
+            "B02": [0.0, -0.2, 0.0],
+            "B03": [0.0, 0.0, -0.1],
+            "B04": [0.0, 0.0, 0.1],
+            "B05": [0.5, 0.0, -0.5],
+            "B06": [-0.5, 0.0, -0.5],
+            "B07": [0.0, 0.0, -2.0],
+            "B08": [0.0, 0.0, -1.0],
+            "B09": [0.0, 0.0, 0.0],
+            "B10": [0.0, 0.0, 1.0],
+            "B11": [0.0, 0.0, 2.0],
+            "B12": [0.0, -2.0, 0.0],
+            "B13": [0.0, -1.0, 0.0],
+            "B14": [0.0, 0.0, 0.0],
+            "B15": [0.0, 1.0, 0.0],
+            "B16": [0.0, 2.0, 0.0],
+            "B17": [2.0, 0.0, 0.0],
+            "B18": [1.0, 0.0, 0.0],
+            "B19": [0.0, 0.0, 0.0],
+            "B20": [-1.0, 0.0, 0.0],
+            "B21": [-2.0, 0.0, 0.0],
+            "B22": [0.0, 0.0, 0.2],
+            "B23": [0.0, 0.1, 0.5],
+            "B24": [0.0, 0.0, 0.5],
+            "B25": [0.0, 0.0, 1.5],
+            "B26": [0.0, 0.3, 0.2],
+            "B27": [-0.2, 0.3, -0.1],
+            "B28": [0.2, 0.3, -0.1],
+            "B29": [-0.5, 0.5, 0.3],
+            "B30": [0.5, 0.5, 0.3],
+            "B31": [0.0, 0.3, -0.1],
+            "B32": [-0.5, 0.4, -0.3],
+            "B33": [0.5, 0.4, -0.3],
+            "B34": [0.0, 0.0, -0.5]
+        };
 
-            const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-            if (matches && matches.length >= 3) {
-                return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
-            } else if (matches && matches.length === 2) {
-                return [parseFloat(matches[0]), parseFloat(matches[1]), 0];
+        function parseCoordinates(coordStr, nodeId = '') {
+            if (Array.isArray(coordStr) && coordStr.length >= 3) {
+                return coordStr.map(Number);
             }
+            
+            if (coordStr) {
+                let cleaned = String(coordStr)
+                    .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
+                    .replace(/[()[\]{}'"]/g, '')
+                    .trim();
+
+                // Check semicolon separated
+                if (cleaned.includes(';')) {
+                    const parts = cleaned.split(';');
+                    const nums = [];
+                    for (const p of parts) {
+                        const m = p.replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+                        if (m) nums.push(parseFloat(m[0]));
+                    }
+                    if (nums.length >= 3) return nums.slice(0, 3);
+                }
+
+                // Check standard dots
+                if (cleaned.includes('.')) {
+                    const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
+                    if (matches && matches.length >= 3) {
+                        return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
+                    }
+                }
+
+                // Check comma decimals e.g. "0,0, 0,8, -0,1"
+                const decFixed = cleaned.replace(/(\d),(\d)/g, '$1.$2');
+                const decMatches = decFixed.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
+                if (decMatches && decMatches.length >= 3) {
+                    return [parseFloat(decMatches[0]), parseFloat(decMatches[1]), parseFloat(decMatches[2])];
+                }
+
+                // Integer coordinates e.g. "0, 0, -2"
+                const intMatches = cleaned.match(/-?\d+/g);
+                if (intMatches && intMatches.length >= 3) {
+                    return [parseFloat(intMatches[0]), parseFloat(intMatches[1]), parseFloat(intMatches[2])];
+                }
+            }
+
+            // Fallback to canonical node coordinates if empty or (0, 0, 0)
+            if (nodeId && FALLBACK_NODE_COORDINATES[nodeId]) {
+                return [...FALLBACK_NODE_COORDINATES[nodeId]];
+            }
+
             return [0, 0, 0];
         }
 
@@ -1544,58 +1613,24 @@
         // SECTION 9: REINTRODUCED TRANSPARENT SPHERE (+50% ENLARGED)
         // & PURE VERTICAL Z-AXIS ROTATION HIERARCHY
         // =========================================================================
-        // Radiant aura halo sprite to ensure the Siddham glyph remains bright and distinct even when all torus and laser overlays are active
-        function createAuraSpriteTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 64);
-            grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
-            grad.addColorStop(0.25, 'rgba(255, 225, 120, 0.75)');
-            grad.addColorStop(0.55, 'rgba(0, 229, 255, 0.40)');
-            grad.addColorStop(0.85, 'rgba(0, 170, 255, 0.15)');
-            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 128, 128);
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.colorSpace = THREE.SRGBColorSpace;
-            return tex;
-        }
-
-        const auraTexture = createAuraSpriteTexture();
-
         function buildSingleActiveActorNode() {
             const containerGroup = new THREE.Group();
-            containerGroup.renderOrder = 10; // High priority so Siddham node renders on top of all secondary animation overlays
+            containerGroup.renderOrder = 10; // High priority so Siddham node renders crisply on top of overlays
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. Transparent Sphere Mesh (+50% enlarged, high transmission)
+            // 1. Transparent Crystal Sphere Mesh
             const sphereMat = sphereTransparentMat.clone();
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
             sphereMesh.renderOrder = 9;
             containerGroup.add(sphereMesh);
 
-            // 2. Pure Vertical Spin Pivot (Spins around its local Z-axis only)
+            // 2. Pure Vertical Spin Pivot (Spins around local vertical Z-axis)
             const spinPivot = new THREE.Group();
             spinPivot.renderOrder = 10;
             containerGroup.add(spinPivot);
 
-            // 3. Inner Radiant Halo Aura Sprite (Behind the glyph plane, keeps glyph crystal clear against all animations)
-            const auraMat = new THREE.SpriteMaterial({
-                map: auraTexture,
-                color: 0xffffff,
-                transparent: true,
-                opacity: 0.85,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false
-            });
-            const auraSprite = new THREE.Sprite(auraMat);
-            auraSprite.scale.set(0.48, 0.48, 1);
-            auraSprite.renderOrder = 10;
-            spinPivot.add(auraSprite);
-
-            // 4. Upright Vertical Plane inside Pivot:
+            // 3. Upright Vertical Plane inside Pivot (High clarity Additive glyph)
             const fallbackTex = createFallbackGlyphTexture("𑖀", "B01");
             const planeMat = new THREE.MeshBasicMaterial({
                 map: fallbackTex,
@@ -1606,13 +1641,13 @@
             });
             const planeMesh = new THREE.Mesh(planeGeoB, planeMat);
             planeMesh.rotation.x = Math.PI / 2;
-            planeMesh.renderOrder = 11; // Always rendered over aura and sphere
+            planeMesh.renderOrder = 11;
             spinPivot.add(planeMesh);
 
-            // 5. Highlight Ring
-            const outlineGeo = new THREE.RingGeometry(0.20, 0.23, 32);
+            // 4. Luminous Highlight Ring (Cyan active locator)
+            const outlineGeo = new THREE.RingGeometry(0.18, 0.21, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
-                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false
+                color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending
             });
             const outlineMesh = new THREE.Mesh(outlineGeo, outlineMat);
             outlineMesh.rotation.x = Math.PI / 2;
@@ -1624,7 +1659,6 @@
                 group: containerGroup,
                 sphere: sphereMesh,
                 spinPivot: spinPivot,
-                aura: auraSprite,
                 plane: planeMesh,
                 planeMat: planeMat,
                 outline: outlineMesh,
@@ -1716,17 +1750,20 @@
             const posCol = colFind('a4 hành') || colFind('spatial position') || colFind('hành');
             
             const coordCol = cols.find(c => {
-                const l = c.label.toLowerCase();
-                return l.includes('a2 lý') || l.includes('a2 ly') || l.startsWith('a2') || l === 'lý' || l === 'ly';
-            }) || colFind('axis') || colFind('coord');
+                const l = c.label.toLowerCase().trim();
+                return l.includes('a2 lý') || l.includes('a2 ly') || l.includes('lý') || l.includes('ly') || l.includes('coord') || l.includes('axis') || l.includes('tọa độ') || l.includes('toa do');
+            }) || cols.find(c => c.index === 3 || c.index === 4); // Column D or E in standard WBSID
 
-            const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image');
-            const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('siddham');
-            const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo');
-            const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('mantra');
+            const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image') || colFind('link');
+            const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('unicode') || colFind('siddham');
+            const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo') || colFind('phap bao');
+            const mantraCol = colFind('a4 hành b') || colFind('hành b') || colFind('hanh b') || colFind('mantra');
 
-            // Strictly filter headers starting with "A."
-            const matchedFilterCols = cols.filter(c => c.label.startsWith('A.') && c.label.length > 2);
+            // Strictly filter all sequence columns with header name starting with "A."
+            const matchedFilterCols = cols.filter(c => {
+                const lb = c.label.trim();
+                return lb.startsWith('A.') && lb.length > 2;
+            });
             if (matchedFilterCols.length > 0) {
                 filterColumns = matchedFilterCols;
             }
@@ -1824,6 +1861,16 @@
                     customUni = '𑖌𑖼';
                 }
 
+                // Robust coordinate extraction with automatic fallback to canonical coordinates
+                let nodeCoords = [0, 0, 0];
+                if (isCustomAnim) {
+                    nodeCoords = [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)];
+                } else if (rawCoordsStr && rawCoordsStr.trim().length > 0) {
+                    nodeCoords = parseCoordinates(rawCoordsStr, id);
+                } else if (FALLBACK_NODE_COORDINATES[id]) {
+                    nodeCoords = [...FALLBACK_NODE_COORDINATES[id]];
+                }
+
                 parsedRows.push({
                     id: id,
                     isEgo: isEgoRow,
@@ -1837,8 +1884,8 @@
                     torusInTriggers: torusInTriggers,
                     torusOutTriggers: torusOutTriggers,
                     spatialPosition: customPos || (isGroupA ? `Column of Light Node ${id}` : ''),
-                    coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : rawCoordsStr,
-                    coords: isCustomAnim ? [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)] : parseCoordinates(rawCoordsStr),
+                    coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : (rawCoordsStr || nodeCoords.join(', ')),
+                    coords: nodeCoords,
                     siddhamImage: isCustomAnim ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
                     siddhamUnicode: customUni,
                     dharmaObject: customObj || (isGroupA ? 'Vajra Scepter' : ''),
@@ -2246,12 +2293,6 @@
                     active3DActor.sphere.geometry = isGroupA ? sphereGeoA : sphereGeoB;
                     active3DActor.plane.geometry = isGroupA ? planeGeoA : planeGeoB;
 
-                    // Scale radiant aura to match sphere size
-                    if (active3DActor.aura) {
-                        const auraSize = isGroupA ? 0.60 : 0.48;
-                        active3DActor.aura.scale.set(auraSize, auraSize, 1);
-                    }
-
                     active3DActor.currentData = nodeData;
 
                     // Load Siddham texture (cached after first fetch)
@@ -2261,7 +2302,7 @@
                         active3DActor.planeMat.needsUpdate = true;
                     }
 
-                    active3DActor.glow = 2.5; // High initial illumination burst
+                    active3DActor.glow = 2.2;
                     active3DActor.group.visible = true;
                 }
 
@@ -2663,9 +2704,6 @@
 
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
-                if (active3DActor.aura) {
-                    active3DActor.aura.material.opacity = (0.75 + Math.sin(elapsedTime * 3.0) * 0.15) * active3DActor.glow;
-                }
 
                 // Billboard (Face Camera) is the default mode
                 if (billboardModeSelect.value === 'billboard') {
