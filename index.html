@@ -460,7 +460,7 @@
         <div id="popup-title">Siddham Node Details</div>
         <div class="popup-row"><span class="popup-label">WBS ID:</span><span class="popup-val" id="popup-id">-</span></div>
         <div class="popup-row"><span class="popup-label">Visualization Guidance:</span><span class="popup-val" id="popup-guidance">-</span></div>
-        <div class="popup-row"><span class="popup-label">A2 Lý Coordinate:</span><span class="popup-val" id="popup-coords">-</span></div>
+        <div class="popup-row"><span class="popup-label">Visualization Coordinate:</span><span class="popup-val" id="popup-coords">-</span></div>
         <div class="popup-row"><span class="popup-label">Sequence Step:</span><span class="popup-val" id="popup-seq-step">-</span></div>
         <div class="popup-row"><span class="popup-label">Siddham:</span><span class="popup-val" id="popup-siddham">-</span></div>
         <div class="popup-row"><span class="popup-label">Dharma Object:</span><span class="popup-val" id="popup-dharma">-</span></div>
@@ -1687,14 +1687,21 @@
             }
             
             if (coordStr) {
-                let cleaned = String(coordStr)
-                    .replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-')
-                    .replace(/[()[\]{}'"]/g, '')
-                    .trim();
+                let text = String(coordStr);
+                
+                // 1. Strip URLs completely (http://, https://, drive.google.com, etc.)
+                text = text.replace(/https?:\/\/[^\s)\]]+/gi, '');
+                text = text.replace(/www\.[^\s)\]]+/gi, '');
+                text = text.replace(/drive\.google[^\s)\]]+/gi, '');
+                
+                // 2. Normalize hyphens and minus signs
+                text = text.replace(/[\u2212\u2010\u2011\u2012\u2013\u2014\u2015\uFE63\uFF0D]/g, '-');
 
-                // Check semicolon separated
-                if (cleaned.includes(';')) {
-                    const parts = cleaned.split(';');
+                // 3. Semicolon delimited (European / Vietnamese number formatting e.g. "0,0; 0,8; -0,1")
+                if (text.includes(';')) {
+                    const paren = text.match(/[(\[](.*?)[)\]]/);
+                    const target = paren ? paren[1] : text;
+                    const parts = target.split(';');
                     const nums = [];
                     for (const p of parts) {
                         const m = p.replace(',', '.').match(/-?\d+(?:\.\d+)?/);
@@ -1703,25 +1710,32 @@
                     if (nums.length >= 3) return nums.slice(0, 3);
                 }
 
-                // Check standard dots
-                if (cleaned.includes('.')) {
-                    const matches = cleaned.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-                    if (matches && matches.length >= 3) {
-                        return [parseFloat(matches[0]), parseFloat(matches[1]), parseFloat(matches[2])];
+                // 4. Extract parenthesized or bracketed coordinates: (0.0, 0.8, -0.1) or [0.0, 0.8, -0.1]
+                const paren = text.match(/[(\[](.*?)[)\]]/);
+                if (paren) {
+                    const inside = paren[1].trim();
+                    const m = inside.match(/(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)/);
+                    if (m) {
+                        return [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
                     }
                 }
 
-                // Check comma decimals e.g. "0,0, 0,8, -0,1"
-                const decFixed = cleaned.replace(/(\d),(\d)/g, '$1.$2');
-                const decMatches = decFixed.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi);
-                if (decMatches && decMatches.length >= 3) {
-                    return [parseFloat(decMatches[0]), parseFloat(decMatches[1]), parseFloat(decMatches[2])];
+                // 5. Look for X: ... Y: ... Z: ... labeled formats
+                const xyz = text.match(/x\s*[:=]\s*(-?\d+(?:\.\d+)?).*?y\s*[:=]\s*(-?\d+(?:\.\d+)?).*?z\s*[:=]\s*(-?\d+(?:\.\d+)?)/i);
+                if (xyz) {
+                    return [parseFloat(xyz[1]), parseFloat(xyz[2]), parseFloat(xyz[3])];
                 }
 
-                // Integer coordinates e.g. "0, 0, -2"
-                const intMatches = cleaned.match(/-?\d+/g);
-                if (intMatches && intMatches.length >= 3) {
-                    return [parseFloat(intMatches[0]), parseFloat(intMatches[1]), parseFloat(intMatches[2])];
+                // 6. Look for 3 consecutive numbers separated by commas or semicolons
+                const m = text.match(/(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)\s*[,;]\s*(-?\d+(?:\.\d+)?)/);
+                if (m) {
+                    return [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
+                }
+
+                // 7. Look for 3 numbers separated by whitespace
+                const mSpace = text.match(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/);
+                if (mSpace) {
+                    return [parseFloat(mSpace[1]), parseFloat(mSpace[2]), parseFloat(mSpace[3])];
                 }
             }
 
@@ -1864,7 +1878,7 @@
             const firstRowHasHeaders = dataRows.length > 0 && dataRows[0].c && dataRows[0].c.some(cell => {
                 if (!cell || cell.v === null) return false;
                 const v = String(cell.f !== undefined ? cell.f : cell.v).trim();
-                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('lý');
+                return v.startsWith('A.') || v.toLowerCase().includes('wbs') || v.toLowerCase().includes('visualization') || v.toLowerCase().includes('lý');
             });
 
             if (firstRowHasHeaders) {
@@ -1882,7 +1896,14 @@
             const idCol = cols.find(c => c.label.toLowerCase().startsWith('wbs') || c.label.toLowerCase() === 'id' || c.label.toLowerCase().startsWith('mã')) || cols[0];
             const posCol = colFind('a3') || colFind('khai dẫn') || colFind('khai dan') || colFind('quán tưởng') || colFind('quan tuong') || colFind('a4 hành') || colFind('spatial position') || colFind('hành');
             
+            // Coordinate Column source is "Visualization" (extracting purely X, Y, Z coordinates)
             const coordCol = cols.find(c => {
+                const l = c.label.toLowerCase().trim();
+                return l === 'visualization' || (l.includes('visualization') && !l.includes('guidance')) || l === 'visualize';
+            }) || cols.find(c => {
+                const l = c.label.toLowerCase().trim();
+                return l.includes('visualization') || l.includes('visualize');
+            }) || cols.find(c => {
                 const l = c.label.toLowerCase().trim();
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.includes('lý') || l.includes('ly') || l.includes('coord') || l.includes('axis') || l.includes('tọa độ') || l.includes('toa do');
             }) || cols.find(c => c.index === 3 || c.index === 4); // Column D or E in standard WBSID
