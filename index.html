@@ -62,7 +62,7 @@
             box-shadow: 0 0 8px #00ff88;
         }
 
-        /* Collapsible Filter Panel */
+        /* Collapsible Filter Panel (LHS Span) */
         #ui-container {
             position: absolute; top: calc(env(safe-area-inset-top, 16px) + 54px); left: 16px;
             background: var(--panel-bg); padding: 14px 18px; border-radius: 14px;
@@ -70,17 +70,34 @@
             width: 310px; pointer-events: auto;
             backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             transition: all 0.35s cubic-bezier(0.2, 0.9, 0.3, 1); z-index: 25;
+            max-height: calc(100vh - (env(safe-area-inset-top, 16px) + 70px) - env(safe-area-inset-bottom, 16px));
+            display: flex; flex-direction: column; box-sizing: border-box;
         }
-        #ui-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        #ui-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; flex-shrink: 0; }
         h1 { font-size: 13px; margin: 0; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 1.2px; font-weight: 800; }
         #ui-toggle-btn { background: none; border: none; color: var(--accent-gold); font-size: 12px; cursor: pointer; padding: 4px; transition: transform 0.3s ease; }
-        #ui-content { margin-top: 12px; transition: max-height 0.3s ease, opacity 0.3s ease; max-height: 520px; opacity: 1; overflow: hidden; }
+        #ui-content {
+            margin-top: 12px;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            padding-right: 4px;
+            transition: opacity 0.3s ease;
+            opacity: 1;
+        }
+
+        /* Custom Scrollbar for Smooth & Visible Scrolling */
+        #ui-content::-webkit-scrollbar { width: 5px; }
+        #ui-content::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.25); border-radius: 4px; }
+        #ui-content::-webkit-scrollbar-thumb { background: rgba(255, 215, 0, 0.4); border-radius: 4px; }
+        #ui-content::-webkit-scrollbar-thumb:hover { background: rgba(255, 215, 0, 0.75); }
 
         /* Collapsed Filter Box: ONLY displays selected sequence matrix name */
-        #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; }
+        #ui-container.collapsed { width: auto; max-width: 280px; padding: 10px 14px; max-height: 48px; }
         #ui-container.collapsed #ui-header h1 { font-size: 11px; color: var(--accent-gold-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #ui-container.collapsed #ui-toggle-btn { transform: rotate(-90deg); margin-left: 10px; }
-        #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; }
+        #ui-container.collapsed #ui-content { max-height: 0; opacity: 0; margin-top: 0; pointer-events: none; overflow: hidden; }
 
         .control-group { margin-bottom: 11px; }
         label { display: block; font-size: 10px; color: #8fa0b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
@@ -172,10 +189,12 @@
             #ui-container {
                 top: calc(env(safe-area-inset-top, 16px) + 54px);
                 left: 20px; width: 310px; z-index: 25;
+                max-height: calc(100vh - (env(safe-area-inset-top, 16px) + 70px) - env(safe-area-inset-bottom, 20px));
             }
             #popup-card {
                 top: calc(env(safe-area-inset-top, 16px) + 54px);
                 right: 20px; width: 340px;
+                max-height: calc(100vh - (env(safe-area-inset-top, 16px) + 70px) - env(safe-area-inset-bottom, 20px));
                 transform: translateX(30px); z-index: 28;
             }
             #popup-card.active { transform: translateX(0); }
@@ -229,6 +248,7 @@
             #ui-container {
                 top: calc(env(safe-area-inset-top, 10px) + 50px); left: 10px;
                 width: calc(100vw - 20px); max-width: none;
+                max-height: calc(100vh - (env(safe-area-inset-top, 10px) + 60px) - env(safe-area-inset-bottom, 16px));
             }
             #ui-container.collapsed { max-width: calc(100vw - 20px); width: calc(100vw - 20px); padding: 8px 12px; }
 
@@ -435,8 +455,8 @@
             </div>
 
             <div class="control-group" style="margin-top: 8px;">
-                <button id="btn-custom-buddha" type="button" style="width: 100%; background: rgba(255, 215, 0, 0.10); border: 1px solid rgba(255, 215, 0, 0.35); color: var(--accent-gold); padding: 7px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.6px; transition: all 0.2s ease;">
-                    Load Buddha 3D Model (.glb)
+                <button id="btn-custom-buddha" type="button" style="width: 100%; background: rgba(255, 215, 0, 0.12); border: 1px solid rgba(255, 215, 0, 0.45); color: var(--accent-gold); padding: 8px 12px; border-radius: 8px; font-size: 10.5px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.8px; transition: all 0.2s ease;">
+                    📁 Load Buddha 3D Model (.glb)
                 </button>
                 <input type="file" id="input-buddha-file" accept=".glb,.gltf" style="display: none;">
             </div>
@@ -850,7 +870,7 @@
             buddhaGroup.add(gltfScene);
         }
 
-        // Exclusively local file paths as primary (zero Google Drive network attempts)
+        // Exclusively local file candidates (no Google Drive attempts)
         const localBuddhaCandidates = [
             'glass+buddha+statue+3d+model.glb',
             './glass+buddha+statue+3d+model.glb',
@@ -2877,7 +2897,7 @@
             }
         }
 
-        // Buddha 3D Model Local File Picker & Drag-and-Drop
+        // Direct File Picker & Drag-and-Drop for Buddha 3D Model (.glb)
         const btnCustomBuddha = document.getElementById('btn-custom-buddha');
         const inputBuddhaFile = document.getElementById('input-buddha-file');
 
@@ -2895,7 +2915,7 @@
                     loader.parse(buffer, '', (gltf) => {
                         if (gltf && gltf.scene) {
                             applyBuddhaGLTFScene(gltf.scene);
-                            btnCustomBuddha.innerText = `Loaded: ${file.name.slice(0, 16)}...`;
+                            btnCustomBuddha.innerText = `✓ Loaded: ${file.name.slice(0, 14)}...`;
                         }
                     });
                 }
@@ -2916,7 +2936,7 @@
                         if (gltf && gltf.scene) {
                             applyBuddhaGLTFScene(gltf.scene);
                             if (btnCustomBuddha) {
-                                btnCustomBuddha.innerText = `Loaded: ${file.name.slice(0, 16)}...`;
+                                btnCustomBuddha.innerText = `✓ Loaded: ${file.name.slice(0, 14)}...`;
                             }
                         }
                     });
