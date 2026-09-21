@@ -434,6 +434,13 @@
                 </label>
             </div>
 
+            <div class="control-group" style="margin-top: 8px;">
+                <button id="btn-custom-buddha" type="button" style="width: 100%; background: rgba(255, 215, 0, 0.10); border: 1px solid rgba(255, 215, 0, 0.35); color: var(--accent-gold); padding: 7px 10px; border-radius: 8px; font-size: 10px; font-weight: 700; cursor: pointer; text-transform: uppercase; letter-spacing: 0.6px; transition: all 0.2s ease;">
+                    Load Buddha 3D Model (.glb)
+                </button>
+                <input type="file" id="input-buddha-file" accept=".glb,.gltf" style="display: none;">
+            </div>
+
             <details>
                 <summary>Character Render Mode</summary>
                 <div style="margin-top: 8px;">
@@ -471,9 +478,9 @@
                 <img id="popup-siddham-img" src="" alt="Siddham">
             </div>
             <div class="popup-img-box" id="box-3dmodel-link" style="display: none;">
-                <span>3D Model (C2 3D Model Link)</span>
-                <div id="popup-3dmodel-badge" style="font-size: 11px; color: var(--accent-cyan); font-weight: 700; margin-top: 10px;">3D Active</div>
-                <a id="popup-3dmodel-anchor" href="#" target="_blank" rel="noopener noreferrer" style="font-size: 9.5px; color: var(--accent-gold); text-decoration: underline; display: block; margin-top: 6px; word-break: break-all;">View Model</a>
+                <span>3D Model (C2 3D Model)</span>
+                <div id="popup-3dmodel-label" style="font-size: 10.5px; color: var(--accent-cyan); font-weight: 700; margin-top: 8px; word-break: break-all;">-</div>
+                <div id="popup-3dmodel-color" style="font-size: 9.5px; color: var(--accent-gold); margin-top: 4px;">-</div>
             </div>
         </div>
 
@@ -826,55 +833,58 @@
 
         buildProceduralBuddha();
 
-        // Google Drive Buddha 3D Model Loader with multi-tier candidate URLs & fallback
-        const BUDDHA_DRIVE_URL = 'https://drive.google.com/file/d/1SuiIWr6ISurthsnK1oNaF2Uz_9OnkZUI/view?usp=drive_link';
-        const buddhaCandidates = buildCandidateModelUrls(BUDDHA_DRIVE_URL).concat([
-            'glass+buddha+statue+3d+model.glb',
-            './glass+buddha+statue+3d+model.glb'
-        ]);
-
-        function loadBuddha3DModel() {
-            const loader = new THREE.GLTFLoader();
-            let idx = 0;
-
-            function tryNext() {
-                if (idx >= buddhaCandidates.length) {
-                    console.log("Buddha 3D model: procedural fallback active");
-                    return;
+        function applyBuddhaGLTFScene(gltfScene) {
+            while (buddhaGroup.children.length > 0) {
+                buddhaGroup.remove(buddhaGroup.children[0]);
+            }
+            gltfScene.traverse((node) => {
+                if (node.isMesh) {
+                    node.material = crystalBuddhaMat;
+                    node.renderOrder = 2;
                 }
-                const url = buddhaCandidates[idx++];
+            });
+            gltfScene.scale.set(1.4, 1.4, 1.4);
+            gltfScene.rotation.order = 'ZYX';
+            gltfScene.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+            gltfScene.position.set(0.0, 0.2, -0.5);
+            buddhaGroup.add(gltfScene);
+        }
+
+        // Exclusively local file paths as primary (zero Google Drive network attempts)
+        const localBuddhaCandidates = [
+            'glass+buddha+statue+3d+model.glb',
+            './glass+buddha+statue+3d+model.glb',
+            'buddha.glb',
+            './buddha.glb'
+        ];
+
+        function loadLocalBuddhaModel() {
+            const loader = new THREE.GLTFLoader();
+            let cIdx = 0;
+            function tryNextCandidate() {
+                if (cIdx >= localBuddhaCandidates.length) {
+                    return; // Procedural crystal Buddha remains active
+                }
+                const path = localBuddhaCandidates[cIdx++];
                 loader.load(
-                    url,
+                    path,
                     (gltf) => {
-                        while (buddhaGroup.children.length > 0) {
-                            buddhaGroup.remove(buddhaGroup.children[0]);
+                        if (gltf && gltf.scene) {
+                            applyBuddhaGLTFScene(gltf.scene);
                         }
-                        const buddhaMesh = gltf.scene;
-                        buddhaMesh.traverse((node) => {
-                            if (node.isMesh) {
-                                node.material = crystalBuddhaMat;
-                                node.renderOrder = 2;
-                            }
-                        });
-                        buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                        buddhaMesh.rotation.order = 'ZYX';
-                        buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                        buddhaMesh.position.set(0.0, 0.2, -0.5);
-                        buddhaGroup.add(buddhaMesh);
-                        console.log("Buddha 3D model loaded successfully from:", url);
                     },
                     undefined,
                     () => {
-                        tryNext();
+                        tryNextCandidate();
                     }
                 );
             }
-            tryNext();
+            tryNextCandidate();
         }
 
         try {
-            loadBuddha3DModel();
-        } catch (e) { /* procedural statue baseline already active */ }
+            loadLocalBuddhaModel();
+        } catch (e) { /* procedural baseline active */ }
 
         // =========================================================================
         // SECTION 6: 3D COORDINATION INDICATORS & 0.5 UNIT MARKERS (DEFAULT OFF)
@@ -1539,48 +1549,114 @@
             return rawUrl;
         }
 
-                function buildCandidateModelUrls(rawUrl) {
-            const list = [];
-            if (!rawUrl || typeof rawUrl !== 'string') return list;
-            const trimmed = rawUrl.trim();
-            const fileId = extractGoogleDriveFileId(trimmed);
+        // Color name lookup dictionary for C2 3D Model color specifications
+        const C2_COLOR_PALETTE = {
+            'gold': 0xffd700, 'golden': 0xffd700, 'yellow': 0xffe600,
+            'white': 0xffffff, 'silver': 0xe0e6ed, 'crystal': 0xffffff,
+            'blue': 0x00c8ff, 'cyan': 0x00e5ff, 'azure': 0x0099ff, 'sky': 0x70d6ff,
+            'red': 0xff3355, 'crimson': 0xdc143c, 'ruby': 0xe0115f,
+            'purple': 0xbb44ff, 'violet': 0x9933ff, 'magenta': 0xff00cc,
+            'green': 0x00ff88, 'emerald': 0x50c878, 'jade': 0x00a86b,
+            'orange': 0xff8800, 'amber': 0xffaa00, 'copper': 0xb87333,
+            'pink': 0xff77aa, 'rose': 0xff007f
+        };
 
-            if (fileId) {
-                // Direct Google Drive download endpoints & CORS-friendly proxies
-                list.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`);
-                list.push(`https://drive.google.com/uc?export=download&id=${fileId}`);
-                list.push(`https://corsproxy.io/?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${fileId}`)}`);
-                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${fileId}`)}`);
-            } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-                list.push(trimmed);
-                list.push(`https://corsproxy.io/?url=${encodeURIComponent(trimmed)}`);
-            } else {
-                list.push(trimmed);
-                list.push('./' + trimmed);
+        function parseC2ModelSpec(c2Str) {
+            if (!c2Str || typeof c2Str !== 'string') {
+                return { filename: '', color: null, colorName: '' };
             }
-            return [...new Set(list)];
+
+            let s = c2Str.trim().replace(/^[\"\']+|[\"\']+$/g, '');
+            if (!s) return { filename: '', color: null, colorName: '' };
+
+            const parts = s.split(/[;,|]/).map(p => p.trim()).filter(Boolean);
+            let foundColor = null;
+            let foundColorName = '';
+            let fileCandidate = '';
+
+            for (const p of parts) {
+                const hexMatch = p.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b|0x[0-9a-fA-F]{6}\b/);
+                if (hexMatch) {
+                    const hexStr = hexMatch[0].replace('#', '0x');
+                    foundColor = parseInt(hexStr, 16);
+                    foundColorName = hexMatch[0];
+                    continue;
+                }
+
+                const lower = p.toLowerCase();
+                if (C2_COLOR_PALETTE[lower] !== undefined) {
+                    foundColor = C2_COLOR_PALETTE[lower];
+                    foundColorName = p;
+                    continue;
+                }
+
+                if (/\.(glb|gltf|obj)\b/i.test(p)) {
+                    fileCandidate = p;
+                } else if (!fileCandidate) {
+                    fileCandidate = p;
+                }
+            }
+
+            if (!fileCandidate && parts.length > 0 && !foundColor) {
+                fileCandidate = parts[0];
+            }
+
+            if (fileCandidate) {
+                const words = fileCandidate.split(/\s+/);
+                const cleanWords = [];
+                for (const w of words) {
+                    const wl = w.toLowerCase();
+                    if (C2_COLOR_PALETTE[wl] !== undefined && !foundColor) {
+                        foundColor = C2_COLOR_PALETTE[wl];
+                        foundColorName = w;
+                    } else if (/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})|0x[0-9a-fA-F]{6}/.test(w) && !foundColor) {
+                        const m = w.match(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})|0x[0-9a-fA-F]{6}/);
+                        foundColor = parseInt(m[0].replace('#', '0x'), 16);
+                        foundColorName = m[0];
+                    } else {
+                        cleanWords.push(w);
+                    }
+                }
+                fileCandidate = cleanWords.join(' ').trim();
+            }
+
+            return {
+                filename: fileCandidate,
+                color: foundColor,
+                colorName: foundColorName
+            };
         }
 
         const model3DCache = new Map();
 
-        async function loadNode3DModel(modelUrl, nodeId) {
-            if (!modelUrl) return null;
-            const cacheKey = modelUrl.trim();
+        async function loadNode3DModel(spec) {
+            if (!spec || !spec.filename) return null;
+            const filename = spec.filename.trim();
+            const colorHex = spec.color !== null ? spec.color : null;
+            const cacheKey = `${filename}_${colorHex}`;
+
             if (model3DCache.has(cacheKey)) {
-                return model3DCache.get(cacheKey);
+                return model3DCache.get(cacheKey).clone(true);
             }
 
-            const candidates = buildCandidateModelUrls(modelUrl);
+            // Exclusively local file fallback paths (no Google Drive)
+            const localCandidates = [
+                filename,
+                './' + filename,
+                filename.endsWith('.glb') ? filename : filename + '.glb'
+            ];
+
             const loader = new THREE.GLTFLoader();
 
-            for (const candUrl of candidates) {
+            for (const path of localCandidates) {
                 try {
                     const gltf = await new Promise((resolve, reject) => {
-                        loader.load(candUrl, resolve, undefined, reject);
+                        loader.load(path, resolve, undefined, reject);
                     });
                     if (gltf && gltf.scene) {
                         const sceneObj = gltf.scene;
-                        // Fit model to sphere interior (~0.24 max dimension)
+
+                        // Fit 3D model comfortably inside the crystal sphere
                         const box = new THREE.Box3().setFromObject(sceneObj);
                         const size = new THREE.Vector3();
                         box.getSize(size);
@@ -1588,30 +1664,40 @@
                         const targetScale = 0.24 / maxDim;
                         sceneObj.scale.setScalar(targetScale);
 
-                        // Center model
                         const center = new THREE.Vector3();
                         box.getCenter(center);
                         sceneObj.position.sub(center.multiplyScalar(targetScale));
 
+                        // Apply color material if specified in C2 3D Model column
                         sceneObj.traverse((node) => {
                             if (node.isMesh) {
                                 node.renderOrder = 11;
-                                if (node.material) {
+                                if (colorHex !== null) {
+                                    node.material = new THREE.MeshStandardMaterial({
+                                        color: colorHex,
+                                        emissive: colorHex,
+                                        emissiveIntensity: 0.25,
+                                        roughness: 0.25,
+                                        metalness: 0.65,
+                                        depthWrite: false
+                                    });
+                                } else if (node.material) {
                                     node.material.depthWrite = false;
                                 }
                             }
                         });
 
                         model3DCache.set(cacheKey, sceneObj);
-                        return sceneObj;
+                        return sceneObj.clone(true);
                     }
                 } catch (e) {
-                    // Try next candidate url
+                    // Try next local candidate
                 }
             }
             return null;
         }
-function buildCandidateUrls(rawUrl, id) {
+
+        function buildCandidateUrls(rawUrl, id) {
             const list = [];
             const isGroupA = id && id.startsWith('A');
 
@@ -1882,7 +1968,7 @@ function buildCandidateUrls(rawUrl, id) {
             planeMesh.renderOrder = 11;
             spinPivot.add(planeMesh);
 
-            // 4. Reference 3D Model Container inside Pivot (For C2 3D Model link)
+            // 4. Reference 3D Model Container inside Pivot (For C2 3D Model)
             const modelContainer = new THREE.Group();
             modelContainer.visible = false;
             modelContainer.renderOrder = 11;
@@ -2016,8 +2102,8 @@ function buildCandidateUrls(rawUrl, id) {
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.includes('lý') || l.includes('ly') || l.includes('coord') || l.includes('axis') || l.includes('tọa độ') || l.includes('toa do');
             }) || cols.find(c => c.index === 3 || c.index === 4); // Column D or E in standard WBSID
 
-            // Column C2 3D Model link
-            const model3DCol = colFind('c2 3d model link') || colFind('c2 3d model') || colFind('c2 3d') || colFind('3d model link') || colFind('3d model') || colFind('c2');
+            // Column C2 3D Model
+            const model3DCol = colFind('c2 3d model') || colFind('c2 3d') || colFind('3d model') || colFind('c2');
             const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image') || colFind('link');
             const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('unicode') || colFind('siddham');
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo') || colFind('phap bao');
@@ -2151,7 +2237,7 @@ function buildCandidateUrls(rawUrl, id) {
                     coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : (rawCoordsStr || nodeCoords.join(', ')),
                     coords: nodeCoords,
                     siddhamImage: isCustomAnim ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
-                    model3DLink: isCustomAnim ? '' : getVal(model3DCol),
+                    model3DSpec: isCustomAnim ? null : parseC2ModelSpec(getVal(model3DCol)),
                     siddhamUnicode: customUni,
                     dharmaObject: customObj || (isGroupA ? 'Vajra Scepter' : ''),
                     mantra: customMantra || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
@@ -2575,14 +2661,14 @@ function buildCandidateUrls(rawUrl, id) {
                         active3DActor.planeMat.needsUpdate = true;
                     }
 
-                    // Check for C2 3D Model link
-                    if (nodeData.model3DLink && nodeData.model3DLink.trim().length > 0) {
-                        loadNode3DModel(nodeData.model3DLink, nodeData.id).then((mObj) => {
+                    // Check for C2 3D Model specification
+                    if (nodeData.model3DSpec && nodeData.model3DSpec.filename) {
+                        loadNode3DModel(nodeData.model3DSpec).then((mObj) => {
                             if (active3DActor.currentData && active3DActor.currentData.id === nodeData.id && mObj) {
                                 while (active3DActor.modelContainer.children.length > 0) {
                                     active3DActor.modelContainer.remove(active3DActor.modelContainer.children[0]);
                                 }
-                                active3DActor.modelContainer.add(mObj.clone());
+                                active3DActor.modelContainer.add(mObj);
                                 active3DActor.has3DModel = true;
                             }
                         });
@@ -2637,7 +2723,8 @@ function buildCandidateUrls(rawUrl, id) {
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
             const box3DModelLink = document.getElementById('box-3dmodel-link');
-            const popup3DAnchor = document.getElementById('popup-3dmodel-anchor');
+            const popup3DLabel = document.getElementById('popup-3dmodel-label');
+            const popup3DColor = document.getElementById('popup-3dmodel-color');
 
             if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut) {
                 boxSiddhamImg.style.display = 'none';
@@ -2661,11 +2748,11 @@ function buildCandidateUrls(rawUrl, id) {
                     boxSiddhamImg.style.display = 'none';
                 }
 
-                if (box3DModelLink && data.model3DLink && data.model3DLink.trim().length > 0) {
+                if (box3DModelLink && data.model3DSpec && data.model3DSpec.filename) {
                     box3DModelLink.style.display = 'block';
-                    if (popup3DAnchor) {
-                        popup3DAnchor.href = data.model3DLink.trim();
-                        popup3DAnchor.innerText = "Open 3D Model Link";
+                    if (popup3DLabel) popup3DLabel.innerText = data.model3DSpec.filename;
+                    if (popup3DColor) {
+                        popup3DColor.innerText = data.model3DSpec.colorName ? `Color: ${data.model3DSpec.colorName}` : 'Color: Native';
                     }
                 } else if (box3DModelLink) {
                     box3DModelLink.style.display = 'none';
@@ -2789,6 +2876,53 @@ function buildCandidateUrls(rawUrl, id) {
                 triggerNextStep();
             }
         }
+
+        // Buddha 3D Model Local File Picker & Drag-and-Drop
+        const btnCustomBuddha = document.getElementById('btn-custom-buddha');
+        const inputBuddhaFile = document.getElementById('input-buddha-file');
+
+        if (btnCustomBuddha && inputBuddhaFile) {
+            btnCustomBuddha.addEventListener('click', (e) => {
+                e.stopPropagation();
+                inputBuddhaFile.click();
+            });
+
+            inputBuddhaFile.addEventListener('change', async (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const buffer = await file.arrayBuffer();
+                    const loader = new THREE.GLTFLoader();
+                    loader.parse(buffer, '', (gltf) => {
+                        if (gltf && gltf.scene) {
+                            applyBuddhaGLTFScene(gltf.scene);
+                            btnCustomBuddha.innerText = `Loaded: ${file.name.slice(0, 16)}...`;
+                        }
+                    });
+                }
+            });
+        }
+
+        // Drag-and-drop any .glb / .gltf file directly into the 3D viewport
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                const fname = file.name.toLowerCase();
+                if (fname.endsWith('.glb') || fname.endsWith('.gltf')) {
+                    const buffer = await file.arrayBuffer();
+                    const loader = new THREE.GLTFLoader();
+                    loader.parse(buffer, '', (gltf) => {
+                        if (gltf && gltf.scene) {
+                            applyBuddhaGLTFScene(gltf.scene);
+                            if (btnCustomBuddha) {
+                                btnCustomBuddha.innerText = `Loaded: ${file.name.slice(0, 16)}...`;
+                            }
+                        }
+                    });
+                }
+            }
+        });
 
         // =========================================================================
         // SECTION 13: UI EVENT LISTENERS
@@ -3121,9 +3255,8 @@ function buildCandidateUrls(rawUrl, id) {
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
 
-                // If a C2 3D model is available for this node, alternate display between 3D model and Siddham character image
+                // Alternating display: If a C2 3D model is available, alternate every 2.5 seconds
                 if (active3DActor.has3DModel) {
-                    // Alternate every 2.5 seconds: phase true = 3D Model, phase false = Siddham Glyph Image
                     const show3D = (Math.floor(elapsedTime / 2.5) % 2) === 1;
                     active3DActor.modelContainer.visible = show3D;
                     active3DActor.plane.visible = !show3D;
