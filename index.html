@@ -470,6 +470,11 @@
                 <span>Siddham Image (C4 CTT Link)</span>
                 <img id="popup-siddham-img" src="" alt="Siddham">
             </div>
+            <div class="popup-img-box" id="box-3dmodel-link" style="display: none;">
+                <span>3D Model (C2 3D Model Link)</span>
+                <div id="popup-3dmodel-badge" style="font-size: 11px; color: var(--accent-cyan); font-weight: 700; margin-top: 10px;">3D Active</div>
+                <a id="popup-3dmodel-anchor" href="#" target="_blank" rel="noopener noreferrer" style="font-size: 9.5px; color: var(--accent-gold); text-decoration: underline; display: block; margin-top: 6px; word-break: break-all;">View Model</a>
+            </div>
         </div>
 
         <div class="popup-mantra-section">
@@ -821,32 +826,55 @@
 
         buildProceduralBuddha();
 
-        try {
-            const MODEL_URL = 'glass+buddha+statue+3d+model.glb';
+        // Google Drive Buddha 3D Model Loader with multi-tier candidate URLs & fallback
+        const BUDDHA_DRIVE_URL = 'https://drive.google.com/file/d/1SuiIWr6ISurthsnK1oNaF2Uz_9OnkZUI/view?usp=drive_link';
+        const buddhaCandidates = buildCandidateModelUrls(BUDDHA_DRIVE_URL).concat([
+            'glass+buddha+statue+3d+model.glb',
+            './glass+buddha+statue+3d+model.glb'
+        ]);
+
+        function loadBuddha3DModel() {
             const loader = new THREE.GLTFLoader();
-            loader.load(
-                MODEL_URL,
-                (gltf) => {
-                    while (buddhaGroup.children.length > 0) {
-                        buddhaGroup.remove(buddhaGroup.children[0]);
-                    }
-                    const buddhaMesh = gltf.scene;
-                    buddhaMesh.traverse((node) => {
-                        if (node.isMesh) {
-                            node.material = crystalBuddhaMat;
-                            node.renderOrder = 2;
+            let idx = 0;
+
+            function tryNext() {
+                if (idx >= buddhaCandidates.length) {
+                    console.log("Buddha 3D model: procedural fallback active");
+                    return;
+                }
+                const url = buddhaCandidates[idx++];
+                loader.load(
+                    url,
+                    (gltf) => {
+                        while (buddhaGroup.children.length > 0) {
+                            buddhaGroup.remove(buddhaGroup.children[0]);
                         }
-                    });
-                    buddhaMesh.scale.set(1.4, 1.4, 1.4);
-                    buddhaMesh.rotation.order = 'ZYX';
-                    buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
-                    buddhaMesh.position.set(0.0, 0.2, -0.5);
-                    buddhaGroup.add(buddhaMesh);
-                },
-                undefined,
-                () => { /* procedural statue baseline already active */ }
-            );
-        } catch (e) { /* continue */ }
+                        const buddhaMesh = gltf.scene;
+                        buddhaMesh.traverse((node) => {
+                            if (node.isMesh) {
+                                node.material = crystalBuddhaMat;
+                                node.renderOrder = 2;
+                            }
+                        });
+                        buddhaMesh.scale.set(1.4, 1.4, 1.4);
+                        buddhaMesh.rotation.order = 'ZYX';
+                        buddhaMesh.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+                        buddhaMesh.position.set(0.0, 0.2, -0.5);
+                        buddhaGroup.add(buddhaMesh);
+                        console.log("Buddha 3D model loaded successfully from:", url);
+                    },
+                    undefined,
+                    () => {
+                        tryNext();
+                    }
+                );
+            }
+            tryNext();
+        }
+
+        try {
+            loadBuddha3DModel();
+        } catch (e) { /* procedural statue baseline already active */ }
 
         // =========================================================================
         // SECTION 6: 3D COORDINATION INDICATORS & 0.5 UNIT MARKERS (DEFAULT OFF)
@@ -1511,7 +1539,79 @@
             return rawUrl;
         }
 
-        function buildCandidateUrls(rawUrl, id) {
+                function buildCandidateModelUrls(rawUrl) {
+            const list = [];
+            if (!rawUrl || typeof rawUrl !== 'string') return list;
+            const trimmed = rawUrl.trim();
+            const fileId = extractGoogleDriveFileId(trimmed);
+
+            if (fileId) {
+                // Direct Google Drive download endpoints & CORS-friendly proxies
+                list.push(`https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`);
+                list.push(`https://drive.google.com/uc?export=download&id=${fileId}`);
+                list.push(`https://corsproxy.io/?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${fileId}`)}`);
+                list.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://drive.google.com/uc?export=download&id=${fileId}`)}`);
+            } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                list.push(trimmed);
+                list.push(`https://corsproxy.io/?url=${encodeURIComponent(trimmed)}`);
+            } else {
+                list.push(trimmed);
+                list.push('./' + trimmed);
+            }
+            return [...new Set(list)];
+        }
+
+        const model3DCache = new Map();
+
+        async function loadNode3DModel(modelUrl, nodeId) {
+            if (!modelUrl) return null;
+            const cacheKey = modelUrl.trim();
+            if (model3DCache.has(cacheKey)) {
+                return model3DCache.get(cacheKey);
+            }
+
+            const candidates = buildCandidateModelUrls(modelUrl);
+            const loader = new THREE.GLTFLoader();
+
+            for (const candUrl of candidates) {
+                try {
+                    const gltf = await new Promise((resolve, reject) => {
+                        loader.load(candUrl, resolve, undefined, reject);
+                    });
+                    if (gltf && gltf.scene) {
+                        const sceneObj = gltf.scene;
+                        // Fit model to sphere interior (~0.24 max dimension)
+                        const box = new THREE.Box3().setFromObject(sceneObj);
+                        const size = new THREE.Vector3();
+                        box.getSize(size);
+                        const maxDim = Math.max(size.x, size.y, size.z) || 1.0;
+                        const targetScale = 0.24 / maxDim;
+                        sceneObj.scale.setScalar(targetScale);
+
+                        // Center model
+                        const center = new THREE.Vector3();
+                        box.getCenter(center);
+                        sceneObj.position.sub(center.multiplyScalar(targetScale));
+
+                        sceneObj.traverse((node) => {
+                            if (node.isMesh) {
+                                node.renderOrder = 11;
+                                if (node.material) {
+                                    node.material.depthWrite = false;
+                                }
+                            }
+                        });
+
+                        model3DCache.set(cacheKey, sceneObj);
+                        return sceneObj;
+                    }
+                } catch (e) {
+                    // Try next candidate url
+                }
+            }
+            return null;
+        }
+function buildCandidateUrls(rawUrl, id) {
             const list = [];
             const isGroupA = id && id.startsWith('A');
 
@@ -1782,7 +1882,13 @@
             planeMesh.renderOrder = 11;
             spinPivot.add(planeMesh);
 
-            // 4. Luminous Highlight Ring (Cyan active locator)
+            // 4. Reference 3D Model Container inside Pivot (For C2 3D Model link)
+            const modelContainer = new THREE.Group();
+            modelContainer.visible = false;
+            modelContainer.renderOrder = 11;
+            spinPivot.add(modelContainer);
+
+            // 5. Luminous Highlight Ring (Cyan active locator)
             const outlineGeo = new THREE.RingGeometry(0.18, 0.21, 32);
             const outlineMat = new THREE.MeshBasicMaterial({
                 color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending
@@ -1799,6 +1905,8 @@
                 spinPivot: spinPivot,
                 plane: planeMesh,
                 planeMat: planeMat,
+                modelContainer: modelContainer,
+                has3DModel: false,
                 outline: outlineMesh,
                 currentData: null,
                 glow: 0.0
@@ -1908,6 +2016,8 @@
                 return l.includes('a2 lý') || l.includes('a2 ly') || l.includes('lý') || l.includes('ly') || l.includes('coord') || l.includes('axis') || l.includes('tọa độ') || l.includes('toa do');
             }) || cols.find(c => c.index === 3 || c.index === 4); // Column D or E in standard WBSID
 
+            // Column C2 3D Model link
+            const model3DCol = colFind('c2 3d model link') || colFind('c2 3d model') || colFind('c2 3d') || colFind('3d model link') || colFind('3d model') || colFind('c2');
             const siddhamImgCol = colFind('c4 ctt link') || colFind('ctt link') || colFind('image') || colFind('link');
             const siddhamUniCol = colFind('c4 siddham unicode') || colFind('siddham unicode') || colFind('unicode') || colFind('siddham');
             const dharmaCol = colFind('c5 dharma object name') || colFind('dharma object') || colFind('pháp bảo') || colFind('phap bao');
@@ -2041,6 +2151,7 @@
                     coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : (rawCoordsStr || nodeCoords.join(', ')),
                     coords: nodeCoords,
                     siddhamImage: isCustomAnim ? '' : (getVal(siddhamImgCol) || (isGroupA ? '06_LA_Gold.PNG' : '')),
+                    model3DLink: isCustomAnim ? '' : getVal(model3DCol),
                     siddhamUnicode: customUni,
                     dharmaObject: customObj || (isGroupA ? 'Vajra Scepter' : ''),
                     mantra: customMantra || (isGroupA ? 'So La, So La\nOm, Wa Dz La Jr Ning,\nBo La Ni Bo Do Ye,\nSo Po He' : ''),
@@ -2449,11 +2560,32 @@
 
                     active3DActor.currentData = nodeData;
 
+                    // Reset 3D model container
+                    while (active3DActor.modelContainer.children.length > 0) {
+                        active3DActor.modelContainer.remove(active3DActor.modelContainer.children[0]);
+                    }
+                    active3DActor.has3DModel = false;
+                    active3DActor.modelContainer.visible = false;
+                    active3DActor.plane.visible = true;
+
                     // Load Siddham texture (cached after first fetch)
                     const tex = await loadSiddhamTexture(nodeData);
                     if (active3DActor.currentData && active3DActor.currentData.id === nodeData.id) {
                         active3DActor.planeMat.map = tex;
                         active3DActor.planeMat.needsUpdate = true;
+                    }
+
+                    // Check for C2 3D Model link
+                    if (nodeData.model3DLink && nodeData.model3DLink.trim().length > 0) {
+                        loadNode3DModel(nodeData.model3DLink, nodeData.id).then((mObj) => {
+                            if (active3DActor.currentData && active3DActor.currentData.id === nodeData.id && mObj) {
+                                while (active3DActor.modelContainer.children.length > 0) {
+                                    active3DActor.modelContainer.remove(active3DActor.modelContainer.children[0]);
+                                }
+                                active3DActor.modelContainer.add(mObj.clone());
+                                active3DActor.has3DModel = true;
+                            }
+                        });
                     }
 
                     active3DActor.glow = 2.2;
@@ -2504,25 +2636,39 @@
             popupDharma.innerText = data.dharmaObject || "-";
             popupMantra.textContent = data.mantra || "Sacred Seed Sound";
 
+            const box3DModelLink = document.getElementById('box-3dmodel-link');
+            const popup3DAnchor = document.getElementById('popup-3dmodel-anchor');
+
             if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut) {
                 boxSiddhamImg.style.display = 'none';
+                if (box3DModelLink) box3DModelLink.style.display = 'none';
             } else {
                 const sUrl = formatImageUrl(data.siddhamImage, data.id);
                 if (sUrl) {
-                popupSiddhamImg.src = sUrl;
-                popupSiddhamImg.onerror = () => {
-                    const fid = extractGoogleDriveFileId(data.siddhamImage);
-                    if (fid) {
-                        popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
-                    } else if (isGroupA) {
-                        popupSiddhamImg.src = '06_LA_Gold.PNG';
-                    } else if (canonicalSiddhamFiles[data.id]) {
-                        popupSiddhamImg.src = canonicalSiddhamFiles[data.id];
-                    }
-                };
-                boxSiddhamImg.style.display = 'block';
+                    popupSiddhamImg.src = sUrl;
+                    popupSiddhamImg.onerror = () => {
+                        const fid = extractGoogleDriveFileId(data.siddhamImage);
+                        if (fid) {
+                            popupSiddhamImg.src = `https://lh3.googleusercontent.com/d/${fid}`;
+                        } else if (isGroupA) {
+                            popupSiddhamImg.src = '06_LA_Gold.PNG';
+                        } else if (canonicalSiddhamFiles[data.id]) {
+                            popupSiddhamImg.src = canonicalSiddhamFiles[data.id];
+                        }
+                    };
+                    boxSiddhamImg.style.display = 'block';
                 } else {
                     boxSiddhamImg.style.display = 'none';
+                }
+
+                if (box3DModelLink && data.model3DLink && data.model3DLink.trim().length > 0) {
+                    box3DModelLink.style.display = 'block';
+                    if (popup3DAnchor) {
+                        popup3DAnchor.href = data.model3DLink.trim();
+                        popup3DAnchor.innerText = "Open 3D Model Link";
+                    }
+                } else if (box3DModelLink) {
+                    box3DModelLink.style.display = 'none';
                 }
             }
 
@@ -2975,15 +3121,32 @@
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
 
+                // If a C2 3D model is available for this node, alternate display between 3D model and Siddham character image
+                if (active3DActor.has3DModel) {
+                    // Alternate every 2.5 seconds: phase true = 3D Model, phase false = Siddham Glyph Image
+                    const show3D = (Math.floor(elapsedTime / 2.5) % 2) === 1;
+                    active3DActor.modelContainer.visible = show3D;
+                    active3DActor.plane.visible = !show3D;
+                } else {
+                    active3DActor.modelContainer.visible = false;
+                    active3DActor.plane.visible = true;
+                }
+
                 // Billboard (Face Camera) is the default mode
                 if (billboardModeSelect.value === 'billboard') {
                     active3DActor.spinPivot.rotation.set(0, 0, 0);
                     active3DActor.plane.quaternion.copy(camera.quaternion);
                     active3DActor.outline.quaternion.copy(camera.quaternion);
+                    if (active3DActor.has3DModel && active3DActor.modelContainer.visible) {
+                        active3DActor.modelContainer.rotation.y = elapsedTime * 1.5; // Smooth turntable rotation
+                    }
                 } else {
                     active3DActor.plane.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.outline.rotation.set(Math.PI / 2, 0, 0);
                     active3DActor.spinPivot.rotation.set(0, 0, elapsedTime * 1.6);
+                    if (active3DActor.has3DModel && active3DActor.modelContainer.visible) {
+                        active3DActor.modelContainer.rotation.y = elapsedTime * 1.5;
+                    }
                 }
             }
 
