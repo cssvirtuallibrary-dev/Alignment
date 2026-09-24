@@ -1927,7 +1927,8 @@ function makeStandardGlyphMarkerSphere(){
 }
 
 const EGO_FORM_DURATION_SECONDS_DONOR = 1.2;
-function buildEgoBubbleObjectAnimation(root, opts){
+const EGO_FORM_DURATION_SECONDS = 1.2;
+        function buildEgoBubbleObjectAnimation(root, opts){
   const holdOpen = !!(opts && opts.holdOpen);
   const mat = new THREE.MeshPhysicalMaterial({ color:0xffffff, roughness:0.05, metalness:0.1, transmission:0.98, ior:1.52, thickness:0.3, transparent:true, opacity:1.0, side:THREE.DoubleSide, depthWrite:false });
   let geo = createOuterBubbleGeometry(0.001, 40, 28);
@@ -1966,7 +1967,13 @@ function buildEgoBubbleObjectAnimation(root, opts){
   };
 }
 
-function loadSharedLotusGeometry(){
+const LOTUS_STL_FILENAME = 'hoa+sen.stl';
+        const LOTUS_STL_CANDIDATES = [ LOTUS_STL_FILENAME, encodeURI(LOTUS_STL_FILENAME) ];
+        const LOTUS_TARGET_DIAMETER = 0.33;
+        const LOTUS_STL_ROTATION_X = 0;
+        const sharedSTLLoader = ('THREE' in window && THREE.STLLoader) ? new THREE.STLLoader() : null;
+        let lotusGeometryLoadPromise = null;
+        function loadSharedLotusGeometry(){
   if (lotusGeometryLoadPromise) return lotusGeometryLoadPromise;
   if (!sharedSTLLoader) { lotusGeometryLoadPromise = Promise.reject(new Error('STLLoader unavailable')); return lotusGeometryLoadPromise; }
   const tryIndex = (idx) => {
