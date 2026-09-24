@@ -264,7 +264,7 @@
             .popup-mantra-val { font-size: 10.5px; padding: 6px 10px; }
         }
 
-        #animate-ego-btn, #animate-laser-btn, #animate-spiral-beams-btn, #animate-torus-in-btn, #animate-torus-out-btn {
+        #animate-ego-btn, #animate-laser-btn, #animate-spiral-beams-btn, #animate-torus-in-btn, #animate-torus-out-btn, #animate-lotus-seq-btn, #animate-hien-luan-btn, #animate-ego-seq-btn {
             margin-top: 5px; width: 100%;
             background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.45);
             color: var(--accent-cyan); padding: 6px 10px; border-radius: 8px;
@@ -272,7 +272,7 @@
             text-transform: uppercase; letter-spacing: 0.8px;
             transition: all 0.2s ease;
         }
-        #animate-ego-btn:hover, #animate-laser-btn:hover, #animate-spiral-beams-btn:hover, #animate-torus-in-btn:hover, #animate-torus-out-btn:hover {
+        #animate-ego-btn:hover, #animate-laser-btn:hover, #animate-spiral-beams-btn:hover, #animate-torus-in-btn:hover, #animate-torus-out-btn:hover, #animate-lotus-seq-btn:hover, #animate-hien-luan-btn:hover, #animate-ego-seq-btn:hover {
             background: rgba(0, 229, 255, 0.25);
             box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
         }
@@ -331,6 +331,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
 </head>
 <body>
 
@@ -435,6 +436,27 @@
                 </label>
                 <button type="button" id="animate-torus-out-btn">
                     ▶ Animate Torus Out
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label style="display:block; font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 4px;">Liên Hoa Bồ Đề Tâm (4-Petal Lotus)</label>
+                <button type="button" id="animate-lotus-seq-btn">
+                    ▶ Animate Lotus Sequence
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label style="display:block; font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 4px;">Hiện Luân (Transforming Light Vortex)</label>
+                <button type="button" id="animate-hien-luan-btn">
+                    ▶ Animate Hien Luan
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label style="display:block; font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; margin-bottom: 4px;">Lục Đại Nhật Nguyệt (Ego Sequence)</label>
+                <button type="button" id="animate-ego-seq-btn">
+                    ▶ Animate Ego Sequence
                 </button>
             </div>
 
@@ -730,6 +752,20 @@
         let egoOnCompleteCallback = null;
         let seqEgoPending = false;
 
+        // ---- New animation state: +LOTUS_SEQUENCE, +HIEN_LUAN, +EGO_SEQUENCE ----
+        let isLotusSeqAnimating = false, lotusSeqStartTime = 0, lotusSeqOnComplete = null, lotusSeqInstance = null;
+        let seqLotusSeqPending = false;
+        const LOTUS_SEQ_DURATION = 16.5;
+
+        let isHienLuanAnimating = false, hienLuanStartTime = 0, hienLuanOnComplete = null, hienLuanInstance = null;
+        let seqHienLuanPending = false;
+        const HIEN_LUAN_DURATION = 15.0;
+
+        let isEgoSeqAnimating = false, egoSeqStartTime = 0, egoSeqOnComplete = null, egoSeqInstance = null;
+        let seqEgoSeqPending = false;
+        const EGO_SEQ_DURATION = 10.6;
+
+
         function updateEgoBubbleWrapping(u) {
             const phiMax = Math.max(0.01, u * Math.PI * 2);
 
@@ -769,6 +805,64 @@
                 sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "EGO" }
             });
         }
+
+        function playLotusSequenceAnimation(onComplete = null) {
+            if (isLotusSeqAnimating) return;
+            isLotusSeqAnimating = true;
+            lotusSeqStartTime = performance.now();
+            lotusSeqOnComplete = onComplete;
+            if (!lotusSeqInstance) lotusSeqInstance = buildLotusSequenceAnimation(scene);
+            showPopup({
+                id: "LOTUS_SEQUENCE",
+                spatialPosition: "YA (Seat) -> SA (Crown) -> 4 Compass Lotuses -> Heart Merge -> VA",
+                coords: [0, 0, 0.2],
+                coordsStr: "0.00, 0.00, 0.20",
+                siddhamUnicode: "𑖭",
+                siddhamImage: "",
+                dharmaObject: "Liên Hoa Bồ Đề Tâm (Four-Petal Lotus Sequence)",
+                mantra: "A Drop of Water Falls From Crown to Seat, Growing the Four-Colored Lotus of Bodhicitta\nYA - SA - Bốn Cánh Sen Bồ Đề Tâm - Hợp Nhất - VA",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "LOTUS_SEQUENCE" }
+            });
+        }
+
+        function playHienLuanAnimation(onComplete = null) {
+            if (isHienLuanAnimating) return;
+            isHienLuanAnimating = true;
+            hienLuanStartTime = performance.now();
+            hienLuanOnComplete = onComplete;
+            if (!hienLuanInstance) hienLuanInstance = buildHienLuanAnimation(scene);
+            showPopup({
+                id: "HIEN_LUAN",
+                spatialPosition: "Heart Core (SCA) -> Crown (Z=1.0) -> Bubble of Ego Interior",
+                coords: [0, 0, 0],
+                coordsStr: "0.00, 0.00, 0.00",
+                siddhamUnicode: "𑖭𑖿𑖓",
+                siddhamImage: "",
+                dharmaObject: "Hiện Luân (Manifested Wheel of Transforming Light)",
+                mantra: "Dark Energy Drawn Inward Through the Core, Transmuted to Light, and Cast Upward to Illuminate the Bubble\nChuyển Hoá Ám Chướng Thành Quang Minh, Chiếu Sáng Khắp Bong Bóng Bản Ngã",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "HIEN_LUAN" }
+            });
+        }
+
+        function playEgoSequenceAnimation(onComplete = null) {
+            if (isEgoSeqAnimating) return;
+            isEgoSeqAnimating = true;
+            egoSeqStartTime = performance.now();
+            egoSeqOnComplete = onComplete;
+            if (!egoSeqInstance) egoSeqInstance = buildEgoSequenceAnimation(scene);
+            showPopup({
+                id: "EGO_SEQUENCE",
+                spatialPosition: "BA (Sunlight) / DA (Moonlight) -- 6 Points Around the Bubble of Ego",
+                coords: [0, 0, 0],
+                coordsStr: "0.00, 0.00, 0.00",
+                siddhamUnicode: "𑖤𑖯 / 𑖟𑖯",
+                siddhamImage: "",
+                dharmaObject: "Lục Đại Nhật Nguyệt (Sunlight & Moonlight Ego Sequence)",
+                mantra: "Sunlight and Moonlight Alternate Around the Bubble of Ego as It Forms\nNhật Quang Nguyệt Quang Luân Chuyển, Bong Bóng Bản Ngã Dần Thành Hình",
+                sequences: { [filterSelect.value || "A.Tổng Thể Bồ Đề Tâm"]: "EGO_SEQUENCE" }
+            });
+        }
+
 
         const crystalBuddhaMat = new THREE.MeshPhysicalMaterial({
             color: 0x80d8ff,
@@ -1759,6 +1853,1032 @@
             return [...new Set(list)];
         }
 
+        
+
+/* =========================================================================
+   DONOR IMPORT: +LOTUS_SEQUENCE, +HIEN_LUAN, +EGO_SEQUENCE
+   Ported from the donor build's per-card mini visualization engine.
+   ========================================================================= */
+const SIDDHAM_FILE_CANDIDATES = {
+  SCA: ['40_SHCA_Gold.PNG', encodeURI('40_SHCA_Gold.PNG'), '40_ŚCA_Gold.PNG', encodeURI('40_ŚCA_Gold.PNG'), '40_SCA_Gold.PNG', encodeURI('40_SCA_Gold.PNG')],
+  BA:  ['08_BA_Gold.PNG', encodeURI('08_BA_Gold.PNG')],
+  DA:  ['07_DA_Gold.PNG', encodeURI('07_DA_Gold.PNG')],
+  YA:  ['13_YA_Gold.PNG', encodeURI('13_YA_Gold.PNG')],
+  SA:  ['16_SA_Gold.PNG', encodeURI('16_SA_Gold.PNG')],
+  VA:  ['11_VA_Gold.PNG', encodeURI('11_VA_Gold.PNG')]
+};
+const siddhamFileTextureCache = {};
+function loadSiddhamFileTexture(key){
+  if (siddhamFileTextureCache[key]) return siddhamFileTextureCache[key];
+  const candidates = SIDDHAM_FILE_CANDIDATES[key] || [];
+  const loader = new THREE.TextureLoader();
+  const tryIndex = (idx) => {
+    if (idx >= candidates.length) return Promise.reject(new Error(`Siddham glyph "${key}" failed to load from all sources`));
+    const url = candidates[idx];
+    return new Promise((resolve, reject) => {
+      loader.load(url,
+        (tex) => resolve(tex),
+        undefined,
+        (err) => { console.warn(`Siddham glyph "${key}" source failed: ${url}`, err); reject(err); });
+    }).catch(() => tryIndex(idx + 1));
+  };
+  siddhamFileTextureCache[key] = tryIndex(0).then((tex) => {
+    tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+    const img = tex.image;
+    const aspect = (img && img.width && img.height) ? (img.width / img.height) : 1;
+    return { tex, aspect };
+  });
+  return siddhamFileTextureCache[key];
+}
+
+
+function makeSiddhamSprite(key, worldHeight){
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent:true, opacity:0, depthWrite:false, depthTest:false }));
+  sprite.renderOrder = 10;
+  sprite.scale.set(worldHeight, worldHeight, 1);
+  if (SIDDHAM_FILE_CANDIDATES[key]) {
+    loadSiddhamFileTexture(key).then(({ tex, aspect }) => {
+      sprite.material.map = tex;
+      sprite.material.needsUpdate = true;
+      sprite.scale.set(worldHeight*aspect, worldHeight, 1);
+    }).catch((err) => {
+      console.warn(`Siddham glyph "${key}" could not be loaded from any source; using fallback glyph texture.`, err);
+      sprite.material.map = createFallbackGlyphTexture(key, key);
+      sprite.material.needsUpdate = true;
+    });
+  } else {
+    sprite.material.map = createFallbackGlyphTexture(key, key);
+    sprite.material.needsUpdate = true;
+  }
+  return sprite;
+}
+
+const GLYPH_MARKER_RADIUS = 0.17;
+const GLYPH_MARKER_COLOR = 0xffc107;
+function makeStandardGlyphMarkerSphere(){
+  const color = new THREE.Color(GLYPH_MARKER_COLOR);
+  // depthWrite:false -- so this translucent marker sphere never blocks the
+  // glyph sprite sitting at its exact center (the sprite itself is also
+  // forced to depthTest:false + a high renderOrder wherever it's used).
+  const mat = new THREE.MeshPhysicalMaterial({ color, emissive:color, emissiveIntensity:0.5, roughness:0.3, metalness:0.15, transparent:true, opacity:0, depthWrite:false });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(GLYPH_MARKER_RADIUS, 28, 28), mat);
+  const light = new THREE.PointLight(color.getHex(), 0, 1.8);
+  return { mesh, mat, light };
+}
+
+const EGO_FORM_DURATION_SECONDS_DONOR = 1.2;
+function buildEgoBubbleObjectAnimation(root, opts){
+  const holdOpen = !!(opts && opts.holdOpen);
+  const mat = new THREE.MeshPhysicalMaterial({ color:0xffffff, roughness:0.05, metalness:0.1, transmission:0.98, ior:1.52, thickness:0.3, transparent:true, opacity:1.0, side:THREE.DoubleSide, depthWrite:false });
+  let geo = createOuterBubbleGeometry(0.001, 40, 28);
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = 3;
+  root.add(mesh);
+  let fullyFormed = false;
+  return {
+    extent: 2.1,
+    update(t){
+      if (holdOpen && fullyFormed) return; // already fully open & static — stop rebuilding geometry every frame
+      let phi;
+      if (holdOpen) {
+        const p = Math.min(1, t / EGO_FORM_DURATION_SECONDS);
+        const eased = p*p*(3-2*p); // smoothstep ease
+        phi = Math.max(0.01, eased * Math.PI * 2);
+        if (p >= 1) fullyFormed = true;
+      } else {
+        const u = (Math.sin(t*0.5)*0.5+0.5); // continuous open/close breathing sweep
+        phi = Math.max(0.01, u*Math.PI*2);
+      }
+      mesh.geometry.dispose();
+      mesh.geometry = createOuterBubbleGeometry(phi, 40, 28);
+    },
+    // Explicitly closes the Bubble back down to its near-zero starting
+    // sliver and clears the "fullyFormed" latch -- used by looping
+    // sequences (e.g. +EGO_SEQUENCE) so the Bubble can fully re-form again
+    // from scratch on every loop, instead of permanently staying open
+    // forever after its very first formation.
+    reset(){
+      fullyFormed = false;
+      mesh.geometry.dispose();
+      mesh.geometry = createOuterBubbleGeometry(0.001, 40, 28);
+    },
+    dispose(){ root.remove(mesh); mesh.geometry.dispose(); mat.dispose(); }
+  };
+}
+
+function loadSharedLotusGeometry(){
+  if (lotusGeometryLoadPromise) return lotusGeometryLoadPromise;
+  if (!sharedSTLLoader) { lotusGeometryLoadPromise = Promise.reject(new Error('STLLoader unavailable')); return lotusGeometryLoadPromise; }
+  const tryIndex = (idx) => {
+    if (idx >= LOTUS_STL_CANDIDATES.length) return Promise.reject(new Error('Hoa Sen.stl failed to load from all sources'));
+    const url = LOTUS_STL_CANDIDATES[idx];
+    return new Promise((resolve, reject) => {
+      sharedSTLLoader.load(url, (geometry) => resolve(geometry), undefined,
+        (err) => { console.warn(`Hoa Sen.stl source failed: ${url}`, err); reject(err); });
+    }).catch(() => tryIndex(idx + 1));
+  };
+  lotusGeometryLoadPromise = tryIndex(0).then((geometry) => {
+    geometry.rotateX(LOTUS_STL_ROTATION_X);
+    geometry.computeBoundingBox();
+    const size = new THREE.Vector3(); geometry.boundingBox.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const scale = LOTUS_TARGET_DIAMETER / maxDim;
+    geometry.scale(scale, scale, scale);
+    geometry.center();
+    geometry.computeVertexNormals();
+    return geometry;
+  });
+  return lotusGeometryLoadPromise;
+}
+
+function createLotusFlowerMesh(colorHex){
+  const color = new THREE.Color(colorHex);
+  const mat = new THREE.MeshPhysicalMaterial({ color, emissive:color, emissiveIntensity:0.22, roughness:0.35, metalness:0.08, side:THREE.DoubleSide, transparent:true, opacity:0.9 });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.001, 6, 6), mat);
+  loadSharedLotusGeometry()
+    .then((geo) => { mesh.geometry.dispose(); mesh.geometry = geo; })
+    .catch((err) => console.warn('Hoa Sen.stl could not be loaded; lotus flowers will remain as placeholder points.', err));
+  return { mesh, mat };
+}
+
+function buildLotusFlowerGroup(colors){
+  const group = new THREE.Group();
+  const instances = colors.map((colorHex, i) => {
+    const { mesh, mat } = createLotusFlowerMesh(colorHex);
+    mesh.rotation.z = (i / colors.length) * Math.PI * 2; // yaw about the scene's vertical (Z) axis
+    // Scale/height falloff is relative to layer count so this works
+    // equally well for a single-color flower (1 layer) or the richly
+    // multi-color merged bloom (12 layers).
+    const layerScale = 1 - (i / colors.length) * 0.32;
+    mesh.scale.setScalar(layerScale);
+    mesh.position.z = i * 0.0018; // tiny vertical stagger to avoid z-fighting between stacked layers
+    group.add(mesh);
+    return { mat };
+  });
+
+  // A multi-color bloom (heart-center merge) gets a golden seed-pod plus a
+  // ring of fine upright stamen filaments at its center, like a real lotus,
+  // so the layered tints read as one naturally-colored flower with a full
+  // floral center rather than flat stacked slices.
+  let stamenMat = null, stamen = null, filamentMat = null;
+  if (colors.length > 1){
+    stamenMat = new THREE.MeshPhysicalMaterial({ color:0xffc107, emissive:0xff9800, emissiveIntensity:0.5, roughness:0.35, metalness:0.4, transparent:true, opacity:0.95 });
+    stamen = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), stamenMat);
+    stamen.position.z = 0.055;
+    group.add(stamen);
+
+    filamentMat = new THREE.MeshStandardMaterial({ color:0xffb300, emissive:0xff9800, emissiveIntensity:0.4, roughness:0.4, metalness:0.3, transparent:true, opacity:0.9 });
+    const FIL_COUNT = 18;
+    for (let fi=0; fi<FIL_COUNT; fi++){
+      const ang = (fi/FIL_COUNT) * Math.PI*2;
+      const fr = 0.07;
+      const fil = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.006, 0.05, 6), filamentMat);
+      fil.position.set(Math.cos(ang)*fr, Math.sin(ang)*fr, 0.05);
+      fil.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1));
+      group.add(fil);
+    }
+  }
+
+  function setBloom(progress){
+    const p = Math.max(0, Math.min(1, progress));
+    const scale = 0.08 + 0.92*p;
+    group.scale.setScalar(scale);
+    instances.forEach(({ mat }) => { mat.opacity = 0.25 + 0.7*p; });
+    if (stamenMat) stamenMat.opacity = 0.2 + 0.75*p;
+    if (filamentMat) filamentMat.opacity = (0.2 + 0.75*p) * 0.9;
+  }
+  setBloom(0);
+  return { group, setBloom };
+}
+
+function buildLotusSequenceAnimation(root){
+  const YA_POS = new THREE.Vector3(0, 0, -0.5);
+  const SA_POS = new THREE.Vector3(0, 0, 1.0);
+  const HEART_POS = new THREE.Vector3(0, 0, 0.2);
+  const VA_POS = new THREE.Vector3(0, 0, 0.35);
+
+  const PETAL_SPECS = [
+    { color:'#3b82f6', target:new THREE.Vector3(-1, 0, 0) }, // BLUE
+    { color:'#FF0000', target:new THREE.Vector3(0, -1, 0) }, // RED (pure red)
+    { color:'#4a148c', target:new THREE.Vector3(1, 0, 0) },  // PURPLE (deep true purple)
+    { color:'#f5f5f5', target:new THREE.Vector3(0, 1, 0) }   // WHITE
+  ];
+
+  // Water droplet travel endpoints: SA -> YA, straight down the vertical axis.
+  const DROP_START = SA_POS.clone();
+  const DROP_END   = YA_POS.clone();
+
+  // A richer, naturally-blended palette for the merged heart-center bloom —
+  // modeled on a real multi-color lotus photo reference: cycles through
+  // blue, indigo, deep purple, magenta/crimson, red, coral, pale lavender,
+  // white, and ice-blue so the flower reads as one smoothly graded bloom
+  // (like overlapping petals of different hues) rather than 4 flat quadrants.
+  function buildNaturalMergedPalette(){
+    return [
+      '#1e88e5', // blue
+      '#3949ab', // blue-indigo
+      '#4a148c', // deep purple
+      '#8e24aa', // purple-magenta
+      '#ad1457', // magenta-crimson
+      '#c62828', // true red
+      '#ef6c4d', // coral
+      '#ffccbc', // pale peach-pink
+      '#f5f5f5', // white
+      '#cfe8fb', // ice blue
+      '#64b5f6', // light blue
+      '#1e88e5'  // back toward blue for a smooth wraparound
+    ];
+  }
+
+  const group = new THREE.Group();
+  root.add(group);
+
+  // Siddham glyphs -- each now placed inside a standardized marker sphere
+  // (same size/color as every other glyph in the experience, per request)
+  // for better visibility against the Bubble/Buddha behind it.
+  const yaSprite = makeSiddhamSprite('YA', 0.204); yaSprite.position.copy(YA_POS); group.add(yaSprite); // ~40% smaller (was 0.34)
+  const yaMarker = makeStandardGlyphMarkerSphere(); yaMarker.mesh.position.copy(YA_POS); group.add(yaMarker.mesh); yaMarker.light.position.copy(YA_POS); group.add(yaMarker.light);
+  const saSprite = makeSiddhamSprite('SA', 0.204); saSprite.position.copy(SA_POS); group.add(saSprite); // ~40% smaller (was 0.34)
+  const saMarker = makeStandardGlyphMarkerSphere(); saMarker.mesh.position.copy(SA_POS); group.add(saMarker.mesh); saMarker.light.position.copy(SA_POS); group.add(saMarker.light);
+  const vaSprite = makeSiddhamSprite('VA', 0.18); vaSprite.position.copy(VA_POS); group.add(vaSprite); // ~40% smaller (was 0.30)
+  const vaMarker = makeStandardGlyphMarkerSphere(); vaMarker.mesh.position.copy(VA_POS); group.add(vaMarker.mesh); vaMarker.light.position.copy(VA_POS); group.add(vaMarker.light);
+
+  // Single drop of water traveling SA -> YA (top to bottom), sculpted as a
+  // proper falling-raindrop silhouette: a rounded, flattened leading belly
+  // (the side facing the direction of travel) tapering to a fine trailing
+  // point (the side facing backward, i.e. "up"), like a real drop of water
+  // stretched by its own fall — plus a small bright catch-light highlight
+  // for a wet, glossy look.
+  function buildWaterDropGeometry(radius){
+    const pts = [
+      new THREE.Vector2(0.00, 1.00),   // trailing tip (points backward/up)
+      new THREE.Vector2(0.14, 0.68),
+      new THREE.Vector2(0.32, 0.30),
+      new THREE.Vector2(0.46, -0.05),
+      new THREE.Vector2(0.42, -0.42),
+      new THREE.Vector2(0.24, -0.75),
+      new THREE.Vector2(0.00, -0.95)   // rounded leading belly (faces direction of travel)
+    ].map(p => new THREE.Vector2(p.x*radius, p.y*radius));
+    const geo = new THREE.LatheGeometry(pts, 24);
+    geo.computeVertexNormals();
+    return geo;
+  }
+  const dropMat = new THREE.MeshPhysicalMaterial({ color:0xbfe9ff, transmission:0.92, roughness:0.03, thickness:0.22, ior:1.33, transparent:true, opacity:0, clearcoat:1.0, clearcoatRoughness:0.05 });
+  const dropMesh = new THREE.Mesh(buildWaterDropGeometry(0.07), dropMat);
+  // Orient the drop so its trailing tip points opposite the direction of
+  // travel (i.e. "backward/up"), and its rounded belly leads the fall —
+  // exactly like a real drop of water dropping down.
+  const dropTravelDir = new THREE.Vector3().subVectors(DROP_END, DROP_START).normalize();
+  dropMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dropTravelDir.clone().negate());
+  group.add(dropMesh);
+  const dropHighlightMat = new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0 });
+  const dropHighlight = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 10), dropHighlightMat);
+  dropHighlight.position.set(0.022, 0.022, 0.02);
+  dropMesh.add(dropHighlight);
+  const dropLight = new THREE.PointLight(0xaee3ff, 0, 1.2);
+  group.add(dropLight);
+
+  // 4 stems, each pre-split into short segments along a curve from YA out
+  // to its compass target, so "growth" is revealed by toggling segment
+  // visibility (no per-frame geometry rebuilds needed).
+  const STEM_SEGMENTS = 14;
+  // Per request: stem made SMALLER (thinner cylinders) and a darker,
+  // earthier green/brown color (was a bright, pure green 0x2e7d32) --
+  // 0x3a3420 is a dark, muted olive-brown, more like a woody/aged stem.
+  const stemMat = new THREE.MeshStandardMaterial({ color:0x3a3420, roughness:0.65, metalness:0.05 });
+  // Winds each stem's growth path spirally around the scene's central
+  // vertical (Z) axis (like a vine circling the Buddha's own centerline as
+  // it climbs), rather than twisting around its own local YA -> flower
+  // axis. Implemented as a pure rotation of each point's (x, y) around the
+  // Z axis, with the rotation angle fading to zero at both endpoints —
+  // this keeps the stem's start (YA, which already sits on the Z axis) and
+  // end (the flower's exact position) unchanged, while the middle of the
+  // path sweeps around the center.
+  const STEM_SPIRAL_TURNS = 0.05; // ~1/20 turn corkscrew twist at the peak of the smooth sine sweep
+  function applySpiralAroundCentralAxis(points){
+    return points.map((p, i) => {
+      const tt = i / (points.length - 1);
+      const angle = STEM_SPIRAL_TURNS * Math.PI * 2 * Math.sin(Math.PI * tt); // 0 at both ends, peaks mid-path
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      return new THREE.Vector3(p.x * cos - p.y * sin, p.x * sin + p.y * cos, p.z);
+    });
+  }
+  const stems = PETAL_SPECS.map(spec => {
+    // Direct growth path from YA out to this flower's position, but with
+    // the final approach rising straight up (Z-up) into the flower's base
+    // -- like a real stem growing upward into its blossom -- rather than
+    // curving in flat/sideways from the side.
+    const mid = new THREE.Vector3().lerpVectors(YA_POS, spec.target, 0.42);
+    mid.z += 0.12; // gentle natural arch through the middle of the path
+    const preTarget = spec.target.clone();
+    preTarget.z -= 0.32; // approach point directly below the flower
+    const curve = new THREE.CatmullRomCurve3([
+      YA_POS.clone(),
+      mid,
+      preTarget,
+      spec.target.clone()
+    ]);
+    const points = applySpiralAroundCentralAxis(curve.getPoints(STEM_SEGMENTS));
+    const segMeshes = [];
+    for (let i=0; i<STEM_SEGMENTS; i++){
+      const a = points[i], b = points[i+1];
+      const dir = new THREE.Vector3().subVectors(b, a);
+      const len = dir.length() || 0.001;
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.015, len, 8), stemMat); // thinner (smaller) stem, was 0.018/0.022
+      cyl.position.copy(a).addScaledVector(dir, 0.5);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+      cyl.visible = false;
+      group.add(cyl);
+      segMeshes.push(cyl);
+    }
+    return segMeshes;
+  });
+
+  // 4 flowers (Hoa Sen.stl, each tinted its own color) blooming at the
+  // compass targets: BLUE @ -X, RED @ -Y, PURPLE @ +X, WHITE @ +Y.
+  const flowers = PETAL_SPECS.map(spec => {
+    const f = buildLotusFlowerGroup([spec.color]);
+    f.group.position.copy(spec.target);
+    group.add(f.group);
+    return { ...f, homePos: spec.target.clone() };
+  });
+
+  // Merged multi-color lotus (8 stacked Hoa Sen.stl copies with a naturally
+  // blended palette) that blooms at the heart center once the 4 flowers
+  // spiral inward and combine.
+  const mergedColors = buildNaturalMergedPalette();
+  const mergedFlower = buildLotusFlowerGroup(mergedColors);
+  mergedFlower.group.position.copy(HEART_POS);
+  mergedFlower.group.scale.setScalar(0.001);
+  group.add(mergedFlower.group);
+
+  // ---- Timeline (seconds); loops seamlessly via elapsed % CYCLE ----
+  const T_YA_IN        = [0.0, 1.0];
+  const T_SA_IN        = [1.0, 2.0];
+  const T_DROP         = [2.2, 4.2];
+  const T_STEM_GROW    = [4.6, 7.2];
+  const T_FLOWER_BLOOM = [6.2, 8.4];
+  const T_MERGE        = [9.0, 11.4];
+  const T_MERGED_BLOOM = [11.0, 12.6];
+  const T_VA_IN        = [12.6, 13.6];
+  const CYCLE = 16.5;
+
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const smooth = (x) => x*x*(3-2*x);
+  const progressOf = (t, span) => clamp01((t - span[0]) / (span[1] - span[0]));
+  const lerp = (a, b, k) => a + (b - a) * k;
+
+  function update(elapsedRaw){
+    const t = elapsedRaw % CYCLE;
+
+    const yaOpacity = smooth(progressOf(t, T_YA_IN));
+    yaSprite.material.opacity = yaOpacity;
+    yaMarker.mat.opacity = yaOpacity * 0.9; yaMarker.light.intensity = yaOpacity * 1.1;
+    const saOpacity = smooth(progressOf(t, T_SA_IN));
+    saSprite.material.opacity = saOpacity;
+    saMarker.mat.opacity = saOpacity * 0.9; saMarker.light.intensity = saOpacity * 1.1;
+
+    const dp = progressOf(t, T_DROP);
+    const dropActive = t >= T_DROP[0] && t <= T_DROP[1] + 0.15;
+    dropMat.opacity = dropActive ? (dp < 0.92 ? 0.95 : lerp(0.95, 0, (dp-0.92)/0.08)) : 0;
+    dropHighlightMat.opacity = dropMat.opacity * 0.9;
+    dropLight.intensity = dropActive ? 1.1 * (1 - Math.abs(dp-0.5)*0.6) : 0;
+    if (dropActive){
+      dropMesh.position.lerpVectors(DROP_START, DROP_END, smooth(dp));
+      dropLight.position.copy(dropMesh.position);
+    }
+
+    const sp = progressOf(t, T_STEM_GROW);
+    const segCount = Math.round(sp * STEM_SEGMENTS);
+    const stemsShouldShow = t < T_MERGE[0]; // stems disappear once the 4 flowers start merging
+    stems.forEach(segMeshes => segMeshes.forEach((m, i) => { m.visible = stemsShouldShow && (i < segCount); }));
+
+    const fp = smooth(progressOf(t, T_FLOWER_BLOOM));
+    flowers.forEach(f => f.setBloom(fp));
+
+    const mp = smooth(progressOf(t, T_MERGE));
+    flowers.forEach((f, idx) => {
+      if (mp <= 0){
+        f.group.position.copy(f.homePos);
+        f.group.scale.setScalar(1);
+        f.group.visible = fp > 0;
+        return;
+      }
+      const spiralTurns = 1.4;
+      const startAngle = Math.atan2(f.homePos.y, f.homePos.x);
+      const startRadius = Math.hypot(f.homePos.x, f.homePos.y);
+      const radius = lerp(startRadius, 0, mp);
+      const angle = startAngle + mp * spiralTurns * Math.PI * 2;
+      f.group.position.set(radius*Math.cos(angle), radius*Math.sin(angle), lerp(f.homePos.z, HEART_POS.z, mp));
+      f.group.scale.setScalar(lerp(1, 0.15, mp));
+      f.group.visible = mp < 0.98;
+    });
+
+    const mbp = smooth(progressOf(t, T_MERGED_BLOOM));
+    mergedFlower.group.scale.setScalar(lerp(0.001, 1, mbp));
+    mergedFlower.setBloom(mbp);
+
+    const vaOpacity = smooth(progressOf(t, T_VA_IN));
+    vaSprite.material.opacity = vaOpacity;
+    vaMarker.mat.opacity = vaOpacity * 0.9; vaMarker.light.intensity = vaOpacity * 1.1;
+  }
+  update(0);
+
+  return {
+    extent: 1.5,
+    update,
+    dispose(){
+      root.remove(group);
+      group.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) { if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose()); else obj.material.dispose(); }
+      });
+    }
+  };
+}
+
+function buildHienLuanAnimation(root, colorHex){
+  const BUBBLE_R = 2.1;
+  const TIP_Z = 1.0; // Crown height -- tip of the inverted-conch spiral
+
+  const group = new THREE.Group();
+  root.add(group);
+
+  // Siddham SCA glyph at the Buddha's heart-origin, sized to match the
+  // +LOTUS_SEQUENCE glyphs -- now placed inside the same standardized
+  // marker sphere used everywhere else, for better visibility.
+  const scaSprite = makeSiddhamSprite('SCA', 0.204);
+  scaSprite.position.set(0, 0, 0);
+  scaSprite.material.opacity = 0;
+  group.add(scaSprite);
+  const scaMarker = makeStandardGlyphMarkerSphere();
+  scaMarker.mesh.position.set(0, 0, 0);
+  scaMarker.light.position.set(0, 0, 0);
+  group.add(scaMarker.mesh);
+  group.add(scaMarker.light);
+
+  // ---- Step 8: starting ~10s in, over 5 seconds the UPPER half of the
+  // (ever-present, holdOpen) Bubble of Ego slowly turns whiter -- like a
+  // light being switched on in a dark room -- while the LOWER half's
+  // darkness fades away, leaving it clearer and more transparent. Both
+  // effects are driven by ONE continuous, seamless full-sphere shell each
+  // (a smooth vertex-color gradient straddling the equator, not two
+  // separate hemisphere meshes), so there is never a hard seam/dark line
+  // at Z=0. After the 5-second transition completes, the whole +HIEN_LUAN
+  // sequence resets (see CYCLE below).
+  const STEP8_ENABLED = true;
+  const stepShellRadius = BUBBLE_R * 0.985;
+  const stepShellGeo = new THREE.SphereGeometry(stepShellRadius, 48, 32);
+  stepShellGeo.rotateX(Math.PI/2); stepShellGeo.rotateZ(-Math.PI/2); // match createOuterBubbleGeometry's orientation
+  const stepVertexCount = stepShellGeo.attributes.position.count;
+  const stepZNorm = new Float32Array(stepVertexCount);
+  for (let i=0;i<stepVertexCount;i++){ stepZNorm[i] = stepShellGeo.attributes.position.getZ(i) / stepShellRadius; }
+  // Smooth, continuous gradient across the equator (soft band so the
+  // transition itself has no visible edge): upperWeight ~1 well above
+  // Z=0, ~0 well below it; lowerWeight is simply its complement.
+  const STEP8_BAND = 0.16;
+  const stepUpperWeight = new Float32Array(stepVertexCount);
+  for (let i=0;i<stepVertexCount;i++){
+    let g = (stepZNorm[i] + STEP8_BAND) / (2*STEP8_BAND);
+    g = Math.max(0, Math.min(1, g));
+    stepUpperWeight[i] = g*g*(3-2*g); // smoothstep
+  }
+  // Shell 1: upper Bubble brightening (additive white glow), intensity
+  // scaled by upperWeight so only the top half ever lights up.
+  const upperGlowGeo = stepShellGeo.clone();
+  const upperGlowColorAttr = new THREE.BufferAttribute(new Float32Array(stepVertexCount*3), 3);
+  upperGlowGeo.setAttribute('color', upperGlowColorAttr);
+  for (let i=0;i<stepVertexCount;i++){ const g = stepUpperWeight[i]; upperGlowColorAttr.setXYZ(i, g, g, g); }
+  const upperGlowMat = new THREE.MeshBasicMaterial({ vertexColors:true, transparent:true, opacity:0, side:THREE.FrontSide, blending:THREE.AdditiveBlending, depthWrite:false });
+  const upperGlowMesh = new THREE.Mesh(upperGlowGeo, upperGlowMat);
+  upperGlowMesh.renderOrder = 4;
+  group.add(upperGlowMesh);
+  // Shell 2: lower Bubble darkness (dark tint), intensity scaled by
+  // lowerWeight (1-upperWeight) so only the bottom half ever carries any
+  // tint -- this is what fades away into transparency over the 5 seconds.
+  const lowerDimGeo = stepShellGeo.clone();
+  const lowerDimColorAttr = new THREE.BufferAttribute(new Float32Array(stepVertexCount*3), 3);
+  lowerDimGeo.setAttribute('color', lowerDimColorAttr);
+  const DIM_TINT = new THREE.Color(0x160a24);
+  for (let i=0;i<stepVertexCount;i++){ const g = 1 - stepUpperWeight[i]; lowerDimColorAttr.setXYZ(i, DIM_TINT.r*g, DIM_TINT.g*g, DIM_TINT.b*g); }
+  const lowerDimMat = new THREE.MeshBasicMaterial({ vertexColors:true, transparent:true, opacity:0, side:THREE.FrontSide, depthWrite:false });
+  const lowerDimMesh = new THREE.Mesh(lowerDimGeo, lowerDimMat);
+  lowerDimMesh.renderOrder = 4;
+  group.add(lowerDimMesh);
+
+  // ---- 3-section trajectory:
+  //   Section 1 (brown)  -- a WIDE, LOW sweep: broad arcs, starting deep
+  //                         below the Buddha and out near the Bubble's
+  //                         inner wall, sweeping in less than one full turn
+  //                         (like broad converging rays, not a tight
+  //                         vortex) as they funnel down toward a single
+  //                         point at Z=0 (the mouth of the core spiral).
+  //   Section 2 (blue)   -- exactly ONE visible strand: it starts at that
+  //                         same converge point (r=0, Z=0), widens out to
+  //                         the Buddha's body diameter over its FIRST loop,
+  //                         then slowly narrows again, loop by loop, over
+  //                         the next 4 loops, arriving at a point exactly
+  //                         at the crown (Z=1). All particles/streamlines
+  //                         share this identical single-line path here, so
+  //                         only one coil is ever visible.
+  //   Section 3 (light)  -- bursts outward starting exactly AT the crown
+  //                         (Z=1, r=0) -- not at Z=0 -- then fans out into
+  //                         12 distinct rays sweeping down across the
+  //                         upper Bubble in one smooth dome.
+  const BROWN_COLOR   = new THREE.Color(0x3d2410);              // darkest -- raw, unconverted energy (Section 1, slowest)
+  const SECTION2_COLOR = new THREE.Color(0x35ff8a);              // vivid GREEN -- energy mid-transformation (Section 2, a bit faster)
+  const LIGHT_COLOR = new THREE.Color(colorHex || '#ffe9a8').lerp(new THREE.Color(0xffffff), 0.88); // brightest near-white -- fully transformed light (Section 3, fastest)
+  // Time allocation across one particle loop also controls perceived SPEED:
+  // Section 1 gets the largest share (slowest), Section 2 a bit less (a
+  // bit faster), Section 3 the smallest share (fastest).
+  // Phase boundaries recalibrated so all 3 sections' particles travel at
+  // the SAME real-world speed (matched to Section 1's speed, which was
+  // the slowest of the 3) instead of each section getting an even 1/3-ish
+  // share of a fixed total loop time regardless of how much physical
+  // distance it actually covers. Measured average path lengths: Section 1
+  // (brown converge) ~4.76 units, Section 2 (green conch spiral) ~9.79
+  // units, Section 3 (light dome burst) ~3.33 units. At the OLD boundaries
+  // (S1=0.50, S2=0.8333 -- i.e. even/fixed time shares of 1.8s/1.2s/0.6s)
+  // that worked out to speeds of ~2.64 / ~8.16 / ~5.54 units/sec --
+  // Section 2 and 3 both moved much faster than Section 1. Rescaling the
+  // boundaries below (and PARTICLE_LOOP_SECONDS) makes every section's
+  // particles move at Section 1's original ~2.64 units/sec.
+  const S1 = 0.2663, S2 = 0.8140; // recalibrated for equal particle speed across all 3 sections (see note above)
+  const BLEND_BAND = 0.05;    // soft crossfade width at each phase boundary
+  const CONVERGE_TURNS = 0.6; // wide, low sweep -- well under one full turn
+  const CONCH_TOTAL_TURNS = 5;      // 1 widening loop + 4 narrowing loops
+  const CONCH_WIDEN_FRACTION = 0.2; // 1 of the 5 total loops is the widening phase
+  const CONCH_MAX_R = 0.6;          // widens out to roughly the Buddha's body diameter
+  const DOME_MAX_THETA = 2.0;       // polar angle (radians) the dome burst sweeps down to -- widened so it fills much more of the Bubble's interior
+
+  const smooth = (x) => x*x*(3-2*x);
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+
+  // ROOT CAUSE of Section 2 reading as white/cyan instead of green: the old
+  // brightenColor() multiplied r/g/b directly and clamped each channel to 1
+  // independently. SECTION2_COLOR (0x35ff8a = r0.21,g1.0,b0.54) times its
+  // old 2.6x multiplier produced (0.54, 1, 1) -- g and b both slammed to
+  // their 1.0 ceiling, which desaturates the color into pale cyan-white,
+  // destroying the green hue entirely. Fixed by brightening in HSL space
+  // instead: hue and saturation are preserved exactly, and only lightness
+  // is lifted (eased toward, never past, a capped ceiling) -- so a color
+  // gets brighter/more vivid without ever being washed out toward white.
+  const LIFT_SECTION1 = 0.55; // brown starts very dark, so lift it the most
+  const LIFT_SECTION2 = 0.12; // green is already fairly bright by default -- only a gentle lift, enough to stay vivid and clearly green
+  const LIFT_SECTION3 = 0.55; // light phase is intentionally designed to trend toward white -- lift is fine here
+  const tmpHSL = { h:0, s:0, l:0 };
+  function brightenColor(c, lift){
+    c.getHSL(tmpHSL);
+    tmpHSL.l = Math.min(0.88, tmpHSL.l + (1 - tmpHSL.l) * lift);
+    tmpHSL.s = Math.min(1, tmpHSL.s * 1.08);
+    c.setHSL(tmpHSL.h, tmpHSL.s, tmpHSL.l);
+  }
+  function phaseColorAt(s, outColor){
+    if (s < S1 - BLEND_BAND) { outColor.copy(BROWN_COLOR); brightenColor(outColor, LIFT_SECTION1); return; }
+    if (s < S1 + BLEND_BAND) { const k=(s-(S1-BLEND_BAND))/(2*BLEND_BAND); outColor.copy(BROWN_COLOR).lerp(SECTION2_COLOR, k); brightenColor(outColor, LIFT_SECTION1 + (LIFT_SECTION2-LIFT_SECTION1)*k); return; }
+    if (s < S2 - BLEND_BAND) { outColor.copy(SECTION2_COLOR); brightenColor(outColor, LIFT_SECTION2); return; }
+    if (s < S2 + BLEND_BAND) { const k=(s-(S2-BLEND_BAND))/(2*BLEND_BAND); outColor.copy(SECTION2_COLOR).lerp(LIGHT_COLOR, k); brightenColor(outColor, LIFT_SECTION2 + (LIFT_SECTION3-LIFT_SECTION2)*k); return; }
+    outColor.copy(LIGHT_COLOR); brightenColor(outColor, LIFT_SECTION3);
+  }
+  // Which of the 3 sections (0, 1, 2) a given phase position s belongs to --
+  // used to gate each section's staged reveal below.
+  function sectionIndexOf(s){ return s < S1 ? 0 : (s < S2 ? 1 : 2); }
+
+  // ---- Section 3 shape: two-phase parabola-then-circle design. Per
+  // feedback, even after matching position AND slope (tangent direction)
+  // exactly at the peak, a small kink was still visible -- this is
+  // because the two curves' CURVATURE (how sharply they bend) differed a
+  // lot at that point: the parabola bends much more sharply there than
+  // the circle does, so even though they touch and point the same way,
+  // one visibly bends harder right at the seam, reading as a kink.
+  // Fix: instead of an instant hand-off at one exact point, blend the two
+  // formulas together over a short window straddling the peak, using a
+  // smoothstep S-curve weight. This spreads the curvature change out
+  // over a short stretch of the path instead of concentrating it at a
+  // single point, which removes the visual "snap".
+  const HIENLUAN_PEAK_R = 0.55;      // radius (from the central axis) at the notional hand-off point between rise and fall
+  const HIENLUAN_PEAK_Z = TIP_Z + 0.85; // height at the notional hand-off point
+  // Circle/sphere radius the FALL phase slides along -- passes exactly
+  // through the peak point, and is comfortably smaller than the Bubble's
+  // own inner wall (BUBBLE_R=2.1, safe limit ~2.07).
+  const HIENLUAN_FALL_SPHERE_R = Math.sqrt(HIENLUAN_PEAK_R*HIENLUAN_PEAK_R + HIENLUAN_PEAK_Z*HIENLUAN_PEAK_Z);
+  // Circle's own slope (dz/dr) at the peak point -- the target slope the
+  // parabola is built to also have there, so the two curves point the
+  // same direction going into the blend.
+  const HIENLUAN_PEAK_SLOPE = -HIENLUAN_PEAK_R / HIENLUAN_PEAK_Z;
+  // Solve A, B for the RISE parabola z(r) = TIP_Z + B*r + A*r^2 such that
+  // z(Rp)=Zp and dz/dr(Rp) = HIENLUAN_PEAK_SLOPE.
+  const HIENLUAN_RISE_H = HIENLUAN_PEAK_Z - TIP_Z;
+  const HIENLUAN_RISE_A = (HIENLUAN_PEAK_SLOPE*HIENLUAN_PEAK_R - HIENLUAN_RISE_H) / (HIENLUAN_PEAK_R*HIENLUAN_PEAK_R);
+  const HIENLUAN_RISE_B = HIENLUAN_PEAK_SLOPE - 2*HIENLUAN_RISE_A*HIENLUAN_PEAK_R;
+  const HIENLUAN_RISE_FRACTION = 0.40; // notional progress-fraction of the peak/hand-off point
+  const HIENLUAN_END_R = 1.80; // how far out (from the axis) the fall phase travels before stopping
+  // Half-width (in progress units p) of the blend window straddling the
+  // peak -- the two curves are cross-faded across
+  // [RISE_FRACTION-BLEND_HW, RISE_FRACTION+BLEND_HW] instead of switching
+  // instantly, to smooth out the curvature change.
+  const HIENLUAN_BLEND_HW = 0.09;
+  function hienluanRiseRZ(p){
+    // Rise curve's own r(p): linear from 0 at p=0 to Rp at p=RISE_FRACTION
+    // (formula is simply extended past RISE_FRACTION when used inside the
+    // blend window).
+    const r = HIENLUAN_PEAK_R * (p / HIENLUAN_RISE_FRACTION);
+    const z = TIP_Z + HIENLUAN_RISE_B*r + HIENLUAN_RISE_A*r*r;
+    return { r, z };
+  }
+  function hienluanFallRZ(p){
+    // Fall curve's own r(p): linear from Rp at p=RISE_FRACTION to END_R at
+    // p=1 (formula is simply extended before RISE_FRACTION when used
+    // inside the blend window).
+    const w = (p - HIENLUAN_RISE_FRACTION) / (1 - HIENLUAN_RISE_FRACTION);
+    const r = HIENLUAN_PEAK_R + (HIENLUAN_END_R - HIENLUAN_PEAK_R) * w;
+    const z = Math.sqrt(Math.max(0, HIENLUAN_FALL_SPHERE_R*HIENLUAN_FALL_SPHERE_R - r*r));
+    return { r, z };
+  }
+  // Given overall progress p (0..1) along the ray, returns {r, z} for
+  // Section 3's two-phase shape, cross-fading smoothly through the blend
+  // window around the peak.
+  function hienluanBurstShape(p){
+    const loEdge = HIENLUAN_RISE_FRACTION - HIENLUAN_BLEND_HW;
+    const hiEdge = HIENLUAN_RISE_FRACTION + HIENLUAN_BLEND_HW;
+    if (p <= loEdge){
+      return hienluanRiseRZ(p);
+    } else if (p >= hiEdge){
+      return hienluanFallRZ(p);
+    } else {
+      // Inside the blend window: evaluate BOTH curves' formulas at this p
+      // (each simply extended slightly past its normal domain) and
+      // cross-fade with a smoothstep weight, so r, z, and the path's
+      // curvature all change gradually across the window rather than
+      // switching abruptly at one point.
+      const t = (p - loEdge) / (hiEdge - loEdge); // 0 -> 1 across the window
+      const w = t*t*(3 - 2*t); // smoothstep
+      const rise = hienluanRiseRZ(p);
+      const fall = hienluanFallRZ(p);
+      const r = rise.r + (fall.r - rise.r) * w;
+      const z = rise.z + (fall.z - rise.z) * w;
+      return { r, z };
+    }
+  }
+
+  function energyPointAt(s, seed, outVec){
+    let x, y, z;
+    if (s < S1){
+      // Section 1: a wide, low sweep -- starting deep below the Buddha and
+      // out near the Bubble's inner wall, sweeping through less than one
+      // full turn as it funnels down to a single point at Z=0.
+      const p = s/S1;
+      const ease = smooth(p);
+      z = seed.startZ * (1-ease);
+      const r = seed.startR * (1-ease*ease); // wide sweep, only pinches in sharply near the very end
+      const angle = seed.startAngle + ease*CONVERGE_TURNS*Math.PI*2;
+      x = r*Math.cos(angle); y = r*Math.sin(angle);
+    } else if (s < S2){
+      // Section 2: ONE shared spiral strand (angle/radius here intentionally
+      // ignore the per-seed azimuth, so every streamline/particle overlaps
+      // into a single visible coil) -- widens to the Buddha's body diameter
+      // across the first loop, then narrows loop by loop across the next 4
+      // loops, ending exactly at the crown point (Z=1, r=0).
+      const p = (s-S1)/(S2-S1);
+      z = p*TIP_Z;
+      const angle = p*CONCH_TOTAL_TURNS*Math.PI*2; // shared reference angle -- no seed-specific offset
+      let r;
+      if (p < CONCH_WIDEN_FRACTION){
+        const w = p/CONCH_WIDEN_FRACTION;
+        r = CONCH_MAX_R*smooth(w);
+      } else {
+        const w = (p-CONCH_WIDEN_FRACTION)/(1-CONCH_WIDEN_FRACTION);
+        r = CONCH_MAX_R*(1-smooth(w));
+      }
+      x = r*Math.cos(angle); y = r*Math.sin(angle);
+    } else {
+      // Section 3 -- fresh design built directly from the side-view / top-
+      // view reference markups: ONE smooth, continuous cubic-Hermite
+      // spline (r, z, and an extra azimuthal curl) through the crown-rise
+      // / arc-up-and-out / descend-to-the-edge keyframes. The spline's
+      // tangent vector is shared at every interior keyframe (via the
+      // finite-difference tangents computed above), guaranteeing the
+      // curve's direction matches exactly across each join -- a single
+      // unbroken, smooth line with no kinks or corners.
+      // Each of the 9 rays starts at its own fixed, evenly-spaced heading
+      // (seed.umbrellaAzimuth), then curls by the SAME extra swirl amount
+      // (thetaOffset) as it travels outward -- so from directly above,
+      // every ray sweeps smoothly from the center out toward the rim,
+      // curving to one side along the way, exactly like the top-view
+      // markup -- and never loops back toward the center.
+      const p = (s-S2)/(1-S2);
+      const shape = hienluanBurstShape(p);
+      const finalAngle = seed.umbrellaAzimuth; // no spiral -- fixed heading per ray
+      x = Math.max(0, shape.r)*Math.cos(finalAngle);
+      y = Math.max(0, shape.r)*Math.sin(finalAngle);
+      z = shape.z;
+    }
+    outVec.set(x, y, z);
+  }
+
+  // ---- Streamlines (static full paths, colored per-section), now split
+  // into 3 SEPARATE per-section line objects (rather than one continuous
+  // line per streamline) so each section can be staged in on its own
+  // timeline -- Section 1 pulls energy toward the center first, THEN (after
+  // a pause) Section 2 animates, THEN (after another pause) Section 3
+  // bursts -- instead of all 3 sections appearing simultaneously.
+  const NUM_STREAMLINES = 9; // reduced from 12 -- fewer rays across all 3 sections for a cleaner look
+  const STREAM_SEGMENTS = 480; // high resolution so the Section 2 coil (5 tight loops) renders as a smooth curve instead of visibly faceted/broken straight segments
+  const streamSeeds = [];
+  for (let i=0;i<NUM_STREAMLINES;i++){
+    const angle = (i/NUM_STREAMLINES) * Math.PI*2;
+    const startZ = -0.3 - (i % 4) * 0.42; // deep, low starting heights (down to about Z=-1.56)
+    const startR = Math.sqrt(Math.max(0, BUBBLE_R*BUBBLE_R - startZ*startZ)) * 0.88; // wide -- close to the Bubble's inner wall
+    streamSeeds.push({ startZ, startAngle: angle, startR, umbrellaAzimuth: angle, umbrellaSwirl: 0.45 });
+  }
+  const streamPositions = new Float32Array(NUM_STREAMLINES*STREAM_SEGMENTS*3);
+  const streamColors = new Float32Array(NUM_STREAMLINES*STREAM_SEGMENTS*3);
+  const streamVec = new THREE.Vector3();
+  const tmpColorA = new THREE.Color();
+  streamSeeds.forEach((seed, si) => {
+    for (let j=0;j<STREAM_SEGMENTS;j++){
+      const s = j/(STREAM_SEGMENTS-1);
+      energyPointAt(s, seed, streamVec);
+      phaseColorAt(s, tmpColorA);
+      const base = (si*STREAM_SEGMENTS + j) * 3;
+      streamPositions[base] = streamVec.x; streamPositions[base+1] = streamVec.y; streamPositions[base+2] = streamVec.z;
+      streamColors[base] = tmpColorA.r; streamColors[base+1] = tmpColorA.g; streamColors[base+2] = tmpColorA.b;
+    }
+  });
+  // ---- ROOT CAUSE of both the "spaghetti tangle" AND Section 2 reading as
+  // white instead of green: Section 2's path formula intentionally IGNORES
+  // each streamline's individual seed (angle/azimuth) so all 12 rays
+  // collapse onto ONE shared coil -- but the old code still built and drew
+  // all 12 of those perfectly-identical, perfectly-overlapping copies. With
+  // ADDITIVE blending, stacking 12 identical bright-green lines exactly on
+  // top of each other sums their color 12x over -- green (0.21,1,0.54)
+  // adds up almost immediately to pure white well before all 12 layers are
+  // even drawn, and the many exactly-overlapping/near-numerically-identical
+  // vertices produced the tangled, twisted "spaghetti" look in the tube
+  // experiment. Fix: Section 2 is now built and drawn exactly ONCE (not 12
+  // times) -- it was always meant to look like a single strand.
+  // Also reverting away from the earlier solid-tube-mesh experiment (which
+  // introduced its own extrusion/frame artifacts, especially near the
+  // sharp convergence point where Section 1's 12 rays pinch down toward
+  // r=0) back to simple, robust THREE.Line rendering: ONE clean line per
+  // section per ray (no parallel offset "halo" duplicates either, which
+  // is what caused the earlier "multi-strand" look) -- thickness is instead
+  // conveyed by the large, bright, glowing flow particles traveling along
+  // each line (see PARTICLES_PER_STREAMLINE / particle size below).
+  const sectionLineMats = [0,1,2].map(() => new THREE.LineBasicMaterial({ vertexColors:true, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, linewidth:2 }));
+  const idxS1 = Math.round(S1 * (STREAM_SEGMENTS-1));
+  const idxS2 = Math.round(S2 * (STREAM_SEGMENTS-1));
+  const SECTION_RANGES = [ [0, idxS1], [idxS1, idxS2], [idxS2, STREAM_SEGMENTS-1] ];
+  for (let si=0; si<NUM_STREAMLINES; si++){
+    const fullPos = streamPositions.slice(si*STREAM_SEGMENTS*3, (si+1)*STREAM_SEGMENTS*3);
+    const fullCol = streamColors.slice(si*STREAM_SEGMENTS*3, (si+1)*STREAM_SEGMENTS*3);
+    SECTION_RANGES.forEach(([lo, hi], sectionIdx) => {
+      // Section 2 (index 1) is IDENTICAL for every streamline (its formula
+      // ignores the per-seed azimuth by design) -- so only build it once,
+      // from si===0, instead of drawing 12 perfectly-overlapping copies.
+      if (sectionIdx === 1 && si !== 0) return;
+      const posSlice = fullPos.slice(lo*3, (hi+1)*3);
+      const colSlice = fullCol.slice(lo*3, (hi+1)*3);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(posSlice, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(colSlice, 3));
+      const line = new THREE.Line(geo, sectionLineMats[sectionIdx]);
+      group.add(line);
+    });
+  }
+
+  // ---- Flowing point particles: small glowing dots continuously traveling
+  // the full brown -> green -> light path along each streamline, exactly
+  // like +TORUS_IN/+TORUS_OUT's flowing-particle technique. Particles
+  // currently positioned within a not-yet-revealed section are hidden by
+  // zeroing their color (additive blending means black == invisible),
+  // rather than by any geometry/visibility toggle -- so the SAME staged
+  // reveal timeline governs both the static streamlines and these moving
+  // particles automatically.
+  function glowTexture(hex){
+    const c = document.createElement('canvas'); c.width=64; c.height=64;
+    const ctx = c.getContext('2d'); const g = ctx.createRadialGradient(32,32,0,32,32,32);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(0.3,hex); g.addColorStop(0.7,hex+'66'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+  }
+  const PARTICLES_PER_STREAMLINE = 6; // doubled -- denser flow of light along every ray for clearer visibility
+  const totalParticles = NUM_STREAMLINES * PARTICLES_PER_STREAMLINE;
+  const particlePositions = new Float32Array(totalParticles*3);
+  const particleColors = new Float32Array(totalParticles*3);
+  const particleGeo = new THREE.BufferGeometry();
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+  const particleMat = new THREE.PointsMaterial({ size:0.4, map:glowTexture('#ffe9a8'), vertexColors:true, transparent:true, opacity:0, blending:THREE.AdditiveBlending, depthWrite:false, sizeAttenuation:true }); // bigger glowing flow-balls -- the primary way the energy flow reads clearly now
+  const particlePoints = new THREE.Points(particleGeo, particleMat);
+  group.add(particlePoints);
+
+  const PARTICLE_LOOP_SECONDS = 6.76; // one full brown->green->white pass per particle.
+                                       // With the recalibrated S1/S2 above, every section
+                                       // now gets exactly the wall-clock time its own path
+                                       // length requires to move at the SAME speed as
+                                       // Section 1 (the slowest section): Section 1 ~1.80s,
+                                       // Section 2 ~3.70s, Section 3 ~1.26s -- no more
+                                       // visibly faster/slower sections.
+
+  // ---- Staged reveal timeline: SCA appears at the heart-origin first;
+  // shortly after, Section 1 begins pulling energy in toward (0,0,0);
+  // after a brief pause, Section 2 (now green) animates; after another
+  // brief pause, Section 3 bursts from the crown -- matching the pacing
+  // style already used by +LOTUS_SEQUENCE / +HIEN_LUAN's own staged steps.
+  const SCA_FADE_DURATION  = 1.0;  // SCA glyph fade-in time
+  const SECTION_FADE       = 0.9;  // each section's own fade-in time once its turn arrives
+  const SECTION_GAP        = 1.0;  // pause between one section finishing its fade-in and the next one starting
+  const SECTION1_START = SCA_FADE_DURATION + 0.3;                          // Section 1 starts shortly after SCA is visible
+  const SECTION2_START = SECTION1_START + SECTION_FADE + SECTION_GAP;      // Section 2 starts after a pause
+  const SECTION3_START = SECTION2_START + SECTION_FADE + SECTION_GAP;      // Section 3 starts after another pause
+  const SECTION_STARTS = [SECTION1_START, SECTION2_START, SECTION3_START];
+
+  const STEP8_START = 10.0;          // Step 8 (Bubble brighten/fade) begins ~10s in -- well after all 3 sections have fully revealed
+  const STEP8_DURATION = 5.0;        // the brighten/fade transition lasts 5 seconds
+  const CYCLE = STEP8_START + STEP8_DURATION; // 15s total -- the whole sequence resets right after Step 8 finishes
+
+  const tmpColorB = new THREE.Color();
+
+  // Per-section fade-in progress (0..1) at a given absolute time t.
+  function sectionRevealAt(sectionIdx, t){
+    return smooth(clamp01((t - SECTION_STARTS[sectionIdx]) / SECTION_FADE));
+  }
+
+  function update(elapsedRaw){
+    const t = elapsedRaw % CYCLE;
+
+    // SCA glyph fades in at the very start of every loop, at the exact
+    // heart-origin (0,0,0).
+    const scaOpacity = smooth(clamp01(t/SCA_FADE_DURATION));
+    scaSprite.material.opacity = scaOpacity;
+    scaMarker.mat.opacity = scaOpacity * 0.9; scaMarker.light.intensity = scaOpacity * 1.1;
+
+    // Step 8: upper Bubble slowly turns whiter (light switching on) while
+    // the lower Bubble's darkness fades into transparency -- both eased
+    // smoothly over the 5-second window starting at STEP8_START, then the
+    // whole sequence resets (t wraps back to 0 via the % CYCLE above).
+    if (STEP8_ENABLED) {
+      // step8P stays exactly 0 for the whole first STEP8_START seconds, so
+      // gating lowerDimMat.opacity on (t >= STEP8_START) ensures the dark
+      // shell is fully ABSENT the entire time beforehand -- it only ever
+      // appears right as the 5-second clearing transition begins, then
+      // fades to fully transparent by the time the transition completes.
+      const step8P = smooth(clamp01((t - STEP8_START) / STEP8_DURATION));
+      upperGlowMat.opacity = step8P * 0.75;
+      lowerDimMat.opacity = (t >= STEP8_START) ? (1 - step8P) * 0.22 : 0;
+    }
+
+    // Each section's streamline fades in independently, staged one after
+    // another: Section 1 (brown, pulling toward center) first, then (after
+    // a pause) Section 2 (green, now drawn as a single clean strand rather
+    // than 12 overlapping copies), then (after another pause) Section 3
+    // (bright burst).
+    for (let i=0;i<3;i++){
+      sectionLineMats[i].opacity = 1.0 * sectionRevealAt(i, t);
+    }
+    particleMat.opacity = sectionRevealAt(0, t); // particles turn on as soon as Section 1 begins; individual particles beyond an unrevealed section are hidden via zeroed color below
+
+    if (t <= SECTION1_START) { return; }
+
+    let ptr = 0;
+    for (let si=0; si<NUM_STREAMLINES; si++){
+      const seed = streamSeeds[si];
+      for (let p=0; p<PARTICLES_PER_STREAMLINE; p++){
+        const basePhase = p / PARTICLES_PER_STREAMLINE;
+        const localT = (t + basePhase*PARTICLE_LOOP_SECONDS) % PARTICLE_LOOP_SECONDS;
+        const s = localT / PARTICLE_LOOP_SECONDS;
+        energyPointAt(s, seed, streamVec);
+        phaseColorAt(s, tmpColorB);
+        // Hide this particle (zero it out -- invisible under additive
+        // blending) if the section it currently occupies hasn't been
+        // revealed yet at this point in the staged timeline.
+        const reveal = sectionRevealAt(sectionIndexOf(s), t);
+        tmpColorB.multiplyScalar(reveal);
+        const base = ptr*3;
+        particlePositions[base] = streamVec.x; particlePositions[base+1] = streamVec.y; particlePositions[base+2] = streamVec.z;
+        particleColors[base] = tmpColorB.r; particleColors[base+1] = tmpColorB.g; particleColors[base+2] = tmpColorB.b;
+        ptr++;
+      }
+    }
+    particleGeo.attributes.position.needsUpdate = true;
+    particleGeo.attributes.color.needsUpdate = true;
+  }
+  update(0);
+
+  return {
+    extent: BUBBLE_R + 0.2,
+    update,
+    dispose(){
+      root.remove(group);
+      group.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) { if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose()); else obj.material.dispose(); }
+      });
+    }
+  };
+}
+
+function buildEgoSequenceMarker(pos, sphereColorHex, glyphKey, glyphWorldHeight){
+  const group = new THREE.Group();
+  group.position.copy(pos);
+  const color = new THREE.Color(sphereColorHex);
+  // depthWrite:false -- so this translucent marker sphere never blocks the
+  // glyph sprite sitting at its exact center (see sprite fix below) or
+  // anything else behind it.
+  const mat = new THREE.MeshPhysicalMaterial({ color, emissive:color, emissiveIntensity:0.55, roughness:0.25, metalness:0.2, transparent:true, opacity:0, depthWrite:false });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.17, 28, 28), mat);
+  group.add(mesh);
+  const light = new THREE.PointLight(color.getHex(), 0, 1.8);
+  group.add(light);
+  const sprite = makeSiddhamSprite(glyphKey, glyphWorldHeight);
+  // Force the glyph to always render on top of its marker sphere: without
+  // this, the sprite (positioned exactly at the sphere's center, i.e.
+  // farther from the camera than the sphere's own near-facing surface) was
+  // being depth-test-rejected and never drawn at all.
+  sprite.material.depthTest = false;
+  sprite.renderOrder = 10;
+  group.add(sprite);
+  return { group, mesh, mat, light, sprite };
+}
+
+function buildEgoSequenceAnimation(root, colorHex){
+  const group = new THREE.Group();
+  root.add(group);
+
+  const ORANGE = '#ff8c1a'; // Sunlight / Nhat Quang -- BA
+  const GREEN  = '#28c76f'; // Moonlight / Nguyet Quang -- DA
+
+  const STEPS = [
+    { key:'BA', sphereColor:ORANGE, pos:new THREE.Vector3(0.0, 2.0, 0.0) },
+    { key:'DA', sphereColor:GREEN,  pos:new THREE.Vector3(0.0,-2.0, 0.0) },
+    { key:'BA', sphereColor:ORANGE, pos:new THREE.Vector3(0.0, 0.0, 2.0) },
+    { key:'DA', sphereColor:GREEN,  pos:new THREE.Vector3(0.0, 0.0,-2.0), formEgo:true }, // Bubble of Ego forms here
+    { key:'BA', sphereColor:ORANGE, pos:new THREE.Vector3(-2.0, 1.5, 2.0) },
+    { key:'DA', sphereColor:GREEN,  pos:new THREE.Vector3(-0.8, 1.0, 1.0) }
+  ];
+
+  const markers = STEPS.map(step => {
+    const m = buildEgoSequenceMarker(step.pos, step.sphereColor, step.key, 0.22);
+    group.add(m.group);
+    return m;
+  });
+
+  // The Bubble of Ego mesh/material is built once, up front (so it never
+  // needs to be rebuilt mid-sequence), but its geometry is only actually
+  // swept open once EGO_START is reached (see update() below) -- exactly
+  // the holdOpen contract already used by +LOTUS_SEQUENCE / +HIEN_LUAN.
+  const egoAnim = buildEgoBubbleObjectAnimation(group, { holdOpen: true });
+
+  const STEP_START = [0.0, 1.3, 2.6, 3.9, 5.4, 6.7]; // seconds -- extra gap after step 4 lets the Bubble of Ego finish forming first
+  const FADE_DURATION = 0.9;
+  const EGO_START = STEP_START[3]; // Bubble of Ego begins forming exactly when the 4th marker (DA @ 0,0,-2) is revealed
+  const HOLD_AFTER_LAST = 3.0;
+  const CYCLE = STEP_START[STEP_START.length-1] + FADE_DURATION + HOLD_AFTER_LAST; // then the whole sequence resets
+
+  const clamp01 = (x) => Math.max(0, Math.min(1, x));
+  const smooth = (x) => x*x*(3-2*x);
+
+  // Tracks which loop iteration we're currently in so the Bubble of Ego can
+  // be explicitly closed back down (egoAnim.reset()) the instant a new loop
+  // begins -- without this, once the Bubble fully opens it latches
+  // "fullyFormed" permanently and would otherwise stay open forever across
+  // every subsequent reset/loop, instead of restarting from the bare Buddha
+  // statue (no Bubble) each time, only re-forming once the 4th glyph
+  // (DA @ 0,0,-2) is revealed again.
+  let lastCycleIndex = -1;
+  function update(elapsedRaw){
+    const cycleIndex = Math.floor(elapsedRaw / CYCLE);
+    if (cycleIndex !== lastCycleIndex) {
+      lastCycleIndex = cycleIndex;
+      egoAnim.reset();
+    }
+    const t = elapsedRaw % CYCLE;
+    markers.forEach((m, i) => {
+      const p = smooth(clamp01((t - STEP_START[i]) / FADE_DURATION));
+      m.mat.opacity = p * 0.85;
+      m.light.intensity = p * 1.1;
+      m.sprite.material.opacity = p;
+    });
+    egoAnim.update(Math.max(0, t - EGO_START));
+  }
+  update(0);
+
+  return {
+    extent: 3.3,
+    update,
+    dispose(){
+      egoAnim.dispose();
+      root.remove(group);
+      group.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) { if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose()); else obj.material.dispose(); }
+      });
+    }
+  };
+}
+
+
         const textureCache = new Map();
 
         async function loadSiddhamTexture(nodeData) {
@@ -2156,6 +3276,9 @@
                 const isSpiralRow = uId.includes('SPIRAL') || uId.includes('HELIX') || uId.includes('XOAN_OC');
                 const isTorusInRow = uId.includes('TORUS_IN') || uId.includes('TORUSIN') || uId.includes('NOI_TRIET');
                 const isTorusOutRow = uId.includes('TORUS_OUT') || uId.includes('TORUSOUT') || uId.includes('BIEN_CHIEU');
+                const isLotusSeqRow = uId.includes('LOTUS_SEQUENCE') || uId.includes('LOTUS') || uId.includes('SEN_BON_MAU') || uId === 'SEN';
+                const isHienLuanRow = uId.includes('HIEN_LUAN') || uId.includes('HIENLUAN');
+                const isEgoSeqRow = uId.includes('EGO_SEQUENCE') || uId.includes('EGOSEQUENCE');
 
                 const sequences = {};
                 const egoTriggers = {};
@@ -2163,6 +3286,9 @@
                 const spiralTriggers = {};
                 const torusInTriggers = {};
                 const torusOutTriggers = {};
+                const lotusSeqTriggers = {};
+                const hienLuanTriggers = {};
+                const egoSeqTriggers = {};
 
                 filterColumns.forEach(fc => {
                     if (fc.index >= 0 && r.c[fc.index]) {
@@ -2188,6 +3314,9 @@
                                 if (checkTag(['+SPIRAL', ';SPIRAL', '-SPIRAL', ' SPIRAL', '_SPIRAL', ':SPIRAL', '[SPIRAL]', '(SPIRAL)', '+HELIX'], 'SPIRAL')) spiralTriggers[fc.label] = true;
                                 if (checkTag(['+TORUS_IN', ';TORUS_IN', '-TORUS_IN', ' TORUS_IN', '_TORUS_IN', ':TORUS_IN', '[TORUS_IN]', '+TORUSIN'], 'TORUS_IN')) torusInTriggers[fc.label] = true;
                                 if (checkTag(['+TORUS_OUT', ';TORUS_OUT', '-TORUS_OUT', ' TORUS_OUT', '_TORUS_OUT', ':TORUS_OUT', '[TORUS_OUT]', '+TORUSOUT'], 'TORUS_OUT')) torusOutTriggers[fc.label] = true;
+                                if (checkTag(['+LOTUS_SEQUENCE', ';LOTUS_SEQUENCE', '-LOTUS_SEQUENCE', ' LOTUS_SEQUENCE', '_LOTUS_SEQUENCE', ':LOTUS_SEQUENCE', '[LOTUS_SEQUENCE]', '+LOTUS', '+SEN_BON_MAU'], 'LOTUS_SEQUENCE')) lotusSeqTriggers[fc.label] = true;
+                                if (checkTag(['+HIEN_LUAN', ';HIEN_LUAN', '-HIEN_LUAN', ' HIEN_LUAN', '_HIEN_LUAN', ':HIEN_LUAN', '[HIEN_LUAN]', '+HIENLUAN'], 'HIEN_LUAN')) hienLuanTriggers[fc.label] = true;
+                                if (checkTag(['+EGO_SEQUENCE', ';EGO_SEQUENCE', '-EGO_SEQUENCE', ' EGO_SEQUENCE', '_EGO_SEQUENCE', ':EGO_SEQUENCE', '[EGO_SEQUENCE]', '+EGOSEQUENCE'], 'EGO_SEQUENCE')) egoSeqTriggers[fc.label] = true;
 
                                 sequences[fc.label] = strVal;
                             }
@@ -2198,7 +3327,7 @@
                 const isGroupA = id.startsWith('A');
                 const rawCoordsStr = getVal(coordCol);
 
-                const isCustomAnim = isEgoRow || isLaserRow || isSpiralRow || isTorusInRow || isTorusOutRow;
+                const isCustomAnim = isEgoRow || isLaserRow || isSpiralRow || isTorusInRow || isTorusOutRow || isLotusSeqRow || isHienLuanRow || isEgoSeqRow;
                 let customPos = getVal(posCol);
                 let customObj = getVal(dharmaCol);
                 let customMantra = getVal(mantraCol);
@@ -2229,12 +3358,27 @@
                     customObj = 'Horn Torus Out (Quang Minh Biến Chiếu)';
                     customMantra = 'Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương';
                     customUni = '𑖌𑖼';
+                } else if (isLotusSeqRow) {
+                    customPos = 'YA (Seat) -> SA (Crown) -> 4 Compass Lotuses -> Heart Merge -> VA';
+                    customObj = 'Liên Hoa Bồ Đề Tâm (Four-Petal Lotus Sequence)';
+                    customMantra = 'A Drop of Water Falls From Crown to Seat, Growing the Four-Colored Lotus of Bodhicitta\nYA - SA - Bốn Cánh Sen Bồ Đề Tâm - Hợp Nhất - VA';
+                    customUni = '𑖭';
+                } else if (isHienLuanRow) {
+                    customPos = 'Heart Core (SCA) -> Crown (Z=1.0) -> Bubble of Ego Interior';
+                    customObj = 'Hiện Luân (Manifested Wheel of Transforming Light)';
+                    customMantra = 'Dark Energy Drawn Inward Through the Core, Transmuted to Light, and Cast Upward to Illuminate the Bubble\nChuyển Hoá Ám Chướng Thành Quang Minh, Chiếu Sáng Khắp Bong Bóng Bản Ngã';
+                    customUni = '𑖭𑖿𑖓';
+                } else if (isEgoSeqRow) {
+                    customPos = 'BA (Sunlight) / DA (Moonlight) -- 6 Points Around the Bubble of Ego';
+                    customObj = 'Lục Đại Nhật Nguyệt (Sunlight & Moonlight Ego Sequence)';
+                    customMantra = 'Sunlight and Moonlight Alternate Around the Bubble of Ego as It Forms\nNhật Quang Nguyệt Quang Luân Chuyển, Bong Bóng Bản Ngã Dần Thành Hình';
+                    customUni = '𑖤𑖯 / 𑖟𑖯';
                 }
 
                 // Robust coordinate extraction with automatic fallback to canonical coordinates
                 let nodeCoords = [0, 0, 0];
                 if (isCustomAnim) {
-                    nodeCoords = [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : 0)];
+                    nodeCoords = [0, 0, (isTorusInRow || isTorusOutRow ? 0.25 : (isHienLuanRow ? 0.0 : (isLotusSeqRow ? 0.2 : 0)))];
                 } else if (rawCoordsStr && rawCoordsStr.trim().length > 0) {
                     nodeCoords = parseCoordinates(rawCoordsStr, id);
                 } else if (FALLBACK_NODE_COORDINATES[id]) {
@@ -2248,11 +3392,17 @@
                     isSpiral: isSpiralRow,
                     isTorusIn: isTorusInRow,
                     isTorusOut: isTorusOutRow,
+                    isLotusSeq: isLotusSeqRow,
+                    isHienLuan: isHienLuanRow,
+                    isEgoSeq: isEgoSeqRow,
                     egoTriggers: egoTriggers,
                     laserTriggers: laserTriggers,
                     spiralTriggers: spiralTriggers,
                     torusInTriggers: torusInTriggers,
                     torusOutTriggers: torusOutTriggers,
+                    lotusSeqTriggers: lotusSeqTriggers,
+                    hienLuanTriggers: hienLuanTriggers,
+                    egoSeqTriggers: egoSeqTriggers,
                     spatialPosition: customPos || (isGroupA ? `Column of Light Node ${id}` : ''),
                     coordsStr: isCustomAnim ? '0.0, 0.0, 0.0' : (rawCoordsStr || nodeCoords.join(', ')),
                     coords: nodeCoords,
@@ -2433,7 +3583,10 @@
                 { id: "LASER", isLaser: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Axes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖮𑖳𑖽", siddhamImage: "", dharmaObject: "Laser Beams of Light (Lục Hướng Quang Minh)", mantra: "Six Radial Beams of Pristine Primordial Light\nPhóng Lục Đạo Quang Minh Chiếu Khắp Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.5", "A.Thường Trụ Bất Biến": "6.5" } },
                 { id: "SPIRAL", isSpiral: true, spatialPosition: "Origin (0.00, 0.00, 0.00) -> 6 Cardinal Helixes", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖟𑖿𑖨𑖳𑖽", siddhamImage: "", dharmaObject: "Spiral Beams of Light (Lục Hướng Xoắn Ốc)", mantra: "Six Cardinal Helical Beams / Phóng Lục Đạo Quang Minh Xoắn Ốc Xuyên Suốt Không Gian", sequences: { "A.Tổng Thể Bồ Đề Tâm": "6.8" } },
                 { id: "TORUS_IN", isTorusIn: true, spatialPosition: "Crown (0,0,1.0) -> Body Core -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖮𑖿𑖨𑖱𑖾", siddhamImage: "", dharmaObject: "Horn Torus In (Nội Triệt Năng Lượng)", mantra: "Inward Horn Torus / Hội Tụ Đỉnh Đầu, Quán Triệt Thân Kim Cương, Thoát Tọa Tòa Sen", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.7" } },
-                { id: "TORUS_OUT", isTorusOut: true, spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)", mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "34.5" } }
+                { id: "TORUS_OUT", isTorusOut: true, spatialPosition: "Crown (0,0,1.0) -> Beyond Bubble (R=3.1) -> Seat (0,0,-0.5)", coords: [0.0, 0.0, 0.25], coordsStr: "0.00, 0.00, 0.25", siddhamUnicode: "𑖌𑖼", siddhamImage: "", dharmaObject: "Horn Torus Out (Quang Minh Biến Chiếu)", mantra: "Outward Horn Torus / Xuất Đỉnh Đại Biến Chiếu, Vượt Thoát Bản Ngã, Phổ Chiếu Mười Phương", sequences: { "A.Tổng Thể Bồ Đề Tâm": "34.5" } },
+                { id: "LOTUS_SEQUENCE", isLotusSeq: true, spatialPosition: "YA (Seat) -> SA (Crown) -> 4 Compass Lotuses -> Heart Merge -> VA", coords: [0.0, 0.0, 0.2], coordsStr: "0.0, 0.0, 0.2", siddhamUnicode: "𑖭", siddhamImage: "", dharmaObject: "Liên Hoa Bồ Đề Tâm (Four-Petal Lotus Sequence)", mantra: "A Drop of Water Falls From Crown to Seat, Growing the Four-Colored Lotus of Bodhicitta\nYA - SA - Bốn Cánh Sen Bồ Đề Tâm - Hợp Nhất - VA", sequences: { "A.Liên Hoa Bồ Đề Tâm": "19.5" } },
+                { id: "HIEN_LUAN", isHienLuan: true, spatialPosition: "Heart Core (SCA) -> Crown (Z=1.0) -> Bubble of Ego Interior", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖭𑖿𑖓", siddhamImage: "", dharmaObject: "Hiện Luân (Manifested Wheel of Transforming Light)", mantra: "Dark Energy Drawn Inward Through the Core, Transmuted to Light, and Cast Upward to Illuminate the Bubble\nChuyển Hoá Ám Chướng Thành Quang Minh, Chiếu Sáng Khắp Bong Bóng Bản Ngã", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.6" } },
+                { id: "EGO_SEQUENCE", isEgoSeq: true, spatialPosition: "BA (Sunlight) / DA (Moonlight) -- 6 Points Around the Bubble of Ego", coords: [0.0, 0.0, 0.0], coordsStr: "0.0, 0.0, 0.0", siddhamUnicode: "𑖤𑖯 / 𑖟𑖯", siddhamImage: "", dharmaObject: "Lục Đại Nhật Nguyệt (Sunlight & Moonlight Ego Sequence)", mantra: "Sunlight and Moonlight Alternate Around the Bubble of Ego as It Forms\nNhật Quang Nguyệt Quang Luân Chuyển, Bong Bóng Bản Ngã Dần Thành Hình", sequences: { "A.Tổng Thể Bồ Đề Tâm": "21.4" } }
             ];
 
             // 40 accurately calibrated LA spiral nodes (4 per 0.25 unit height)
@@ -2492,6 +3645,9 @@
                 row.triggerSpiralAfter = !!(row.spiralTriggers && row.spiralTriggers[selectedFilter]);
                 row.triggerTorusInAfter = !!(row.torusInTriggers && row.torusInTriggers[selectedFilter]);
                 row.triggerTorusOutAfter = !!(row.torusOutTriggers && row.torusOutTriggers[selectedFilter]);
+                row.triggerLotusSeqAfter = !!(row.lotusSeqTriggers && row.lotusSeqTriggers[selectedFilter]);
+                row.triggerHienLuanAfter = !!(row.hienLuanTriggers && row.hienLuanTriggers[selectedFilter]);
+                row.triggerEgoSeqAfter = !!(row.egoSeqTriggers && row.egoSeqTriggers[selectedFilter]);
             });
 
             const spiralNodes = rawSheetRows.filter(r => r.id.startsWith('A')).sort((a, b) => {
@@ -2645,6 +3801,18 @@
                     playTorusOutAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     return;
                 }
+                if (nodeData.id === 'LOTUS_SEQUENCE' || nodeData.isLotusSeq) {
+                    playLotusSequenceAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
+                if (nodeData.id === 'HIEN_LUAN' || nodeData.isHienLuan) {
+                    playHienLuanAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
+                if (nodeData.id === 'EGO_SEQUENCE' || nodeData.isEgoSeq) {
+                    playEgoSequenceAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    return;
+                }
 
                 // Check for inline triggers
                 if (nodeData.triggerEgoAfter) seqEgoPending = true;
@@ -2652,6 +3820,9 @@
                 if (nodeData.triggerSpiralAfter) seqSpiralPending = true;
                 if (nodeData.triggerTorusInAfter) seqTorusInPending = true;
                 if (nodeData.triggerTorusOutAfter) seqTorusOutPending = true;
+                if (nodeData.triggerLotusSeqAfter) seqLotusSeqPending = true;
+                if (nodeData.triggerHienLuanAfter) seqHienLuanPending = true;
+                if (nodeData.triggerEgoSeqAfter) seqEgoSeqPending = true;
 
                 const rawCoords = nodeData.coordsStr ? parseCoordinates(nodeData.coordsStr) : nodeData.coords;
                 nodeData.coords = rawCoords;
@@ -2724,7 +3895,7 @@
             if (!data) return;
 
             // On mobile devices (portrait or mobile landscape): do NOT display popup for overlay animations
-            const isOverlay = data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut;
+            const isOverlay = data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut || data.id === 'LOTUS_SEQUENCE' || data.isLotusSeq || data.id === 'HIEN_LUAN' || data.isHienLuan || data.id === 'EGO_SEQUENCE' || data.isEgoSeq;
             const isMobile = (window.innerWidth / window.innerHeight < 1.0) || window.innerHeight < 500 || window.innerWidth < 900;
             if (isMobile && isOverlay) return;
 
@@ -2746,7 +3917,7 @@
             const popup3DLabel = document.getElementById('popup-3dmodel-label');
             const popup3DColor = document.getElementById('popup-3dmodel-color');
 
-            if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut) {
+            if (data.id === 'EGO' || data.isEgo || data.id === 'LASER' || data.isLaser || data.id === 'SPIRAL' || data.isSpiral || data.id === 'TORUS_IN' || data.isTorusIn || data.id === 'TORUS_OUT' || data.isTorusOut || data.id === 'LOTUS_SEQUENCE' || data.isLotusSeq || data.id === 'HIEN_LUAN' || data.isHienLuan || data.id === 'EGO_SEQUENCE' || data.isEgoSeq) {
                 boxSiddhamImg.style.display = 'none';
                 if (box3DModelLink) box3DModelLink.style.display = 'none';
             } else {
@@ -3090,6 +4261,30 @@
             });
         }
 
+        const animateLotusSeqBtn = document.getElementById('animate-lotus-seq-btn');
+        if (animateLotusSeqBtn) {
+            animateLotusSeqBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playLotusSequenceAnimation();
+            });
+        }
+
+        const animateHienLuanBtn = document.getElementById('animate-hien-luan-btn');
+        if (animateHienLuanBtn) {
+            animateHienLuanBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playHienLuanAnimation();
+            });
+        }
+
+        const animateEgoSeqBtn = document.getElementById('animate-ego-seq-btn');
+        if (animateEgoSeqBtn) {
+            animateEgoSeqBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playEgoSequenceAnimation();
+            });
+        }
+
         showAxesCheckbox.addEventListener('change', (e) => {
             axesGroup.visible = e.target.checked;
         });
@@ -3233,8 +4428,62 @@
                 updateHornTorusSystem(torusOutData, flowOffset, 1.0);
             }
 
+            // 6. Advance Lotus Sequence (+LOTUS_SEQUENCE)
+            if (isLotusSeqAnimating) {
+                const elapsed = (performance.now() - lotusSeqStartTime) / 1000;
+                if (lotusSeqInstance) lotusSeqInstance.update(elapsed);
+                if (elapsed >= LOTUS_SEQ_DURATION) {
+                    isLotusSeqAnimating = false;
+                    setTimeout(() => {
+                        if (lotusSeqOnComplete) {
+                            const cb = lotusSeqOnComplete;
+                            lotusSeqOnComplete = null;
+                            cb();
+                        }
+                    }, 800);
+                }
+            } else if (lotusSeqInstance) {
+                lotusSeqInstance.update(0);
+            }
+
+            // 7. Advance Hien Luan (+HIEN_LUAN)
+            if (isHienLuanAnimating) {
+                const elapsed = (performance.now() - hienLuanStartTime) / 1000;
+                if (hienLuanInstance) hienLuanInstance.update(elapsed);
+                if (elapsed >= HIEN_LUAN_DURATION) {
+                    isHienLuanAnimating = false;
+                    setTimeout(() => {
+                        if (hienLuanOnComplete) {
+                            const cb = hienLuanOnComplete;
+                            hienLuanOnComplete = null;
+                            cb();
+                        }
+                    }, 800);
+                }
+            } else if (hienLuanInstance) {
+                hienLuanInstance.update(0);
+            }
+
+            // 8. Advance Ego Sequence (+EGO_SEQUENCE)
+            if (isEgoSeqAnimating) {
+                const elapsed = (performance.now() - egoSeqStartTime) / 1000;
+                if (egoSeqInstance) egoSeqInstance.update(elapsed);
+                if (elapsed >= EGO_SEQ_DURATION) {
+                    isEgoSeqAnimating = false;
+                    setTimeout(() => {
+                        if (egoSeqOnComplete) {
+                            const cb = egoSeqOnComplete;
+                            egoSeqOnComplete = null;
+                            cb();
+                        }
+                    }, 800);
+                }
+            } else if (egoSeqInstance) {
+                egoSeqInstance.update(0);
+            }
+
             // Sequential matrix controller: dispatch inline pending animations before next node
-            const anyCustomAnimRunning = isEgoAnimating || isLaserAnimating || isSpiralAnimating || isTorusInAnimating || isTorusOutAnimating;
+            const anyCustomAnimRunning = isEgoAnimating || isLaserAnimating || isSpiralAnimating || isTorusInAnimating || isTorusOutAnimating || isLotusSeqAnimating || isHienLuanAnimating || isEgoSeqAnimating;
 
             if (isRunning && !anyCustomAnimRunning && !isPaused) {
                 seqTimer += delta * animSpeedMultiplier;
@@ -3255,6 +4504,15 @@
                     } else if (seqEgoPending) {
                         seqEgoPending = false;
                         playEgoBubbleAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqLotusSeqPending) {
+                        seqLotusSeqPending = false;
+                        playLotusSequenceAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqHienLuanPending) {
+                        seqHienLuanPending = false;
+                        playHienLuanAnimation(() => { seqTimer = 0; triggerNextStep(); });
+                    } else if (seqEgoSeqPending) {
+                        seqEgoSeqPending = false;
+                        playEgoSequenceAnimation(() => { seqTimer = 0; triggerNextStep(); });
                     } else {
                         triggerNextStep();
                     }
