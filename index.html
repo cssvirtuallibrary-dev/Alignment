@@ -1914,15 +1914,15 @@ function makeSiddhamSprite(key, worldHeight){
 }
 
 const GLYPH_MARKER_RADIUS = 0.17;
-const GLYPH_MARKER_COLOR = 0xffc107;
+const GLYPH_MARKER_COLOR = 0xff17e0; // vivid magenta -- stands out against every other animation's warm/cool palette
 function makeStandardGlyphMarkerSphere(){
   const color = new THREE.Color(GLYPH_MARKER_COLOR);
   // depthWrite:false -- so this translucent marker sphere never blocks the
   // glyph sprite sitting at its exact center (the sprite itself is also
   // forced to depthTest:false + a high renderOrder wherever it's used).
-  const mat = new THREE.MeshPhysicalMaterial({ color, emissive:color, emissiveIntensity:0.5, roughness:0.3, metalness:0.15, transparent:true, opacity:0, depthWrite:false });
+  const mat = new THREE.MeshPhysicalMaterial({ color, emissive:color, emissiveIntensity:0.95, roughness:0.2, metalness:0.1, transparent:true, opacity:0, depthWrite:false });
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(GLYPH_MARKER_RADIUS, 28, 28), mat);
-  const light = new THREE.PointLight(color.getHex(), 0, 1.8);
+  const light = new THREE.PointLight(color.getHex(), 0, 2.6);
   return { mesh, mat, light };
 }
 
@@ -3090,11 +3090,19 @@ function buildEgoSequenceAnimation(root, colorHex){
             containerGroup.visible = false;
             nodesGroup.add(containerGroup);
 
-            // 1. Transparent Crystal Sphere Mesh
+            // 1. Transparent Crystal Sphere Mesh -- given a vivid magenta emissive
+            // glow (on top of its clear glass/transmissive look) so it stays
+            // clearly visible even with many bright overlay animations running.
             const sphereMat = sphereTransparentMat.clone();
+            sphereMat.emissive = new THREE.Color(0xff17e0);
+            sphereMat.emissiveIntensity = 0.55;
             const sphereMesh = new THREE.Mesh(sphereGeoB, sphereMat);
             sphereMesh.renderOrder = 9;
             containerGroup.add(sphereMesh);
+
+            // 1b. Standout point light so the sphere casts its own colored glow
+            const standoutLight = new THREE.PointLight(0xff17e0, 1.4, 1.6);
+            containerGroup.add(standoutLight);
 
             // 2. Pure Vertical Spin Pivot (Spins around local vertical Z-axis)
             const spinPivot = new THREE.Group();
@@ -3141,6 +3149,7 @@ function buildEgoSequenceAnimation(root, colorHex){
                 modelContainer: modelContainer,
                 has3DModel: false,
                 outline: outlineMesh,
+                standoutLight: standoutLight,
                 currentData: null,
                 glow: 0.0
             };
@@ -4539,6 +4548,15 @@ function buildEgoSequenceAnimation(root, colorHex){
 
                 const pulseScale = 1.0 + (Math.sin(elapsedTime * 3.0) * 0.04);
                 active3DActor.sphere.scale.setScalar(pulseScale);
+
+                // Standout locator ring + colored point light: always visible while a
+                // Siddham node is active (previously only shown when manually tapped),
+                // so the current node stays easy to spot even with many bright overlay
+                // animations (Bubble of Ego, lasers, lotus bloom, etc.) running at once.
+                active3DActor.outline.visible = true;
+                if (active3DActor.standoutLight) {
+                    active3DActor.standoutLight.intensity = 1.1 + Math.sin(elapsedTime * 3.0) * 0.5;
+                }
 
                 // Alternating display: If a C2 3D model is available, alternate every 2.5 seconds
                 if (active3DActor.has3DModel) {
